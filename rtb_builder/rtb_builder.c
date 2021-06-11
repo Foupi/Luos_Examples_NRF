@@ -20,6 +20,11 @@ static  container_t*    s_rtb_builder       = NULL;
 // Describes if a detection was asked.
 static  bool            s_detection_asked   = false;
 
+/*      STATIC FUNCTIONS                                            */
+
+// Does nothing: only commands are performed through button IT.
+static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg);
+
 void RTBBuilder_Init(void)
 {
     revision_t revision = { .unmap = REV };
