@@ -7,9 +7,12 @@
 #include <stdint.h>         // uint*_t
 
 // NRF
-#include "boards.h"         // bsp_board_led_*
-#include "nrf_log.h"        // NRF_LOG_INFO
+#include "boards.h"         // BSP_BUTTON_0, BUTTON_PULL
 #include "sdk_errors.h"     // ret_code_t
+
+#ifdef DEBUG
+#include "nrf_log.h"        // NRF_LOG_INFO
+#endif /* DEBUG */
 
 // NRF APPS
 #include "app_button.h"     // app_button_*
@@ -18,6 +21,7 @@
 
 // LUOS
 #include "luos.h"           // Luos_CreateContainer, container_t
+#include "routing_table.h"  // routing_table_t, RoutingTB_*
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -42,6 +46,10 @@ static const uint32_t BTN_DTX_DELAY = APP_TIMER_TICKS(50);
 // Initializes the button functionality.
 static void init_button(void);
 
+// Logs each entry from the given routing table.
+static void print_rtb(const routing_table_t* rtb,
+                      uint16_t last_entry_index);
+
 /*      CALLBACKS                                                   */
 
 // Does nothing: only commands are performed through button IT.
@@ -55,15 +63,34 @@ void RTBBuilder_Init(void)
     init_button();
 
     revision_t revision = { .unmap = REV };
-    s_rtb_builder = Luos_CreateContainer(NULL, RTB_TYPE, RTB_ALIAS,
-                                         revision);
+    s_rtb_builder = Luos_CreateContainer(RTBBuilder_MsgHandler,
+                                         RTB_TYPE, RTB_ALIAS, revision);
 
     app_button_enable();
 }
 
 void RTBBuilder_Loop(void)
 {
-    // if detection asked, run detection.
+    if (s_detection_asked)
+    {
+        #ifdef DEBUG
+        NRF_LOG_INFO("Detection asked!");
+        #endif /* DEBUG */
+
+        // Run detection
+        RoutingTB_DetectContainers(s_rtb_builder);
+
+        #ifdef DEBUG
+        NRF_LOG_INFO("Detection complete!");
+        #endif /* DEBUG */
+
+        // Log RTB
+        routing_table_t* rtb = RoutingTB_Get();
+        uint16_t last_entry_index = RoutingTB_GetLastEntry();
+        print_rtb(rtb, last_entry_index);
+
+        s_detection_asked = false;
+    }
 }
 
 static void init_button(void)
@@ -82,12 +109,49 @@ static void init_button(void)
     APP_ERROR_CHECK(err_code);
 }
 
-static void button_evt_handler(uint8_t btn_idx, uint8_t event)
+static void print_rtb(const routing_table_t* rtb,
+                      uint16_t last_entry_index)
 {
     #ifdef DEBUG
-    NRF_LOG_INFO("Button event %u on btn %u!", event, btn_idx);
-    #endif /* DEBUG */
+    for (uint16_t entry_idx = 0; entry_idx < last_entry_index;
+         entry_idx++)
+    {
+        NRF_LOG_INFO("Entry %u!", entry_idx);
 
+        const routing_table_t entry = rtb[entry_idx];
+        switch (entry.mode)
+        {
+        case NODE:
+            NRF_LOG_INFO("Mode: node!");
+            NRF_LOG_INFO("Node ID: %u!", entry.node_id);
+            NRF_LOG_INFO("Certified: %s!",
+                         entry.certified ? "true" : "false");
+            for (uint8_t port_idx = 0; port_idx < NBR_PORT; port_idx++)
+            {
+                NRF_LOG_INFO("Port %u: %u!", port_idx,
+                             entry.port_table[port_idx]);
+            }
+            break;
+        case CONTAINER:
+            NRF_LOG_INFO("Mode: container!");
+            NRF_LOG_INFO("ID: %u!", entry.id);
+            NRF_LOG_INFO("Type: %u (%s)!", entry.type,
+                         RoutingTB_StringFromType(entry.type));
+            NRF_LOG_INFO("Alias: %s!", entry.alias);
+            break;
+        default:
+            NRF_LOG_INFO("Unknown entry mode: leaving!");
+            return;
+        }
+    }
+    #endif /* DEBUG */
+}
+
+static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
+{}
+
+static void button_evt_handler(uint8_t btn_idx, uint8_t event)
+{
     if (btn_idx != BUTTON_IDX)
     {
         return;
