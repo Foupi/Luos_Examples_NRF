@@ -7,44 +7,28 @@
 #include <stdint.h>         // uint*_t
 
 // NRF
-#include "boards.h"         // BSP_BUTTON_0, BUTTON_PULL
-#include "sdk_errors.h"     // ret_code_t
 
 #ifdef DEBUG
 #include "nrf_log.h"        // NRF_LOG_INFO
 #endif /* DEBUG */
 
-// NRF APPS
-#include "app_button.h"     // app_button_*
-#include "app_error.h"      // APP_ERROR_CHECK
-#include "app_timer.h"      // APP_TIMER_TICKS
-
 // LUOS
 #include "luos.h"           // Luos_CreateContainer, container_t
 #include "routing_table.h"  // routing_table_t, RoutingTB_*
 
-/*      STATIC VARIABLES & CONSTANTS                                */
+/*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
 #ifndef REV
 #define REV {0,0,1}
 #endif
 
-// The container instance.
-static  container_t*    s_rtb_builder       = NULL;
+// Global detection boolean.
+bool                g_detection_asked   = false;
 
-// Describes if a detection was asked.
-static  bool            s_detection_asked   = false;
-
-// Button to press.
-#define                 BUTTON_IDX  BSP_BUTTON_0
-
-// Button detection delay.
-static const uint32_t BTN_DTX_DELAY = APP_TIMER_TICKS(50);
+// Static container instance.
+static container_t* s_rtb_builder       = NULL;
 
 /*      STATIC FUNCTIONS                                            */
-
-// Initializes the button functionality.
-static void init_button(void);
 
 // Logs each entry from the given routing table.
 static void print_rtb(const routing_table_t* rtb,
@@ -55,23 +39,16 @@ static void print_rtb(const routing_table_t* rtb,
 // Does nothing: only commands are performed through button IT.
 static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg);
 
-// If the index is the defined one, toggles the detection boolean.
-static void button_evt_handler(uint8_t btn_idx, uint8_t event);
-
 void RTBBuilder_Init(void)
 {
-    init_button();
-
     revision_t revision = { .unmap = REV };
     s_rtb_builder = Luos_CreateContainer(RTBBuilder_MsgHandler,
                                          RTB_TYPE, RTB_ALIAS, revision);
-
-    app_button_enable();
 }
 
 void RTBBuilder_Loop(void)
 {
-    if (s_detection_asked)
+    if (g_detection_asked)
     {
         #ifdef DEBUG
         NRF_LOG_INFO("Detection asked!");
@@ -87,26 +64,10 @@ void RTBBuilder_Loop(void)
         // Log RTB
         routing_table_t* rtb = RoutingTB_Get();
         uint16_t last_entry_index = RoutingTB_GetLastEntry();
+
         print_rtb(rtb, last_entry_index);
-
-        s_detection_asked = false;
+        g_detection_asked       = false;
     }
-}
-
-static void init_button(void)
-{
-    static app_button_cfg_t buttons[] =
-    {
-        {
-            BUTTON_IDX,
-            APP_BUTTON_ACTIVE_LOW,
-            BUTTON_PULL,
-            button_evt_handler,
-        },
-    };
-
-    ret_code_t err_code = app_button_init(buttons, 1, BTN_DTX_DELAY);
-    APP_ERROR_CHECK(err_code);
 }
 
 static void print_rtb(const routing_table_t* rtb,
@@ -148,14 +109,5 @@ static void print_rtb(const routing_table_t* rtb,
 }
 
 static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
-{}
-
-static void button_evt_handler(uint8_t btn_idx, uint8_t event)
 {
-    if (btn_idx != BUTTON_IDX)
-    {
-        return;
-    }
-
-    s_detection_asked = (event == APP_BUTTON_PUSH);
 }
