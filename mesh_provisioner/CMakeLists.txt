@@ -7,6 +7,7 @@ set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 
 add_library( mesh_provisioner
     "${MESH_PROVISIONER_PATH}/mesh_provisioner.c"
+    "${MESH_PROVISIONER_PATH}/provisioning.c"
 )
 
 add_compile_definitions(

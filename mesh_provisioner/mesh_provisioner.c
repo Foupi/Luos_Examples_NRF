@@ -11,6 +11,9 @@
 // LUOS
 #include "luos.h"       // container_t, Luos_CreateContainer, msg_t
 
+// CUSTOM
+#include "provisioning.h"   // mesh_*, prov*
+
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
 #ifndef REV
@@ -31,11 +34,11 @@ static void MeshProvisioner_MsgHandler(container_t* container,
 
 void MeshProvisioner_Init(void)
 {
-    // FIXME Initialize Mesh stack.
+    mesh_init();
 
-    // FIXME Initialize provisioning module.
+    provisioning_init();
 
-    // FIXME Start Mesh stack.
+    mesh_start();
 
     revision_t revision = { .unmap = REV };
 
@@ -55,11 +58,11 @@ void MeshProvisioner_Loop(void)
 
         if (g_prov_scan_req)
         {
-            // FIXME Start scanning.
+            prov_scan_start();
         }
         else
         {
-            // FIXME Stop scanning.
+            prov_scan_stop();
         }
 
         s_prov_scanning_state = g_prov_scan_req;
