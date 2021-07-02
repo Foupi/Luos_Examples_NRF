@@ -36,9 +36,19 @@ void MeshProvisioner_Init(void)
 {
     mesh_init();
 
+    NRF_LOG_INFO("Mesh stack initialized!");
+
     provisioning_init();
 
+    NRF_LOG_INFO("Provisioning module initialized!");
+
+    network_ctx_init();
+
+    NRF_LOG_INFO("Network context initialized!");
+
     mesh_start();
+
+    NRF_LOG_INFO("Mesh stack started!");
 
     revision_t revision = { .unmap = REV };
 
