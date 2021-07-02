@@ -28,4 +28,4 @@ void MeshProvisioner_Loop(void);
 // Describes the expected provisioning scan state.
 extern bool g_prov_scan_req;
 
-#endif /* MESH_PROVISIONER_H */
+#endif /* ! MESH_PROVISIONER_H */

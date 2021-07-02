@@ -16,4 +16,4 @@ void prov_scan_start(void);
 // Stop scanning for unprovisioned devices.
 void prov_scan_stop(void);
 
-#endif /* PROVISIONING_H */
+#endif /* ! PROVISIONING_H */

@@ -6,29 +6,43 @@ endif ()
 set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 
 add_library( mesh_provisioner
-    "${MESH_PROVISIONER_PATH}/mesh_provisioner.c"
-    "${MESH_PROVISIONER_PATH}/provisioning.c"
+    "${MESH_PROVISIONER_PATH}/src/mesh_provisioner.c"
+    "${MESH_PROVISIONER_PATH}/src/provisioning.c"
 
-    "${MESH_SDK_DIR}/mesh/stack/src/mesh_stack.c"
-    "${SDK_ROOT}/modules/nrfx/drivers/src/nrfx_gpiote.c"
     ${MESH_CORE_SOURCE_FILES}
     ${MESH_BEARER_SOURCE_FILES}
-    ${CONFIG_CLIENT_SOURCE_FILES}
+    ${PROV_COMMON_SOURCE_FILES}
+    ${PROV_PROVISIONER_SOURCE_FILES}
+    ${PROV_BEARER_ADV_SOURCE_FILES}
+    ${ACCESS_SOURCE_FILES}
+    ${DFU_SOURCE_FILES}
+    ${MESH_STACK_SOURCE_FILES}
     ${CONFIG_SERVER_SOURCE_FILES}
     ${HEALTH_SERVER_SOURCE_FILES}
-    ${HEALTH_CLIENT_SOURCE_FILES}
-    ${ACCESS_SOURCE_FILES}
-    ${PROV_PROVISIONER_SOURCE_FILES}
-    ${PROV_COMMON_SOURCE_FILES}
-    ${PROV_BEARER_ADV_SOURCE_FILES}
+    ${MESH_APP_TIMER_SOURCE_FILES}
     ${${PLATFORM}_SOURCE_FILES}
     ${${nRF5_SDK_VERSION}_SOURCE_FILES}
 )
 
+
+target_include_directories( mesh_provisioner PUBLIC
+    "${MESH_PROVISIONER_PATH}/include"
+
+    ${MESH_INCLUDE_DIRS}
+    ${CONFIG_SERVER_INCLUDE_DIRS}
+    ${HEALTH_SERVER_INCLUDE_DIRS}
+    ${${SOFTDEVICE}_INCLUDE_DIRS}
+    ${${PLATFORM}_INCLUDE_DIRS}
+    ${${BOARD}_INCLUDE_DIRS}
+    ${${nRF5_SDK_VERSION}_INCLUDE_DIRS}
+)
 add_compile_definitions(
     BSP_DEFINES_ONLY
     CONFIG_GPIO_AS_PINRESET
     DEBUG
+    NRF52_SERIES
+    NRF_MESH_LOG_ENABLE=NRF_LOG_USES_RTT
+    CONFIG_APP_IN_CORE
 )
 
 target_link_libraries( mesh_provisioner PUBLIC
@@ -47,18 +61,4 @@ target_link_libraries( mesh_provisioner PUBLIC
 
     # Mesh
     uECC_${PLATFORM}
-)
-
-target_include_directories( mesh_provisioner PUBLIC
-    "${MESH_PROVISIONER_PATH}"
-
-    ${CONFIG_CLIENT_INCLUDE_DIRS}
-    ${CONFIG_SERVER_INCLUDE_DIRS}
-    ${HEALTH_SERVER_INCLUDE_DIRS}
-    ${HEALTH_CLIENT_INCLUDE_DIRS}
-    ${MESH_INCLUDE_DIRS}
-    ${${SOFTDEVICE}_INCLUDE_DIRS}
-    ${${PLATFORM}_INCLUDE_DIRS}
-    ${${BOARD}_INCLUDE_DIRS}
-    ${${nRF5_SDK_VERSION}_INCLUDE_DIRS}
 )
