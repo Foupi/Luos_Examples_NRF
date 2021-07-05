@@ -34,6 +34,25 @@
 #include "config_server.h"              // config_server_*
 #include "config_server_events.h"       // config_server_evt_t
 
+/*      TYPEDEFS                                                    */
+
+// Enum representing the current provisioning state.
+typedef enum
+{
+    // Neither scanning nor provisioning.
+    PROV_STATE_IDLE,
+
+    // Scanning for unprovisioned devices.
+    PROV_STATE_SCANNING,
+
+    // Provisioning a device.
+    PROV_STATE_PROVISIONING,
+
+    // Waiting for link closure after successful provisioning.
+    PROV_STATE_COMPLETE,
+
+} prov_state_t;
+
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Configuration tag.
@@ -63,6 +82,18 @@ static const mesh_key_index_t       PROV_APPKEY_IDX         = 0x0000;
 static const uint32_t               NB_NETKEY_IDX           = 1;
 static const uint32_t               NB_APPKEY_IDX           = 1;
 
+// Information regarding the current state and provisioned device.
+static struct
+{
+    // Current provisioning state.
+    prov_state_t    prov_state;
+
+    // Number of elements of the current unprovisioned device.
+    uint8_t         curr_num_elements;
+
+}                                   s_prov_curr_state;
+
+// Network context: keys and handles.
 static struct
 {
     // Key handles.
@@ -156,6 +187,8 @@ void provisioning_init(void)
     prov_bearer_t* generic_bearer = nrf_mesh_prov_bearer_adv_interface_get(&s_prov_bearer);
     err_code = nrf_mesh_prov_bearer_add(&s_prov_ctx, generic_bearer);
     APP_ERROR_CHECK(err_code);
+
+    s_prov_curr_state.prov_state = PROV_STATE_IDLE;
 }
 
 void network_ctx_init(void)
@@ -188,12 +221,16 @@ void prov_scan_start(void)
     ret_code_t err_code = nrf_mesh_prov_scan_start(mesh_unprov_event_cb);
     APP_ERROR_CHECK(err_code);
 
+    s_prov_curr_state.prov_state = PROV_STATE_SCANNING;
+
     NRF_LOG_INFO("Start scanning for unprovisioned devices!");
 }
 
 void prov_scan_stop(void)
 {
     nrf_mesh_prov_scan_stop();
+
+    s_prov_curr_state.prov_state = PROV_STATE_IDLE;
 
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
 }
@@ -351,5 +388,14 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
         return;
     }
 
-    NRF_LOG_INFO("Unprovisioned device detected!");
+    if (s_prov_curr_state.prov_state != PROV_STATE_SCANNING)
+    {
+        NRF_LOG_INFO("Unprovisioned device detected while not scanning!");
+
+        return;
+    }
+
+    NRF_LOG_INFO("Start provisioning detected device!");
+
+    s_prov_curr_state.prov_state = PROV_STATE_PROVISIONING;
 }
