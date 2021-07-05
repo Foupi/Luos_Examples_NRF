@@ -383,8 +383,49 @@ static void models_init_cb(void)
 
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 {
-    NRF_LOG_INFO("Mesh provisioning event received: type %u!",
-                 event->type);
+    ret_code_t              err_code;
+    nrf_mesh_prov_ctx_t*    device_prov_ctx;
+
+    switch (event->type)
+    {
+    case NRF_MESH_PROV_EVT_LINK_ESTABLISHED:
+        if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
+        {
+            NRF_LOG_INFO("Provisioning link established while not provisioning!");
+            return;
+        }
+
+        NRF_LOG_INFO("Provisioning link established with unprovisioned device!");
+        break;
+
+    case NRF_MESH_PROV_EVT_CAPS_RECEIVED:
+        if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
+        {
+            NRF_LOG_INFO("OOB capacities received while not provisioning!");
+            return;
+        }
+
+    {
+        NRF_LOG_INFO("Capacities received from unprovisioned device!");
+
+        nrf_mesh_prov_evt_caps_received_t   oob_caps_received = event->params.oob_caps_received;
+        device_prov_ctx                                       = oob_caps_received.p_context;
+
+        s_prov_curr_state.curr_num_elements = oob_caps_received.oob_caps.num_elements;
+
+        err_code = nrf_mesh_prov_oob_use(device_prov_ctx,
+                                         NRF_MESH_PROV_OOB_METHOD_STATIC,
+                                         0,
+                                         NRF_MESH_KEY_SIZE);
+        APP_ERROR_CHECK(err_code);
+    }
+        break;
+
+    default:
+        NRF_LOG_INFO("Mesh provisioning event received: type %u!",
+                     event->type);
+        break;
+    }
 }
 
 static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
