@@ -46,6 +46,10 @@ void MeshProvisioner_Init(void)
 
     NRF_LOG_INFO("Network context initialized!");
 
+    prov_conf_init();
+
+    NRF_LOG_INFO("Provisioning configuration initialized!");
+
     mesh_start();
 
     NRF_LOG_INFO("Mesh stack started!");

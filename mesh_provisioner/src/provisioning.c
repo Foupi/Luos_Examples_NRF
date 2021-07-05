@@ -34,6 +34,9 @@
 #include "config_server.h"              // config_server_*
 #include "config_server_events.h"       // config_server_evt_t
 
+// CUSTOM
+#include "provisioner_config.h"         // prov_conf_*
+
 /*      TYPEDEFS                                                    */
 
 // Enum representing the current provisioning state.
@@ -95,10 +98,13 @@ static const uint8_t                AUTH_DATA[]             = {
 static struct
 {
     // Current provisioning state.
-    prov_state_t    prov_state;
+    prov_state_t                    prov_state;
 
-    // Number of elements of the current unprovisioned device.
-    uint8_t         curr_num_elements;
+    // Current provisioning configuration header state.
+    prov_conf_header_entry_live_t   prov_conf_header;
+
+    // Current node being approvisioned.
+    prov_conf_node_entry_live_t     curr_conf_node;
 
 }                                   s_prov_curr_state;
 
@@ -217,6 +223,11 @@ void network_ctx_init(void)
                  s_network_ctx.netkey_handle,
                  s_network_ctx.appkey_handle,
                  s_network_ctx.self_devkey_handle);
+}
+
+void prov_conf_init(void)
+{
+    NRF_LOG_INFO("Initializing provisioning configuration!");
 }
 
 void mesh_start(void)
@@ -417,10 +428,10 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     {
         NRF_LOG_INFO("Capacities received from unprovisioned device!");
 
-        nrf_mesh_prov_evt_caps_received_t   oob_caps_received = event->params.oob_caps_received;
-        device_prov_ctx                                       = oob_caps_received.p_context;
+        nrf_mesh_prov_evt_caps_received_t   oob_caps_received   = event->params.oob_caps_received;
+        device_prov_ctx                                         = oob_caps_received.p_context;
 
-        s_prov_curr_state.curr_num_elements = oob_caps_received.oob_caps.num_elements;
+        s_prov_curr_state.curr_conf_node.nb_elm                 = oob_caps_received.oob_caps.num_elements;
 
         err_code = nrf_mesh_prov_oob_use(device_prov_ctx,
                                          NRF_MESH_PROV_OOB_METHOD_STATIC,
