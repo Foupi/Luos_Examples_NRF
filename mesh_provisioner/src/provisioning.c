@@ -106,13 +106,17 @@ static void config_server_event_cb(const config_server_evt_t* event);
 // Initializes the config client and health client models.
 static void models_init_cb(void);
 
-/* Caps received:   Use received capacities for OOB authentication.
-** Static request:  Provide static authentication data.
-** Complete:        Prepare remote config server setup.
-** Link closed:     Add node to static context if provisioning was
-**                  successful.
+/* Caps received:           Use received capacities for
+**                          OOB authentication.
+** Static request:          Provide static authentication data.
+** Complete:                Prepare remote config server setup.
+** Link closed:             Add node to static context if provisioning
+**                          was successful.
 */
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event);
+
+// Unprovisioned device:    Start provisioning the advertising device.
+static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event);
 
 void mesh_init(void)
 {
@@ -131,7 +135,7 @@ void mesh_init(void)
     memset(&init_params, 0, sizeof(mesh_stack_init_params_t));
     init_params.core.irq_priority       = NRF_MESH_IRQ_PRIORITY_LOWEST;
     init_params.core.lfclksrc           = lf_clk_src;
-    init_params.models.models_init_cb   = /* FIXME */ NULL;
+    init_params.models.models_init_cb   = models_init_cb;
     init_params.models.config_server_cb = config_server_event_cb;
 
     ret_code_t err_code = mesh_stack_init(&init_params,
@@ -181,11 +185,16 @@ void mesh_start(void)
 
 void prov_scan_start(void)
 {
+    ret_code_t err_code = nrf_mesh_prov_scan_start(mesh_unprov_event_cb);
+    APP_ERROR_CHECK(err_code);
+
     NRF_LOG_INFO("Start scanning for unprovisioned devices!");
 }
 
 void prov_scan_stop(void)
 {
+    nrf_mesh_prov_scan_stop();
+
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
 }
 
@@ -265,7 +274,6 @@ static void network_ctx_fetch(void)
     mesh_key_index_t            key_index_buffer;
     dsm_handle_t                curr_handle;
 
-    // FIXME Retrieve netkey index, then retrieve and store handle.
     err_code = dsm_subnet_get_all(&key_index_buffer, &nb_indexes);
     APP_ERROR_CHECK(err_code);
     if (nb_indexes != NB_NETKEY_IDX)
@@ -295,7 +303,6 @@ static void network_ctx_fetch(void)
     }
     s_network_ctx.appkey_handle = curr_handle;
 
-    // FIXME Retrieve and store self devkey handle.
     err_code = dsm_devkey_handle_get(local_addr_range.address_start,
                                      &curr_handle);
     APP_ERROR_CHECK(err_code);
@@ -321,8 +328,28 @@ static void config_server_event_cb(const config_server_evt_t* event)
     }
 }
 
+static void models_init_cb(void)
+{
+    s_network_ctx.netkey_handle         = DSM_HANDLE_INVALID;
+    s_network_ctx.appkey_handle         = DSM_HANDLE_INVALID;
+    s_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
+
+    NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
+}
+
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 {
     NRF_LOG_INFO("Mesh provisioning event received: type %u!",
                  event->type);
+}
+
+static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
+{
+    if (event->type != NRF_MESH_PROV_EVT_UNPROVISIONED_RECEIVED)
+    {
+        // Only manage unprovisioned device events.
+        return;
+    }
+
+    NRF_LOG_INFO("Unprovisioned device detected!");
 }
