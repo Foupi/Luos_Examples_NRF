@@ -13,6 +13,7 @@ add_library( mesh_provisioner
     ${MESH_BEARER_SOURCE_FILES}
     ${PROV_COMMON_SOURCE_FILES}
     ${PROV_PROVISIONER_SOURCE_FILES}
+    ${PROV_PROVISIONEE_SOURCE_FILES}    # prov_provisionee_auth_data
     ${PROV_BEARER_ADV_SOURCE_FILES}
     ${ACCESS_SOURCE_FILES}
     ${DFU_SOURCE_FILES}

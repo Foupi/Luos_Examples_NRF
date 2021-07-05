@@ -85,6 +85,12 @@ static const uint32_t               NB_APPKEY_IDX           = 1;
 // Unprovisioned device attention duration, in seconds.
 static const uint32_t               ATTENTION_DURATION      = 5;
 
+// Static authentication data (FIXME copied from Mesh examples).
+static const uint8_t                AUTH_DATA[]             = {
+    0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F, 0x65,
+    0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31,
+};
+
 // Information regarding the current state and provisioned device.
 static struct
 {
@@ -233,7 +239,10 @@ void prov_scan_stop(void)
 {
     nrf_mesh_prov_scan_stop();
 
-    s_prov_curr_state.prov_state = PROV_STATE_IDLE;
+    if (s_prov_curr_state.prov_state == PROV_STATE_SCANNING)
+    {
+        s_prov_curr_state.prov_state = PROV_STATE_IDLE;
+    }
 
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
 }
@@ -421,6 +430,97 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     }
         break;
 
+    case NRF_MESH_PROV_EVT_STATIC_REQUEST:
+        if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
+        {
+            NRF_LOG_INFO("Static authentication data request received while not provisioning!");
+            return;
+        }
+
+        NRF_LOG_INFO("Static authentication data requested by unprovisioned device!");
+
+        device_prov_ctx = event->params.static_request.p_context;
+
+        err_code = nrf_mesh_prov_auth_data_provide(device_prov_ctx,
+                                                   AUTH_DATA,
+                                                   NRF_MESH_KEY_SIZE);
+        APP_ERROR_CHECK(err_code);
+        break;
+
+    case NRF_MESH_PROV_EVT_FAILED:
+        if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
+        {
+            NRF_LOG_INFO("Provisioning failed event received while not provisioning!");
+            return;
+        }
+
+        NRF_LOG_INFO("Provisioning procedure failed! Reason code: %u!",
+                     event->params.failed.failure_code);
+
+        break;
+
+    case NRF_MESH_PROV_EVT_COMPLETE:
+        if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
+        {
+            NRF_LOG_INFO("Provisioning complete event received while not provisioning!");
+            return;
+        }
+
+    {
+        s_prov_curr_state.prov_state    = PROV_STATE_COMPLETE;
+
+        nrf_mesh_prov_evt_complete_t    prov_complete           = event->params.complete;
+        uint16_t                        device_first_address    = prov_complete.p_prov_data->address;
+        const uint8_t*                  device_devkey           = prov_complete.p_devkey;
+        dsm_handle_t                    device_address_handle;
+        dsm_handle_t                    device_devkey_handle;
+
+        NRF_LOG_INFO("Provisioning process complete for device 0x%x!",
+                     device_first_address);
+
+        err_code = dsm_address_publish_add(device_first_address,
+                                           &device_address_handle);
+        APP_ERROR_CHECK(err_code);
+
+        err_code = dsm_devkey_add(device_first_address,
+                                  s_network_ctx.netkey_handle,
+                                  device_devkey, &device_devkey_handle);
+        APP_ERROR_CHECK(err_code);
+
+        /* FIXME    Store new provisioned device data in persistent
+        **          memory (devkey handle, addr range...).
+        */
+        // FIXME    Compute next target address.
+    }
+
+        break;
+
+    case NRF_MESH_PROV_EVT_LINK_CLOSED:
+        switch (s_prov_curr_state.prov_state)
+        {
+        case PROV_STATE_COMPLETE:
+            NRF_LOG_INFO("Provisioning link closed after successful procedure!");
+
+            // FIXME Start configuration.
+
+            prov_scan_start();
+
+            break;
+
+        case PROV_STATE_PROVISIONING:
+            NRF_LOG_INFO("Provisioning procedure was aborted!");
+
+            prov_scan_start();
+
+            break;
+
+        default:
+            NRF_LOG_INFO("Provisioning link closed event received in inadequate state!");
+            break;
+        }
+
+        break;
+
     default:
         NRF_LOG_INFO("Mesh provisioning event received: type %u!",
                      event->type);
@@ -445,19 +545,24 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
 
     NRF_LOG_INFO("Start provisioning detected device!");
 
-    s_prov_curr_state.prov_state = PROV_STATE_PROVISIONING;
-
     nrf_mesh_prov_provisioning_data_t   prov_data;
     memset(&prov_data, 0, sizeof(nrf_mesh_prov_provisioning_data_t));
     prov_data.netkey_index  = PROV_NETKEY_IDX;
-    prov_data.address       = /* FIXME */ 0x0002;
+    prov_data.address       = /* FIXME Fetch from persistent data. */ 0x0002;
     memcpy(prov_data.netkey, s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
 
     const uint8_t*                      target_uuid = event->params.unprov.device_uuid;
     ret_code_t                          err_code;
 
+    err_code = nrf_mesh_prov_generate_keys(s_pubkey, s_privkey);
+    APP_ERROR_CHECK(err_code);
+
     err_code = nrf_mesh_prov_provision(&s_prov_ctx, target_uuid,
                                        ATTENTION_DURATION, &prov_data,
                                        NRF_MESH_PROV_BEARER_ADV);
     APP_ERROR_CHECK(err_code);
+
+    prov_scan_stop();
+
+    s_prov_curr_state.prov_state = PROV_STATE_PROVISIONING;
 }
