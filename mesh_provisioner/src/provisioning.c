@@ -21,8 +21,9 @@
 
 // MESH SDK
 #include "device_state_manager.h"       // dsm_*
+#include "mesh_config.h"                // mesh_config_*
 #include "mesh_stack.h"                 // mesh_stack_*
-#include "nrf_mesh.h"                   // nrf_mesh_on_sd_evt
+#include "nrf_mesh.h"                   // nrf_mesh_*
 #include "nrf_mesh_prov.h"              /* nrf_mesh_prov_*,
                                         ** NRF_MESH_PROV_*
                                         */
@@ -105,6 +106,10 @@ static struct
 
     // Current node being approvisioned.
     prov_conf_node_entry_live_t     curr_conf_node;
+
+    // Device key and address handles for each approvisioned node.
+    dsm_handle_t                    devkey_handles[MAX_PROV_CONF_NODE_RECORDS];
+    dsm_handle_t                    address_handles[MAX_PROV_CONF_NODE_RECORDS];
 
 }                                   s_prov_curr_state;
 
@@ -227,7 +232,53 @@ void network_ctx_init(void)
 
 void prov_conf_init(void)
 {
-    NRF_LOG_INFO("Initializing provisioning configuration!");
+    if (s_device_provisioned)
+    {
+        mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID,
+                              &(s_prov_curr_state.prov_conf_header));
+
+        uint32_t                    err_code;
+        prov_conf_node_entry_live_t node_conf_buffer;
+        uint16_t                    nb_prov_nodes       = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
+        for (uint16_t node_entry_idx = 0; node_entry_idx < nb_prov_nodes;
+             node_entry_idx++)
+        {
+            mesh_config_entry_get(PROV_CONF_NODE_ENTRY_ID(node_entry_idx),
+                                  &node_conf_buffer);
+
+            err_code = dsm_devkey_handle_get(node_conf_buffer.first_addr,
+                s_prov_curr_state.devkey_handles + node_entry_idx);
+            APP_ERROR_CHECK(err_code);
+
+            nrf_mesh_address_t device_address;
+            memset(&device_address, 0, sizeof(nrf_mesh_address_t));
+            device_address.type     = NRF_MESH_ADDRESS_TYPE_UNICAST;
+            device_address.value    = node_conf_buffer.first_addr;
+
+            err_code = dsm_address_handle_get(&device_address,
+                s_prov_curr_state.address_handles + node_entry_idx);
+            APP_ERROR_CHECK(err_code);
+
+        }
+
+        if (nb_prov_nodes > s_prov_curr_state.prov_conf_header.nb_conf_nodes)
+        {
+            /* One node has been provisioned but not configured: store
+            ** it in current context so that it can be configured right
+            ** away.
+            */
+            s_prov_curr_state.curr_conf_node = node_conf_buffer;
+        }
+    }
+    else
+    {
+        s_prov_curr_state.prov_conf_header.nb_prov_nodes    = 0;
+        s_prov_curr_state.prov_conf_header.nb_conf_nodes    = 0;
+        s_prov_curr_state.prov_conf_header.next_address     = PROV_ELM_ADDRESS + ACCESS_ELEMENT_COUNT;
+
+        mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
+                              &(s_prov_curr_state.prov_conf_header));
+    }
 }
 
 void mesh_start(void)
@@ -478,30 +529,37 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         }
 
     {
-        s_prov_curr_state.prov_state    = PROV_STATE_COMPLETE;
+        s_prov_curr_state.prov_state                            = PROV_STATE_COMPLETE;
 
         nrf_mesh_prov_evt_complete_t    prov_complete           = event->params.complete;
         uint16_t                        device_first_address    = prov_complete.p_prov_data->address;
         const uint8_t*                  device_devkey           = prov_complete.p_devkey;
-        dsm_handle_t                    device_address_handle;
-        dsm_handle_t                    device_devkey_handle;
+        uint16_t                        node_idx                = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
+        uint16_t                        node_nb_elm             = s_prov_curr_state.curr_conf_node.nb_elm;
 
         NRF_LOG_INFO("Provisioning process complete for device 0x%x!",
                      device_first_address);
 
+
         err_code = dsm_address_publish_add(device_first_address,
-                                           &device_address_handle);
+            s_prov_curr_state.address_handles + node_idx);
         APP_ERROR_CHECK(err_code);
 
         err_code = dsm_devkey_add(device_first_address,
-                                  s_network_ctx.netkey_handle,
-                                  device_devkey, &device_devkey_handle);
+            s_network_ctx.netkey_handle, device_devkey,
+            s_prov_curr_state.devkey_handles + node_idx);
         APP_ERROR_CHECK(err_code);
 
-        /* FIXME    Store new provisioned device data in persistent
-        **          memory (devkey handle, addr range...).
-        */
-        // FIXME    Compute next target address.
+        s_prov_curr_state.prov_conf_header.next_address         = device_first_address + node_nb_elm;
+        s_prov_curr_state.prov_conf_header.nb_prov_nodes++;
+        mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
+                              &(s_prov_curr_state.prov_conf_header));
+
+        s_prov_curr_state.curr_conf_node.first_addr             = device_first_address;
+        mesh_config_entry_set(PROV_CONF_NODE_ENTRY_ID(node_idx),
+                              &(s_prov_curr_state.curr_conf_node));
+
+        // FIXME Start configuration.
     }
 
         break;
@@ -559,7 +617,7 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     nrf_mesh_prov_provisioning_data_t   prov_data;
     memset(&prov_data, 0, sizeof(nrf_mesh_prov_provisioning_data_t));
     prov_data.netkey_index  = PROV_NETKEY_IDX;
-    prov_data.address       = /* FIXME Fetch from persistent data. */ 0x0002;
+    prov_data.address       = s_prov_curr_state.prov_conf_header.next_address;
     memcpy(prov_data.netkey, s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
 
     const uint8_t*                      target_uuid = event->params.unprov.device_uuid;
