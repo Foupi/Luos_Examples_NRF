@@ -82,6 +82,9 @@ static const mesh_key_index_t       PROV_APPKEY_IDX         = 0x0000;
 static const uint32_t               NB_NETKEY_IDX           = 1;
 static const uint32_t               NB_APPKEY_IDX           = 1;
 
+// Unprovisioned device attention duration, in seconds.
+static const uint32_t               ATTENTION_DURATION      = 5;
+
 // Information regarding the current state and provisioned device.
 static struct
 {
@@ -323,6 +326,10 @@ static void network_ctx_fetch(void)
     {
         // FIXME Manage error.
     }
+
+    err_code = dsm_subnet_key_get(curr_handle, s_network_ctx.netkey);
+    APP_ERROR_CHECK(err_code);
+
     s_network_ctx.netkey_handle = curr_handle;
 
     err_code = dsm_appkey_get_all(s_network_ctx.netkey_handle,
@@ -398,4 +405,18 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     NRF_LOG_INFO("Start provisioning detected device!");
 
     s_prov_curr_state.prov_state = PROV_STATE_PROVISIONING;
+
+    nrf_mesh_prov_provisioning_data_t   prov_data;
+    memset(&prov_data, 0, sizeof(nrf_mesh_prov_provisioning_data_t));
+    prov_data.netkey_index  = PROV_NETKEY_IDX;
+    prov_data.address       = /* FIXME */ 0x0002;
+    memcpy(prov_data.netkey, s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
+
+    const uint8_t*                      target_uuid = event->params.unprov.device_uuid;
+    ret_code_t                          err_code;
+
+    err_code = nrf_mesh_prov_provision(&s_prov_ctx, target_uuid,
+                                       ATTENTION_DURATION, &prov_data,
+                                       NRF_MESH_PROV_BEARER_ADV);
+    APP_ERROR_CHECK(err_code);
 }
