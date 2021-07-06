@@ -687,7 +687,6 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     err_code = nrf_mesh_prov_provision(&s_prov_ctx, target_uuid,
                                        ATTENTION_DURATION, &prov_data,
                                        NRF_MESH_PROV_BEARER_ADV);
-    NRF_LOG_INFO("Provisioning error code: 0x%x!", err_code);
     APP_ERROR_CHECK(err_code);
 
     prov_scan_stop();

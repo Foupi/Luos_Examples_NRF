@@ -38,6 +38,7 @@ target_include_directories( mesh_provisioner PUBLIC
     ${${BOARD}_INCLUDE_DIRS}
     ${${nRF5_SDK_VERSION}_INCLUDE_DIRS}
 )
+
 add_compile_definitions(
     BSP_DEFINES_ONLY
     CONFIG_GPIO_AS_PINRESET
