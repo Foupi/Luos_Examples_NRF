@@ -3,13 +3,13 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>    // bool
+#include <stdbool.h>        // bool
 
 // NRF
-#include "nrf_log.h"    // NRF_LOG_INFO
+#include "nrf_log.h"        // NRF_LOG_INFO
 
 // LUOS
-#include "luos.h"       // container_t, Luos_CreateContainer, msg_t
+#include "luos.h"           // container_t, Luos_CreateContainer, msg_t
 
 // CUSTOM
 #include "provisioning.h"   // mesh_*, prov*
