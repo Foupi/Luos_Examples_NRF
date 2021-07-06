@@ -26,56 +26,7 @@ static struct
 
 } s_prov_conf_live;
 
-/*      CALLBACKS                                                   */
-
-// Provisioning configuration header callbacks.
-static uint32_t prov_conf_header_set_cb(mesh_config_entry_id_t id,
-                                        const void* new_val);
-static void     prov_conf_header_get_cb(mesh_config_entry_id_t id,
-                                        void* buf);
-static void     prov_conf_header_delete_cb(mesh_config_entry_id_t id);
-
-// Provisioning configuration node callbacks.
-static uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
-                                      const void* new_val);
-static void     prov_conf_node_get_cb(mesh_config_entry_id_t id,
-                                      void* buf);
-static void     prov_conf_node_delete_cb(mesh_config_entry_id_t id);
-
-/*      INITIALIZATIONS                                             */
-
-// Provisioner configuration file.
-MESH_CONFIG_FILE(
-    s_prov_conf_file,
-    PROV_CONF_FILE_ID,
-    MESH_CONFIG_STRATEGY_CONTINUOUS
-);
-
-// Provisioner configuration header entry.
-MESH_CONFIG_ENTRY(
-    s_prov_conf_header_entry,
-    PROV_CONF_HEADER_ENTRY_ID,
-    1,
-    sizeof(prov_conf_header_entry_live_t),
-    prov_conf_header_set_cb,
-    prov_conf_header_get_cb,
-    prov_conf_header_delete_cb,
-    false
-);
-
-// Provisioner connfiguration node entries.
-MESH_CONFIG_ENTRY(
-    s_prov_conf_first_node_entry,
-    PROV_CONF_NODE_ENTRY_ID(0),
-    MAX_PROV_CONF_NODE_RECORDS,
-    sizeof(prov_conf_node_entry_live_t),
-    prov_conf_node_set_cb,
-    prov_conf_node_get_cb,
-    prov_conf_node_delete_cb,
-    false
-);
-
-static uint32_t prov_conf_header_set_cb(mesh_config_entry_id_t id,
+uint32_t prov_conf_header_set_cb(mesh_config_entry_id_t id,
                                         const void* new_val)
 {
     NRF_LOG_INFO("Provisioner configuration header setter!");
@@ -86,8 +37,7 @@ static uint32_t prov_conf_header_set_cb(mesh_config_entry_id_t id,
     return NRF_SUCCESS;
 }
 
-static void prov_conf_header_get_cb(mesh_config_entry_id_t id,
-                                    void* buf)
+void prov_conf_header_get_cb(mesh_config_entry_id_t id, void* buf)
 {
     NRF_LOG_INFO("Provisioner configuration header getter!");
 
@@ -95,7 +45,7 @@ static void prov_conf_header_get_cb(mesh_config_entry_id_t id,
            sizeof(prov_conf_header_entry_live_t));
 }
 
-static void prov_conf_header_delete_cb(mesh_config_entry_id_t id)
+void prov_conf_header_delete_cb(mesh_config_entry_id_t id)
 {
     NRF_LOG_INFO("Provisioner configuration header deleter!");
 
@@ -103,8 +53,8 @@ static void prov_conf_header_delete_cb(mesh_config_entry_id_t id)
            sizeof(prov_conf_header_entry_live_t));
 }
 
-static uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
-                                      const void* new_val)
+uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
+                               const void* new_val)
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 
@@ -123,7 +73,7 @@ static uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
     return NRF_SUCCESS;
 }
 
-static void prov_conf_node_get_cb(mesh_config_entry_id_t id, void* buf)
+void prov_conf_node_get_cb(mesh_config_entry_id_t id, void* buf)
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 
@@ -140,7 +90,7 @@ static void prov_conf_node_get_cb(mesh_config_entry_id_t id, void* buf)
            sizeof(prov_conf_node_entry_live_t));
 }
 
-static void prov_conf_node_delete_cb(mesh_config_entry_id_t id)
+void prov_conf_node_delete_cb(mesh_config_entry_id_t id)
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 

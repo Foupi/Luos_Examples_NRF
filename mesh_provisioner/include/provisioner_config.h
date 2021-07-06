@@ -56,4 +56,16 @@ typedef struct
 
 } prov_conf_node_entry_live_t;
 
+// Provisioning configuration header callbacks.
+uint32_t prov_conf_header_set_cb(mesh_config_entry_id_t id,
+                                 const void* new_val);
+void     prov_conf_header_get_cb(mesh_config_entry_id_t id, void* buf);
+void     prov_conf_header_delete_cb(mesh_config_entry_id_t id);
+
+// Provisioning configuration node callbacks.
+uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
+                               const void* new_val);
+void     prov_conf_node_get_cb(mesh_config_entry_id_t id, void* buf);
+void     prov_conf_node_delete_cb(mesh_config_entry_id_t id);
+
 #endif /* PROVISIONER_CONFIG_H */

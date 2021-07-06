@@ -21,7 +21,7 @@
 
 // MESH SDK
 #include "device_state_manager.h"       // dsm_*
-#include "mesh_config.h"                // mesh_config_*
+#include "mesh_config.h"                // mesh_config_*, MESH_CONFIG_*
 #include "mesh_stack.h"                 // mesh_stack_*
 #include "nrf_mesh.h"                   // nrf_mesh_*
 #include "nrf_mesh_prov.h"              /* nrf_mesh_prov_*,
@@ -128,6 +128,39 @@ static struct
 
 }                                   s_network_ctx;
 
+/*      INITIALIZATIONS                                             */
+
+// Provisioner configuration file.
+MESH_CONFIG_FILE(
+    s_prov_conf_file,
+    PROV_CONF_FILE_ID,
+    MESH_CONFIG_STRATEGY_CONTINUOUS
+);
+
+// Provisioner configuration header entry.
+MESH_CONFIG_ENTRY(
+    s_prov_conf_header_entry,
+    PROV_CONF_HEADER_ENTRY_ID,
+    1,
+    sizeof(prov_conf_header_entry_live_t),
+    prov_conf_header_set_cb,
+    prov_conf_header_get_cb,
+    prov_conf_header_delete_cb,
+    false
+);
+
+// Provisioner connfiguration node entries.
+MESH_CONFIG_ENTRY(
+    s_prov_conf_first_node_entry,
+    PROV_CONF_NODE_ENTRY_ID(0),
+    MAX_PROV_CONF_NODE_RECORDS,
+    sizeof(prov_conf_node_entry_live_t),
+    prov_conf_node_set_cb,
+    prov_conf_node_get_cb,
+    prov_conf_node_delete_cb,
+    false
+);
+
 /*      STATIC FUNCTIONS                                            */
 
 // Initializes the SoftDevice and BLE stack with predefined parameters.
@@ -211,6 +244,78 @@ void provisioning_init(void)
     s_prov_curr_state.prov_state = PROV_STATE_IDLE;
 }
 
+void prov_conf_init(void)
+{
+    if (s_device_provisioned)
+    {
+        NRF_LOG_INFO("Retrieving persistent configuration!");
+
+        mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID,
+                              &(s_prov_curr_state.prov_conf_header));
+
+        uint32_t                    err_code;
+        prov_conf_node_entry_live_t node_conf_buffer;
+        uint16_t                    nb_prov_nodes       = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
+
+        NRF_LOG_INFO("Number of provisioned nodes: %u!", nb_prov_nodes);
+
+        for (uint16_t node_entry_idx = 0; node_entry_idx < nb_prov_nodes;
+             node_entry_idx++)
+        {
+            NRF_LOG_INFO("Retrieving config for node %u!",
+                         node_entry_idx);
+
+            mesh_config_entry_get(PROV_CONF_NODE_ENTRY_ID(node_entry_idx),
+                                  &node_conf_buffer);
+
+            uint16_t    node_unicast_addr   = node_conf_buffer.first_addr;
+
+            NRF_LOG_INFO("Unicast address: %u!", node_unicast_addr);
+
+            err_code = dsm_devkey_handle_get(node_conf_buffer.first_addr,
+                s_prov_curr_state.devkey_handles + node_entry_idx);
+            APP_ERROR_CHECK(err_code);
+
+            NRF_LOG_INFO("Devkey handle: 0x%x!",
+                s_prov_curr_state.devkey_handles[node_entry_idx]);
+
+            nrf_mesh_address_t device_address;
+            memset(&device_address, 0, sizeof(nrf_mesh_address_t));
+            device_address.type             = NRF_MESH_ADDRESS_TYPE_UNICAST;
+            device_address.value            = node_unicast_addr;
+
+            err_code = dsm_address_handle_get(&device_address,
+                s_prov_curr_state.address_handles + node_entry_idx);
+            APP_ERROR_CHECK(err_code);
+
+            NRF_LOG_INFO("Address handle: 0x%x!",
+                s_prov_curr_state.address_handles[node_entry_idx]);
+        }
+
+        if (nb_prov_nodes > s_prov_curr_state.prov_conf_header.nb_conf_nodes)
+        {
+            NRF_LOG_INFO("Last provisioned node must still be configured!");
+
+            /* One node has been provisioned but not configured: store
+            ** it in current context so that it can be configured right
+            ** away.
+            */
+            s_prov_curr_state.curr_conf_node = node_conf_buffer;
+        }
+    }
+    else
+    {
+        s_prov_curr_state.prov_conf_header.nb_prov_nodes    = 0;
+        s_prov_curr_state.prov_conf_header.nb_conf_nodes    = 0;
+        s_prov_curr_state.prov_conf_header.next_address     = PROV_ELM_ADDRESS + ACCESS_ELEMENT_COUNT;
+
+        mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
+                              &(s_prov_curr_state.prov_conf_header));
+
+        NRF_LOG_INFO("Generating persistent configuration!");
+    }
+}
+
 void network_ctx_init(void)
 {
     if (s_device_provisioned)
@@ -228,57 +333,6 @@ void network_ctx_init(void)
                  s_network_ctx.netkey_handle,
                  s_network_ctx.appkey_handle,
                  s_network_ctx.self_devkey_handle);
-}
-
-void prov_conf_init(void)
-{
-    if (s_device_provisioned)
-    {
-        mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID,
-                              &(s_prov_curr_state.prov_conf_header));
-
-        uint32_t                    err_code;
-        prov_conf_node_entry_live_t node_conf_buffer;
-        uint16_t                    nb_prov_nodes       = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
-        for (uint16_t node_entry_idx = 0; node_entry_idx < nb_prov_nodes;
-             node_entry_idx++)
-        {
-            mesh_config_entry_get(PROV_CONF_NODE_ENTRY_ID(node_entry_idx),
-                                  &node_conf_buffer);
-
-            err_code = dsm_devkey_handle_get(node_conf_buffer.first_addr,
-                s_prov_curr_state.devkey_handles + node_entry_idx);
-            APP_ERROR_CHECK(err_code);
-
-            nrf_mesh_address_t device_address;
-            memset(&device_address, 0, sizeof(nrf_mesh_address_t));
-            device_address.type     = NRF_MESH_ADDRESS_TYPE_UNICAST;
-            device_address.value    = node_conf_buffer.first_addr;
-
-            err_code = dsm_address_handle_get(&device_address,
-                s_prov_curr_state.address_handles + node_entry_idx);
-            APP_ERROR_CHECK(err_code);
-
-        }
-
-        if (nb_prov_nodes > s_prov_curr_state.prov_conf_header.nb_conf_nodes)
-        {
-            /* One node has been provisioned but not configured: store
-            ** it in current context so that it can be configured right
-            ** away.
-            */
-            s_prov_curr_state.curr_conf_node = node_conf_buffer;
-        }
-    }
-    else
-    {
-        s_prov_curr_state.prov_conf_header.nb_prov_nodes    = 0;
-        s_prov_curr_state.prov_conf_header.nb_conf_nodes    = 0;
-        s_prov_curr_state.prov_conf_header.next_address     = PROV_ELM_ADDRESS + ACCESS_ELEMENT_COUNT;
-
-        mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
-                              &(s_prov_curr_state.prov_conf_header));
-    }
 }
 
 void mesh_start(void)
@@ -381,7 +435,7 @@ static void network_ctx_fetch(void)
     dsm_local_unicast_addresses_get(&local_addr_range);
 
     // Temporary variables to ease writing.
-    uint32_t                    nb_indexes;
+    uint32_t                    nb_indexes          = 1;
     mesh_key_index_t            key_index_buffer;
     dsm_handle_t                curr_handle;
 
@@ -390,6 +444,8 @@ static void network_ctx_fetch(void)
     if (nb_indexes != NB_NETKEY_IDX)
     {
         // FIXME Manage error.
+        NRF_LOG_INFO("Number of indexes: %u! (Expected %u).",
+                     nb_indexes, NB_NETKEY_IDX);
     }
 
     curr_handle = dsm_net_key_index_to_subnet_handle(key_index_buffer);
@@ -416,6 +472,7 @@ static void network_ctx_fetch(void)
     {
         // FIXME Manage error.
     }
+
     s_network_ctx.appkey_handle = curr_handle;
 
     err_code = dsm_devkey_handle_get(local_addr_range.address_start,
@@ -425,6 +482,7 @@ static void network_ctx_fetch(void)
     {
         // FIXME Manage error.
     }
+
     s_network_ctx.self_devkey_handle = curr_handle;
 }
 
@@ -629,6 +687,7 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     err_code = nrf_mesh_prov_provision(&s_prov_ctx, target_uuid,
                                        ATTENTION_DURATION, &prov_data,
                                        NRF_MESH_PROV_BEARER_ADV);
+    NRF_LOG_INFO("Provisioning error code: 0x%x!", err_code);
     APP_ERROR_CHECK(err_code);
 
     prov_scan_stop();
