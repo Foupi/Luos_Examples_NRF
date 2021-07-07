@@ -45,6 +45,9 @@ static uint8_t                      s_privkey[NRF_MESH_PROV_PRIVKEY_SIZE];
 // Provisioning bearer (ADV).
 static nrf_mesh_prov_bearer_adv_t   s_prov_bearer;
 
+// Static authentication data.
+static const uint8_t                AUTH_DATA[]     = LUOS_STATIC_AUTH_DATA;
+
 /*      STATIC FUNCTIONS                                            */
 
 // Initializes the SoftDevice and BLE stack with predefined parameters.
@@ -101,10 +104,23 @@ void _provisioning_init(nrf_mesh_prov_ctx_t* prov_ctx,
     APP_ERROR_CHECK(err_code);
 }
 
+void mesh_start(void)
+{
+    ret_code_t err_code = mesh_stack_start();
+    APP_ERROR_CHECK(err_code);
+}
+
 void encryption_keys_generate(void)
 {
     ret_code_t err_code;
     err_code = nrf_mesh_prov_generate_keys(s_pubkey, s_privkey);
+    APP_ERROR_CHECK(err_code);
+}
+
+void auth_data_provide(nrf_mesh_prov_ctx_t* prov_ctx)
+{
+    ret_code_t err_code = nrf_mesh_prov_auth_data_provide(prov_ctx,
+        AUTH_DATA, NRF_MESH_KEY_SIZE);
     APP_ERROR_CHECK(err_code);
 }
 

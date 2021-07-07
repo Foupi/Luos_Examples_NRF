@@ -3,37 +3,36 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdint.h>                     // uint*_t
-#include <string.h>                     // memset
+#include <stdint.h>                 // uint*_t
+#include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                    // NRF_LOG_INFO
-#include "sdk_errors.h"                 // ret_code_t
+#include "nrf_log.h"                // NRF_LOG_INFO
+#include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
-#include "app_error.h"                  // APP_ERROR_CHECK
+#include "app_error.h"              // APP_ERROR_CHECK
 
 // MESH SDK
-#include "device_state_manager.h"       // dsm_*
-#include "mesh_config.h"                // mesh_config_*, MESH_CONFIG_*
-#include "mesh_stack.h"                 // mesh_stack_*
-#include "nrf_mesh.h"                   // nrf_mesh_*
-#include "nrf_mesh_prov.h"              /* nrf_mesh_prov_*,
-                                        ** NRF_MESH_PROV_*
-                                        */
-#include "nrf_mesh_prov_bearer.h"       // prov_bearer_t
-#include "nrf_mesh_prov_bearer_adv.h"   // nrf_mesh_prov_bearer_adv_*
-#include "rand.h"                       // rand_hw_rng_get
+#include "device_state_manager.h"   // dsm_*
+#include "mesh_config.h"            // mesh_config_*, MESH_CONFIG_*
+#include "mesh_stack.h"             // mesh_stack_*
+#include "nrf_mesh.h"               // nrf_mesh_*
+#include "nrf_mesh_prov.h"          /* nrf_mesh_prov_*,
+                                    ** NRF_MESH_PROV_*
+                                    */
+#include "rand.h"                   // rand_hw_rng_get
 
 // MESH MODELS
-#include "config_server.h"              // config_server_*
-#include "config_server_events.h"       // config_server_evt_t
+#include "config_server.h"          // config_server_*
+#include "config_server_events.h"   // config_server_evt_t
 
 // CUSTOM
-#include "luos_mesh_common.h"           /* _mesh_init, _provisioning_init,
-                                        ** encryption_keys_generate,
-                                        */
-#include "provisioner_config.h"         // prov_conf_*
+#include "luos_mesh_common.h"       /* _mesh_init, _provisioning_init,
+                                    ** encryption_keys_generate,
+                                    ** auth_data_provide
+                                    */
+#include "provisioner_config.h"     // prov_conf_*
 
 /*      TYPEDEFS                                                    */
 
@@ -75,12 +74,6 @@ static const uint32_t               NB_APPKEY_IDX           = 1;
 
 // Unprovisioned device attention duration, in seconds.
 static const uint32_t               ATTENTION_DURATION      = 5;
-
-// Static authentication data (FIXME copied from Mesh examples).
-static const uint8_t                AUTH_DATA[]             = {
-    0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F, 0x65,
-    0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31,
-};
 
 // Information regarding the current state and provisioned device.
 static struct
@@ -284,12 +277,6 @@ void network_ctx_init(void)
                  s_network_ctx.self_devkey_handle);
 }
 
-void mesh_start(void)
-{
-    ret_code_t err_code = mesh_stack_start();
-    APP_ERROR_CHECK(err_code);
-}
-
 void prov_scan_start(void)
 {
     ret_code_t err_code = nrf_mesh_prov_scan_start(mesh_unprov_event_cb);
@@ -474,11 +461,8 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         NRF_LOG_INFO("Static authentication data requested by unprovisioned device!");
 
         device_prov_ctx = event->params.static_request.p_context;
+        auth_data_provide(device_prov_ctx);
 
-        err_code = nrf_mesh_prov_auth_data_provide(device_prov_ctx,
-                                                   AUTH_DATA,
-                                                   NRF_MESH_KEY_SIZE);
-        APP_ERROR_CHECK(err_code);
         break;
 
     case NRF_MESH_PROV_EVT_FAILED:
