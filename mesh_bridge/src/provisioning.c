@@ -2,6 +2,10 @@
 
 /*      INCLUDES                                                    */
 
+// C STANDARD
+#include <stdbool.h>                // bool
+#include <stdint.h>                 // uint*_t
+
 // NRF
 #include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
@@ -40,16 +44,12 @@ static void config_server_event_cb(const config_server_evt_t* event);
 // FIXME Initialize the models present on the node.
 static void models_init_cb(void);
 
-/* Link established:    Turn on LED 4.
-** Invite received:     Turn on LED 3 for the received amount of
+/* Invite received:     Turn on LEDs for the received amount of
 **                      seconds.
-** Start received:      Turn off LED 3, Turn on LED 2.
+** Start received:      Turn off LEDs.
 ** Static request:      Send authentication data.
 ** Complete:            Store received data and toggles provisioned
-**                      bool, turn off LED 2.
-** Failed:              Turn off LED 2.
-** Link closed:         If provisioned bool is true turn on LED 1, turn
-**                      off LED 4.
+**                      bool.
 */
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event);
 
@@ -87,6 +87,8 @@ void prov_listening_start(void)
     ret_code_t err_code = nrf_mesh_prov_listen(&s_prov_ctx,
         LUOS_DEVICE_URI, 0, NRF_MESH_PROV_BEARER_ADV);
     APP_ERROR_CHECK(err_code);
+
+    NRF_LOG_INFO("Started listening for incoming links!");
 }
 
 static void config_server_event_cb(const config_server_evt_t* event)
@@ -106,6 +108,69 @@ static void models_init_cb(void)
 
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 {
-    NRF_LOG_INFO("Mesh provisioning event received: type %u!",
-                 event->type);
+    ret_code_t err_code;
+
+    switch (event->type)
+    {
+    case NRF_MESH_PROV_EVT_LINK_ESTABLISHED:
+        NRF_LOG_INFO("Provisioning link established!");
+        break;
+
+    case NRF_MESH_PROV_EVT_INVITE_RECEIVED:
+    {
+        uint32_t attention_duration = event->params.invite_received.attention_duration_s;
+
+        NRF_LOG_INFO("Invitation received: attention interval is %us!",
+                     attention_duration);
+
+        // FIXME Turn on LEDs for the given duration.
+    }
+        break;
+
+    case NRF_MESH_PROV_EVT_START_RECEIVED:
+        NRF_LOG_INFO("Provisioning procedure started!");
+
+        // FIXME Turn off LEDs.
+
+        break;
+
+    case NRF_MESH_PROV_EVT_STATIC_REQUEST:
+        NRF_LOG_INFO("Static authentication data requested!");
+
+        auth_data_provide(&s_prov_ctx);
+
+        break;
+
+    case NRF_MESH_PROV_EVT_COMPLETE:
+    {
+        NRF_LOG_INFO("Provisioning procedure complete!");
+
+        nrf_mesh_prov_evt_complete_t                complete_evt    = event->params.complete;
+        const nrf_mesh_prov_provisioning_data_t*    prov_data       = complete_evt.p_prov_data;
+        const uint8_t*                              device_key      = complete_evt.p_devkey;
+
+        err_code = mesh_stack_provisioning_data_store(prov_data,
+                                                      device_key);
+        APP_ERROR_CHECK(err_code);
+
+        // Device is now provisioned.
+        s_device_provisioned = true;
+    }
+        break;
+
+    case NRF_MESH_PROV_EVT_LINK_CLOSED:
+        NRF_LOG_INFO("Provisioning link closed!");
+
+        if (!s_device_provisioned)
+        {
+            NRF_LOG_INFO("Provisioning procedure was aborted: listening again!");
+
+            prov_listening_start();
+        }
+
+    default:
+        NRF_LOG_INFO("Mesh provisioning event received: type %u!",
+                     event->type);
+        break;
+    }
 }
