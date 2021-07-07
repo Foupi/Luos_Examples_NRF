@@ -11,7 +11,7 @@
                                 */
 
 // CUSTOM
-//#include "luos_mesh_common.h"   // mesh_start
+#include "luos_mesh_common.h"   // mesh_start
 #include "provisioning.h"       /* mesh_init, provisioning_init,
                                 ** persistent_conf_init,
                                 ** prov_listening_start
@@ -42,7 +42,7 @@ void MeshBridge_Init(void)
 
     NRF_LOG_INFO("Persistent configuration initialized!");
 
-//    mesh_start();
+    mesh_start();
 
     NRF_LOG_INFO("Mesh stack started!");
 

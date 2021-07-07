@@ -3,15 +3,46 @@ if ( NOT CONTAINERS_PATH )
     return()
 endif ()
 
+if ( NOT CONTAINERS_COMMON_PATH )
+    message( STATUS "Path to containers common codebase not set!" )
+    return()
+endif ()
+
 set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
 
 add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
     "${MESH_BRIDGE_PATH}/src/provisioning.c"
+
+    "${CONTAINERS_COMMON_PATH}/src/luos_mesh_common.c"
+
+    ${MESH_CORE_SOURCE_FILES}
+    ${MESH_BEARER_SOURCE_FILES}
+    ${PROV_COMMON_SOURCE_FILES}
+    ${PROV_PROVISIONEE_SOURCE_FILES}
+    ${PROV_BEARER_ADV_SOURCE_FILES}
+    ${ACCESS_SOURCE_FILES}
+    ${DFU_SOURCE_FILES}
+    ${MESH_STACK_SOURCE_FILES}
+    ${CONFIG_SERVER_SOURCE_FILES}
+    ${HEALTH_SERVER_SOURCE_FILES}
+    ${MESH_APP_TIMER_SOURCE_FILES}
+    ${${PLATFORM}_SOURCE_FILES}
+    ${${nRF5_SDK_VERSION}_SOURCE_FILES}
 )
 
 target_include_directories( mesh_bridge PUBLIC
     "${MESH_BRIDGE_PATH}/include"
+
+    "${CONTAINERS_COMMON_PATH}/include"
+
+    ${MESH_INCLUDE_DIRS}
+    ${CONFIG_SERVER_INCLUDE_DIRS}
+    ${HEALTH_SERVER_INCLUDE_DIRS}
+    ${${SOFTDEVICE}_INCLUDE_DIRS}
+    ${${PLATFORM}_INCLUDE_DIRS}
+    ${${BOARD}_INCLUDE_DIRS}
+    ${${nRF5_SDK_VERSION}_INCLUDE_DIRS}
 )
 
 add_compile_definitions(
