@@ -3,12 +3,19 @@ if ( NOT CONTAINERS_PATH )
     return()
 endif ()
 
+if ( NOT CONTAINERS_COMMON_PATH )
+    message( STATUS "Path to containers common codebase not set!" )
+    return()
+endif ()
+
 set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 
 add_library( mesh_provisioner
     "${MESH_PROVISIONER_PATH}/src/mesh_provisioner.c"
     "${MESH_PROVISIONER_PATH}/src/provisioning.c"
     "${MESH_PROVISIONER_PATH}/src/provisioner_config.c"
+
+    "${CONTAINERS_COMMON_PATH}/src/luos_mesh_common.c"
 
     ${MESH_CORE_SOURCE_FILES}
     ${MESH_BEARER_SOURCE_FILES}
@@ -29,6 +36,8 @@ add_library( mesh_provisioner
 
 target_include_directories( mesh_provisioner PUBLIC
     "${MESH_PROVISIONER_PATH}/include"
+
+    "${CONTAINERS_COMMON_PATH}/include"
 
     ${MESH_INCLUDE_DIRS}
     ${CONFIG_SERVER_INCLUDE_DIRS}

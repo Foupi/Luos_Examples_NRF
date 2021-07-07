@@ -21,6 +21,16 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 
 void MeshBridge_Init(void)
 {
+    // FIXME Initialize Mesh stack.
+
+    // FIXME Initialize provisioning context.
+
+    // FIXME Initialize persistent data.
+
+    // FIXME Start Mesh stack.
+
+    // FIXME Start listening.
+
     revision_t revision = { .unmap = REV };
 
     Luos_CreateContainer(MeshBridge_MsgHandler, MESH_BRIDGE_TYPE,
