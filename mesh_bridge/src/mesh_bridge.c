@@ -48,8 +48,6 @@ void MeshBridge_Init(void)
 
     prov_listening_start();
 
-    NRF_LOG_INFO("Started listening for incoming link!");
-
     revision_t revision = { .unmap = REV };
 
     Luos_CreateContainer(MeshBridge_MsgHandler, MESH_BRIDGE_TYPE,

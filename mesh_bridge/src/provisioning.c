@@ -114,6 +114,7 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     {
     case NRF_MESH_PROV_EVT_LINK_ESTABLISHED:
         NRF_LOG_INFO("Provisioning link established!");
+
         break;
 
     case NRF_MESH_PROV_EVT_INVITE_RECEIVED:
@@ -167,6 +168,8 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 
             prov_listening_start();
         }
+
+        break;
 
     default:
         NRF_LOG_INFO("Mesh provisioning event received: type %u!",
