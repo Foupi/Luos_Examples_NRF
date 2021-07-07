@@ -13,9 +13,6 @@ void prov_conf_init(void);
 // Initializes network context (generating or fetching persistent data).
 void network_ctx_init(void);
 
-// Starts the Mesh stack.
-void mesh_start(void);
-
 // Start scanning for unprovisioned devices.
 void prov_scan_start(void);
 

@@ -7,6 +7,7 @@ set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
 
 add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
+    "${MESH_BRIDGE_PATH}/src/provisioning.c"
 )
 
 target_include_directories( mesh_bridge PUBLIC

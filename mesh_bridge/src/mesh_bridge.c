@@ -3,10 +3,19 @@
 /*      INCLUDES                                                    */
 
 // NRF
-#include "nrf_log.h"    // NRF_LOG_INFO
+#include "nrf_log.h"            // NRF_LOG_INFO
 
 // LUOS
-#include "luos.h"       // container_t, Luos_CreateContainer, msg_t
+#include "luos.h"               /* container_t, Luos_CreateContainer,
+                                ** msg_t
+                                */
+
+// CUSTOM
+//#include "luos_mesh_common.h"   // mesh_start
+#include "provisioning.h"       /* mesh_init, provisioning_init,
+                                ** persistent_conf_init,
+                                ** prov_listening_start
+                                */
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
@@ -21,15 +30,25 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 
 void MeshBridge_Init(void)
 {
-    // FIXME Initialize Mesh stack.
+    mesh_init();
 
-    // FIXME Initialize provisioning context.
+    NRF_LOG_INFO("Mesh stack initialized!");
 
-    // FIXME Initialize persistent data.
+    provisioning_init();
 
-    // FIXME Start Mesh stack.
+    NRF_LOG_INFO("Provisioning context initialized!");
 
-    // FIXME Start listening.
+    persistent_conf_init();
+
+    NRF_LOG_INFO("Persistent configuration initialized!");
+
+//    mesh_start();
+
+    NRF_LOG_INFO("Mesh stack started!");
+
+    prov_listening_start();
+
+    NRF_LOG_INFO("Started listening for incoming link!");
 
     revision_t revision = { .unmap = REV };
 
