@@ -30,7 +30,9 @@
 #include "config_server_events.h"       // config_server_evt_t
 
 // CUSTOM
-#include "luos_mesh_common.h"           // _mesh_init
+#include "luos_mesh_common.h"           /* _mesh_init, _provisioning_init,
+                                        ** encryption_keys_generate,
+                                        */
 #include "provisioner_config.h"         // prov_conf_*
 
 /*      TYPEDEFS                                                    */
@@ -59,13 +61,6 @@ static bool                         s_device_provisioned    = false;
 
 // Provisioning context.
 static nrf_mesh_prov_ctx_t          s_prov_ctx;
-
-// Provisioning encryption keys (public/private)
-static uint8_t                      s_pubkey[NRF_MESH_PROV_PUBKEY_SIZE];
-static uint8_t                      s_privkey[NRF_MESH_PROV_PRIVKEY_SIZE];
-
-// Provisioning bearer (ADV).
-static nrf_mesh_prov_bearer_adv_t   s_prov_bearer;
 
 // Provisioner element address.
 static const uint16_t               PROV_ELM_ADDRESS        = 0x0001;
@@ -193,17 +188,7 @@ void mesh_init(void)
 
 void provisioning_init(void)
 {
-    ret_code_t                      err_code;
-
-    const nrf_mesh_prov_oob_caps_t  oob_caps = NRF_MESH_PROV_OOB_CAPS_DEFAULT(ACCESS_ELEMENT_COUNT);
-
-    err_code = nrf_mesh_prov_init(&s_prov_ctx, s_pubkey, s_privkey,
-                                  &oob_caps, mesh_prov_event_cb);
-    APP_ERROR_CHECK(err_code);
-
-    prov_bearer_t* generic_bearer = nrf_mesh_prov_bearer_adv_interface_get(&s_prov_bearer);
-    err_code = nrf_mesh_prov_bearer_add(&s_prov_ctx, generic_bearer);
-    APP_ERROR_CHECK(err_code);
+    _provisioning_init(&s_prov_ctx, mesh_prov_event_cb);
 
     s_prov_curr_state.prov_state = PROV_STATE_IDLE;
 }
@@ -607,12 +592,10 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     prov_data.address       = s_prov_curr_state.prov_conf_header.next_address;
     memcpy(prov_data.netkey, s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
 
+    encryption_keys_generate();
+
     const uint8_t*                      target_uuid = event->params.unprov.device_uuid;
     ret_code_t                          err_code;
-
-    err_code = nrf_mesh_prov_generate_keys(s_pubkey, s_privkey);
-    APP_ERROR_CHECK(err_code);
-
     err_code = nrf_mesh_prov_provision(&s_prov_ctx, target_uuid,
                                        ATTENTION_DURATION, &prov_data,
                                        NRF_MESH_PROV_BEARER_ADV);

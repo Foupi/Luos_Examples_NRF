@@ -3,34 +3,47 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>                // bool
-#include <stdint.h>                 // uint*_t
-#include <string.h>                 // memset
+#include <stdbool.h>                    // bool
+#include <stdint.h>                     // uint*_t
+#include <string.h>                     // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
-#include "nrf_sdh_ble.h"            // nrf_sdh_ble_*
-#include "nrf_sdh_soc.h"            // NRF_SDH_SOC_OBSERVER
-#include "sdk_config.h"             // NRF_SDH_CLOCK_LF_*
-#include "sdk_errors.h"             // ret_code_t
+#include "nrf_log.h"                    // NRF_LOG_INFO
+#include "nrf_sdh_ble.h"                // nrf_sdh_ble_*
+#include "nrf_sdh_soc.h"                // NRF_SDH_SOC_OBSERVER
+#include "sdk_config.h"                 // NRF_SDH_CLOCK_LF_*
+#include "sdk_errors.h"                 // ret_code_t
 
 // NRF APPS
-#include "app_error.h"              // APP_ERROR_CHECK
+#include "app_error.h"                  // APP_ERROR_CHECK
 
 // SOFTDEVICE
-#include "nrf_sdm.h"                // nrf_clock_lf_cfg_t
+#include "nrf_sdm.h"                    // nrf_clock_lf_cfg_t
 
 // MESH SDK
-#include "mesh_stack.h"             // mesh_stack_*
-#include "nrf_mesh.h"               // nrf_mesh_*
+#include "mesh_stack.h"                 // mesh_stack_*
+#include "nrf_mesh.h"                   // nrf_mesh_*
+#include "nrf_mesh_prov.h"              /* nrf_mesh_prov_*,
+                                        ** NRF_MESH_PROV_*
+                                        */
+#include "nrf_mesh_prov_bearer.h"       // prov_bearer_t
+#include "nrf_mesh_prov_bearer_adv.h"   // nrf_mesh_prov_bearer_adv_*
+#include "nrf_mesh_prov_events.h"       // nrf_mesh_prov_evt_handler_cb_t
 
 // MESH MODELS
-#include "config_server_events.h"   // config_server_evt_cb_t
+#include "config_server_events.h"       // config_server_evt_cb_t
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Configuration tag.
-static const uint8_t                CONN_CFG_TAG            = 1;
+static const uint8_t                CONN_CFG_TAG    = 1;
+
+// Provisioning encryption keys (public/private)
+static uint8_t                      s_pubkey[NRF_MESH_PROV_PUBKEY_SIZE];
+static uint8_t                      s_privkey[NRF_MESH_PROV_PRIVKEY_SIZE];
+
+// Provisioning bearer (ADV).
+static nrf_mesh_prov_bearer_adv_t   s_prov_bearer;
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -72,6 +85,29 @@ void _mesh_init(config_server_evt_cb_t cfg_srv_cb,
     APP_ERROR_CHECK(err_code);
 }
 
+void _provisioning_init(nrf_mesh_prov_ctx_t* prov_ctx,
+                        nrf_mesh_prov_evt_handler_cb_t event_handler)
+{
+    ret_code_t                      err_code;
+
+    const nrf_mesh_prov_oob_caps_t  oob_caps = NRF_MESH_PROV_OOB_CAPS_DEFAULT(ACCESS_ELEMENT_COUNT);
+
+    err_code = nrf_mesh_prov_init(prov_ctx, s_pubkey, s_privkey,
+                                  &oob_caps, event_handler);
+    APP_ERROR_CHECK(err_code);
+
+    prov_bearer_t* generic_bearer = nrf_mesh_prov_bearer_adv_interface_get(&s_prov_bearer);
+    err_code = nrf_mesh_prov_bearer_add(prov_ctx, generic_bearer);
+    APP_ERROR_CHECK(err_code);
+}
+
+void encryption_keys_generate(void)
+{
+    ret_code_t err_code;
+    err_code = nrf_mesh_prov_generate_keys(s_pubkey, s_privkey);
+    APP_ERROR_CHECK(err_code);
+}
+
 // Logs instruction pointer.
 void mesh_assertion_handler(uint32_t pc)
 {
@@ -106,4 +142,3 @@ static void sd_soc_event_cb(uint32_t event, void* context)
 {
     nrf_mesh_on_sd_evt(event);
 }
-
