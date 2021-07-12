@@ -4,6 +4,7 @@
 
 // C STANDARD
 #include <stdint.h>                 // uint16_t
+#include <string.h>                 // memset
 
 // NRF
 #include "nrf_log.h"                // NRF_LOG_INFO
@@ -20,6 +21,7 @@
 // MESH MODELS
 #include "config_client.h"          // config_client_*
 #include "config_opcodes.h"         // CONFIG_OPCODE_*
+#include "health_common.h"          // HEALTH_SERVER_MODEL_ID
 
 // CUSTOM
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
@@ -110,6 +112,12 @@ static void node_config_network_transmit_to_appkey_add(void);
 */
 static void node_config_appkey_add_to_appkey_bind_health(void);
 
+/* Sets current context on Publish Health Server, then defines the
+** publish parameters of the remote Health Server instance to the
+** Provisioner element address.
+*/
+static void node_config_appkey_bind_health_to_publish_health(void);
+
 /* Increases the number of configured nodes in the persistent
 ** configuration, then sets the configuration state to Idle and starts
 ** scanning.
@@ -119,16 +127,21 @@ static void node_config_success(void);
 /*      INITIALIZATIONS                                             */
 
 // Transition function for each configuration step.
-static const node_config_step_transition_t  STEP_TRANSITIONS[]  =
+static const node_config_step_transition_t  STEP_TRANSITIONS[]              =
 {
     [NODE_CONFIG_STEP_IDLE]                 = node_config_idle_to_composition_get,
     [NODE_CONFIG_STEP_COMPOSITION_GET]      = node_config_composition_get_to_network_transmit,
     [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = node_config_network_transmit_to_appkey_add,
     [NODE_CONFIG_STEP_APPKEY_ADD]           = node_config_appkey_add_to_appkey_bind_health,
-    [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = /* FIXME */ NULL,
-    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = node_config_appkey_bind_health_to_publish_health,
+    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = node_config_success,
 };
 
+static const access_model_id_t              HEALTH_SERVER_ACCESS_MODEL_ID   =
+{
+    .company_id = ACCESS_COMPANY_ID_NONE,
+    .model_id   = HEALTH_SERVER_MODEL_ID,
+};
 
 void node_config_start(uint16_t device_first_addr,
                        dsm_handle_t devkey_handle,
@@ -198,6 +211,36 @@ void config_client_msg_handler(const config_client_event_t* event)
 
         break;
 
+    case CONFIG_OPCODE_MODEL_APP_STATUS:
+        status = event->p_msg->app_status.status;
+
+        if (status != ACCESS_STATUS_SUCCESS)
+        {
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
+                  "Wrong status received: operation failed!\n")
+
+            // FIXME Manage error.
+
+            return;
+        }
+
+        break;
+
+    case CONFIG_OPCODE_MODEL_PUBLICATION_STATUS:
+        status = event->p_msg->publication_status.status;
+
+        if (status != ACCESS_STATUS_SUCCESS)
+        {
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
+                  "Wrong status received: operation failed!\n")
+
+            // FIXME Manage error.
+
+            return;
+        }
+
+        break;
+
     default:
         // No status to check.
         break;
@@ -256,13 +299,51 @@ static void node_config_appkey_add_to_appkey_bind_health(void)
 {
     NRF_LOG_INFO("Appkey added to device!");
 
-    node_config_success();
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_HEALTH;
 
-    // FIXME Step Appkey bind health...
+    ret_code_t err_code;
+
+    err_code = config_client_model_app_bind(s_node_config_curr_state.elm_address,
+        PROV_APPKEY_IDX, HEALTH_SERVER_ACCESS_MODEL_ID);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_appkey_bind_health_to_publish_health(void)
+{
+    NRF_LOG_INFO("Appkey bound to remote Health Server Instance!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_HEALTH;
+
+    ret_code_t                  err_code;
+
+    nrf_mesh_address_t          health_client_address;
+    memset(&health_client_address, 0, sizeof(nrf_mesh_address_t));
+    health_client_address.type  = NRF_MESH_ADDRESS_TYPE_UNICAST;
+    health_client_address.value = PROV_ELM_ADDRESS;
+
+    access_publish_period_t     publish_period;
+    memset(&publish_period, 0, sizeof(access_publish_period_t));
+    publish_period.step_num     = 1;
+    publish_period.step_res     = ACCESS_PUBLISH_RESOLUTION_10S;
+
+    config_publication_state_t  pub_state;
+    memset(&pub_state, 0, sizeof(config_publication_state_t));
+    pub_state.element_address   = s_node_config_curr_state.elm_address;
+    pub_state.publish_address   = health_client_address;
+    pub_state.appkey_index      = PROV_APPKEY_IDX;
+    pub_state.publish_ttl       = ACCESS_DEFAULT_TTL;
+    pub_state.publish_period    = publish_period;
+    pub_state.retransmit_count  = 1;
+    pub_state.model_id          = HEALTH_SERVER_ACCESS_MODEL_ID;
+
+    err_code = config_client_model_publication_set(&pub_state);
+    APP_ERROR_CHECK(err_code);
 }
 
 static void node_config_success(void)
 {
+    NRF_LOG_INFO("Configuration process successfully completed!");
+
     prov_conf_header_entry_live_t   tmp_conf_header;
     mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID, &tmp_conf_header);
 

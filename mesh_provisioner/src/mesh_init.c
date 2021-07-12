@@ -20,6 +20,7 @@
 #include "config_server_events.h"   // config_server_evt_t
 
 // CUSTOM
+#include "app_health_client.h"      // app_health_client_init
 #include "luos_mesh_common.h"       // _mesh_init
 #include "network_ctx.h"            // g_network_ctx
 #include "node_config.h"            // config_client_msg_handler
@@ -89,5 +90,5 @@ static void models_init_cb(void)
     ret_code_t err_code = config_client_init(config_client_event_cb);
     APP_ERROR_CHECK(err_code);
 
-    // FIXME Init health client.
+    app_health_client_init();
 }

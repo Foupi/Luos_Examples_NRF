@@ -19,7 +19,7 @@
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Health Client model instance.
-static health_client_t              s_health_client;
+static health_client_t  s_health_client;
 
 /*      CALLBACKS                                                   */
 
