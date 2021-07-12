@@ -32,6 +32,14 @@ bool    g_device_provisioned    = false;
 // On node reset event, erases persistent data and resets the board.
 static void config_server_event_cb(const config_server_evt_t* event);
 
+/* Timeout: FIXME Call timeout function.
+** Cancel:  FIXME Call cancel function.
+** Message: Send event to message handler.
+*/
+static void config_client_event_cb(config_client_event_type_t type,
+                                   const config_client_event_t* event,
+                                   uint16_t len);
+
 // Initializes the config client and health client models.
 static void models_init_cb(void);
 
@@ -51,6 +59,13 @@ static void config_server_event_cb(const config_server_evt_t* event)
     }
 }
 
+static void config_client_event_cb(config_client_event_type_t type,
+                                   const config_client_event_t* event,
+                                   uint16_t len)
+{
+    NRF_LOG_INFO("Config client event received: type %u!", type);
+}
+
 static void models_init_cb(void)
 {
     g_network_ctx.netkey_handle         = DSM_HANDLE_INVALID;
@@ -59,7 +74,7 @@ static void models_init_cb(void)
 
     NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
 
-    ret_code_t err_code = config_client_init(/* FIXME */ NULL);
+    ret_code_t err_code = config_client_init(config_client_event_cb);
     APP_ERROR_CHECK(err_code);
 
     // FIXME Init health client.

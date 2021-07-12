@@ -33,6 +33,7 @@
                                     */
 #include "mesh_init.h"              // g_device_provisioned
 #include "network_ctx.h"            // network_ctx_*
+#include "node_config.h"            // node_config_start
 #include "provisioner_config.h"     // prov_conf_*
 
 /*      TYPEDEFS                                                    */
@@ -232,6 +233,7 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 {
     ret_code_t              err_code;
     nrf_mesh_prov_ctx_t*    device_prov_ctx;
+    uint16_t                node_idx;
 
     switch (event->type)
     {
@@ -303,11 +305,11 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 
     {
         s_prov_curr_state.prov_state                            = PROV_STATE_COMPLETE;
+        node_idx                                                = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
 
         nrf_mesh_prov_evt_complete_t    prov_complete           = event->params.complete;
         uint16_t                        device_first_address    = prov_complete.p_prov_data->address;
         const uint8_t*                  device_devkey           = prov_complete.p_devkey;
-        uint16_t                        node_idx                = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
         uint16_t                        node_nb_elm             = s_prov_curr_state.curr_conf_node.nb_elm;
 
         NRF_LOG_INFO("Provisioning process complete for device 0x%x!",
@@ -331,8 +333,6 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         s_prov_curr_state.curr_conf_node.first_addr             = device_first_address;
         mesh_config_entry_set(PROV_CONF_NODE_ENTRY_ID(node_idx),
                               &(s_prov_curr_state.curr_conf_node));
-
-        // FIXME Start configuration.
     }
 
         break;
@@ -343,9 +343,12 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         case PROV_STATE_COMPLETE:
             NRF_LOG_INFO("Provisioning link closed after successful procedure!");
 
-            // FIXME Start configuration.
+            s_prov_curr_state.prov_state    = PROV_STATE_IDLE;
+            node_idx                        = s_prov_curr_state.prov_conf_header.nb_prov_nodes - 1;
 
-            prov_scan_start();
+            node_config_start(s_prov_curr_state.curr_conf_node.first_addr,
+                              s_prov_curr_state.devkey_handles[node_idx],
+                              s_prov_curr_state.address_handles[node_idx]);
 
             break;
 

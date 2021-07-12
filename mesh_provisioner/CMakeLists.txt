@@ -15,6 +15,7 @@ add_library( mesh_provisioner
 
     "${MESH_PROVISIONER_PATH}/src/mesh_init.c"
     "${MESH_PROVISIONER_PATH}/src/network_ctx.c"
+    "${MESH_PROVISIONER_PATH}/src/node_config.c"
     "${MESH_PROVISIONER_PATH}/src/provisioning.c"
     "${MESH_PROVISIONER_PATH}/src/provisioner_config.c"
 
