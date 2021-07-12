@@ -15,6 +15,7 @@
 
 // CUSTOM
 #include "luos_mesh_common.h"   // mesh_start
+#include "mesh_init.h"          // mesh_init
 #include "network_ctx.h"        // network_ctx_init, g_network_ctx
 #include "provisioning.h"       // mesh_*, prov*
 

@@ -21,7 +21,8 @@
 #include "config_server.h"          // config_server_*
 
 // CUSTOM
-#include "provisioning.h"           // g_device_provisioned, PROV_*
+#include "mesh_init.h"              // g_device_provisioned
+#include "provisioning.h"           // PROV_*
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 

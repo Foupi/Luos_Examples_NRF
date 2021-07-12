@@ -12,6 +12,8 @@ set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 
 add_library( mesh_provisioner
     "${MESH_PROVISIONER_PATH}/src/mesh_provisioner.c"
+
+    "${MESH_PROVISIONER_PATH}/src/mesh_init.c"
     "${MESH_PROVISIONER_PATH}/src/network_ctx.c"
     "${MESH_PROVISIONER_PATH}/src/provisioning.c"
     "${MESH_PROVISIONER_PATH}/src/provisioner_config.c"

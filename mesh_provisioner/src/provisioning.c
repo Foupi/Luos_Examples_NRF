@@ -27,10 +27,11 @@
 #include "config_server_events.h"   // config_server_evt_t
 
 // CUSTOM
-#include "luos_mesh_common.h"       /* _mesh_init, _provisioning_init,
+#include "luos_mesh_common.h"       /* _provisioning_init,
                                     ** encryption_keys_generate,
                                     ** auth_data_provide
                                     */
+#include "mesh_init.h"              // g_device_provisioned
 #include "network_ctx.h"            // network_ctx_*
 #include "provisioner_config.h"     // prov_conf_*
 
@@ -55,14 +56,11 @@ typedef enum
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
-// Describes if the device is provisioned.
-bool                                g_device_provisioned    = false;
-
 // Provisioning context.
-static nrf_mesh_prov_ctx_t          s_prov_ctx;
+static nrf_mesh_prov_ctx_t  s_prov_ctx;
 
 // Unprovisioned device attention duration, in seconds.
-static const uint32_t               ATTENTION_DURATION      = 5;
+static const uint32_t       ATTENTION_DURATION      = 5;
 
 // Information regarding the current state and provisioned device.
 static struct
@@ -80,7 +78,7 @@ static struct
     dsm_handle_t                    devkey_handles[MAX_PROV_CONF_NODE_RECORDS];
     dsm_handle_t                    address_handles[MAX_PROV_CONF_NODE_RECORDS];
 
-}                                   s_prov_curr_state;
+}                           s_prov_curr_state;
 
 /*      INITIALIZATIONS                                             */
 
@@ -117,12 +115,6 @@ MESH_CONFIG_ENTRY(
 
 /*      CALLBACKS                                                   */
 
-// On node reset event, erases persistent data and resets the board.
-static void config_server_event_cb(const config_server_evt_t* event);
-
-// Initializes the config client and health client models.
-static void models_init_cb(void);
-
 /* Caps received:           Use received capacities for
 **                          OOB authentication.
 ** Static request:          Provide static authentication data.
@@ -134,12 +126,6 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event);
 
 // Unprovisioned device:    Start provisioning the advertising device.
 static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event);
-
-void mesh_init(void)
-{
-    _mesh_init(config_server_event_cb, models_init_cb,
-               &g_device_provisioned);
-}
 
 void provisioning_init(void)
 {
@@ -240,25 +226,6 @@ void prov_scan_stop(void)
     }
 
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
-}
-
-static void config_server_event_cb(const config_server_evt_t* event)
-{
-    if (event->type == CONFIG_SERVER_EVT_NODE_RESET)
-    {
-        // FIXME Erase persistent data.
-
-        // FIXME Reset board.
-    }
-}
-
-static void models_init_cb(void)
-{
-    g_network_ctx.netkey_handle         = DSM_HANDLE_INVALID;
-    g_network_ctx.appkey_handle         = DSM_HANDLE_INVALID;
-    g_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
-
-    NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
 }
 
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
