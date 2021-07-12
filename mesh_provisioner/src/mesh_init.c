@@ -7,11 +7,16 @@
 
 // NRF
 #include "nrf_log.h"                // NRF_LOG_INFO
+#include "sdk_errors.h"             // ret_code_t
+
+// NRF APPS
+#include "app_error.h"              // APP_ERROR_CHECK
 
 // MESH SDK
 #include "device_state_manager.h"   // DSM_HANDLE_INVALID
 
 // MESH MODELS
+#include "config_client.h"          // config_client_init
 #include "config_server_events.h"   // config_server_evt_t
 
 // CUSTOM
@@ -53,4 +58,9 @@ static void models_init_cb(void)
     g_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
 
     NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
+
+    ret_code_t err_code = config_client_init(/* FIXME */ NULL);
+    APP_ERROR_CHECK(err_code);
+
+    // FIXME Init health client.
 }
