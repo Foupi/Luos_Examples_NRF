@@ -43,6 +43,11 @@ typedef struct
     // Target address for the next unprovisioned device.
     uint16_t    next_address;
 
+    /* Application key (has to be copied because not retrievable through
+    ** DSM)
+    */
+    uint8_t     appkey[NRF_MESH_KEY_SIZE];
+
 } prov_conf_header_entry_live_t;
 
 // Live representation of a node config entry.

@@ -47,16 +47,16 @@ void MeshProvisioner_Init(void)
 
     NRF_LOG_INFO("Provisioning module initialized!");
 
-    prov_conf_init();
-
-    NRF_LOG_INFO("Provisioning configuration initialized!");
-
     network_ctx_init();
 
     NRF_LOG_INFO("Netkey handle: 0x%x; Appkey handle: 0x%x; Self devkey handle: 0x%x!",
                  g_network_ctx.netkey_handle,
                  g_network_ctx.appkey_handle,
                  g_network_ctx.self_devkey_handle);
+
+    prov_conf_init();
+
+    NRF_LOG_INFO("Provisioning configuration initialized!");
 
     mesh_start();
 

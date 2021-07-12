@@ -193,12 +193,21 @@ void prov_conf_init(void)
             */
             s_prov_curr_state.curr_conf_node = node_conf_buffer;
         }
+
+        // Needed since appkey can not be retrieved from DSM.
+        memcpy(g_network_ctx.appkey,
+               s_prov_curr_state.prov_conf_header.appkey,
+               NRF_MESH_KEY_SIZE);
     }
     else
     {
         s_prov_curr_state.prov_conf_header.nb_prov_nodes    = 0;
         s_prov_curr_state.prov_conf_header.nb_conf_nodes    = 0;
         s_prov_curr_state.prov_conf_header.next_address     = PROV_ELM_ADDRESS + ACCESS_ELEMENT_COUNT;
+
+        // Store previously computed appkey.
+        memcpy(s_prov_curr_state.prov_conf_header.appkey,
+               g_network_ctx.appkey, NRF_MESH_KEY_SIZE);
 
         mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
                               &(s_prov_curr_state.prov_conf_header));
