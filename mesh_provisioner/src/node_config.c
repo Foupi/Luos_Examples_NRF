@@ -13,7 +13,9 @@
 #include "app_error.h"              // APP_ERROR_CHECK
 
 // MESH SDK
+#include "access_status.h"          // ACCESS_STATUS_*
 #include "device_state_manager.h"   // dsm_handle_t
+#include "mesh_config.h"            // mesh_config_entry_*
 
 // MESH MODELS
 #include "config_client.h"          // config_client_*
@@ -21,6 +23,8 @@
 
 // CUSTOM
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
+#include "provisioner_config.h"     // prov_conf_*
+#include "provisioning.h"           // prov_scan_start
 
 /*      TYPEDEFS                                                    */
 
@@ -101,6 +105,17 @@ static void node_config_composition_get_to_network_transmit(void);
 */
 static void node_config_network_transmit_to_appkey_add(void);
 
+/* Sets current context on Appkey Bind to Health Server, then binds the
+** remote Health Server instance to the appkey.
+*/
+static void node_config_appkey_add_to_appkey_bind_health(void);
+
+/* Increases the number of configured nodes in the persistent
+** configuration, then sets the configuration state to Idle and starts
+** scanning.
+*/
+static void node_config_success(void);
+
 /*      INITIALIZATIONS                                             */
 
 // Transition function for each configuration step.
@@ -109,7 +124,7 @@ static const node_config_step_transition_t  STEP_TRANSITIONS[]  =
     [NODE_CONFIG_STEP_IDLE]                 = node_config_idle_to_composition_get,
     [NODE_CONFIG_STEP_COMPOSITION_GET]      = node_config_composition_get_to_network_transmit,
     [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = node_config_network_transmit_to_appkey_add,
-    [NODE_CONFIG_STEP_APPKEY_ADD]           = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_APPKEY_ADD]           = node_config_appkey_add_to_appkey_bind_health,
     [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = /* FIXME */ NULL,
     [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = /* FIXME */ NULL,
 };
@@ -163,6 +178,31 @@ void config_client_msg_handler(const config_client_event_t* event)
         return;
     }
 
+    uint8_t                         status;
+
+    switch (received_opcode)
+    {
+    case CONFIG_OPCODE_APPKEY_STATUS:
+        status = event->p_msg->appkey_status.status;
+
+        if ((status != ACCESS_STATUS_SUCCESS)
+            && (status != ACCESS_STATUS_KEY_INDEX_ALREADY_STORED))
+        {
+            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
+                  "Wrong status received: operation failed!\n")
+
+            // FIXME Manage error.
+
+            return;
+        }
+
+        break;
+
+    default:
+        // No status to check.
+        break;
+    }
+
     node_config_step_transition_t   next_transition = STEP_TRANSITIONS[s_node_config_curr_state.config_step];
 
     if (next_transition == NULL)
@@ -210,4 +250,27 @@ static void node_config_network_transmit_to_appkey_add(void)
                                         PROV_APPKEY_IDX,
                                         g_network_ctx.appkey);
     APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_appkey_add_to_appkey_bind_health(void)
+{
+    NRF_LOG_INFO("Appkey added to device!");
+
+    node_config_success();
+
+    // FIXME Step Appkey bind health...
+}
+
+static void node_config_success(void)
+{
+    prov_conf_header_entry_live_t   tmp_conf_header;
+    mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID, &tmp_conf_header);
+
+    tmp_conf_header.nb_conf_nodes++;
+
+    mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID, &tmp_conf_header);
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_IDLE;
+
+    prov_scan_start();
 }
