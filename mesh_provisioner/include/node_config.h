@@ -9,11 +9,17 @@
 // MESH SDK
 #include "device_state_manager.h"   // dsm_handle_t
 
+// MESH MODELS
+#include "config_client.h"          // config_client_*
+
 /* Sets up configuration context and starts configuration process for
 ** the given values.
 */
 void node_config_start(uint16_t device_first_addr,
                        dsm_handle_t devkey_handle,
                        dsm_handle_t address_handle);
+
+// Handles the received message based on the current context.
+void config_client_msg_handler(const config_client_event_t* event);
 
 #endif /* ! NODE_CONFIG_H */

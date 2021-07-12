@@ -22,6 +22,7 @@
 // CUSTOM
 #include "luos_mesh_common.h"       // _mesh_init
 #include "network_ctx.h"            // g_network_ctx
+#include "node_config.h"            // config_client_msg_handler
 
 /*      STATIC/GLOBAL VARIABLES AND CONSTANTS                       */
 
@@ -63,7 +64,18 @@ static void config_client_event_cb(config_client_event_type_t type,
                                    const config_client_event_t* event,
                                    uint16_t len)
 {
-    NRF_LOG_INFO("Config client event received: type %u!", type);
+    switch (type)
+    {
+    case CONFIG_CLIENT_EVENT_TYPE_MSG:
+        config_client_msg_handler(event);
+
+        break;
+
+    default:
+        NRF_LOG_INFO("Config client event received: type %u!", type);
+
+        break;
+    }
 }
 
 static void models_init_cb(void)

@@ -17,6 +17,7 @@
 
 // MESH MODELS
 #include "config_client.h"          // config_client_*
+#include "config_opcodes.h"         // CONFIG_OPCODE_*
 
 /*      TYPEDEFS                                                    */
 
@@ -35,19 +36,29 @@ typedef enum
     NODE_CONFIG_STEP_APPKEY_ADD,
 
     // FIXME Binding remote health server instance to appkey.
-    NODE_SETUP_APPKEY_BIND_HEALTH,
+    NODE_CONFIG_STEP_APPKEY_BIND_HEALTH,
 
     /* FIXME    Setting publish address of remote health server instance
     **          to address of the element hosting the health client
     **          instance.
     */
-    NODE_SETUP_PUBLISH_HEALTH,
+    NODE_CONFIG_STEP_PUBLISH_HEALTH,
 
     // FIXME Add steps for custom models.
 
 } node_config_step_t;
 
 /*      STATIC VARIABLES & CONSTANTS                                */
+
+// Mapping between configuration steps and expected config opcodes.
+static const config_opcode_t    EXPECTED_OPCODES[]          =
+{
+    [NODE_CONFIG_STEP_COMPOSITION_GET]      = CONFIG_OPCODE_COMPOSITION_DATA_STATUS,
+    [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = CONFIG_OPCODE_NETWORK_TRANSMIT_STATUS,
+    [NODE_CONFIG_STEP_APPKEY_ADD]           = CONFIG_OPCODE_APPKEY_STATUS,
+    [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = CONFIG_OPCODE_MODEL_APP_STATUS,
+    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = CONFIG_OPCODE_MODEL_PUBLICATION_STATUS,
+};
 
 // Node configuration state.
 static struct
@@ -58,11 +69,14 @@ static struct
     // Address of the currently configured element.
     uint16_t            elm_address;
 
-}   s_node_config_curr_state =
+}                               s_node_config_curr_state    =
 {
     // Initialization to prevent problems on first configuration.
     .config_step    = NODE_CONFIG_STEP_IDLE,
 };
+
+// Remote device first composition page index.
+static const uint8_t            FIRST_COMP_PAGE_IDX         = 0x00;
 
 void node_config_start(uint16_t device_first_addr,
                        dsm_handle_t devkey_handle,
@@ -91,5 +105,34 @@ void node_config_start(uint16_t device_first_addr,
     s_node_config_curr_state.config_step        = NODE_CONFIG_STEP_COMPOSITION_GET;
     s_node_config_curr_state.elm_address        = device_first_addr;
 
-    // FIXME Request composition data.
+    err_code = config_client_composition_data_get(FIRST_COMP_PAGE_IDX);
+    APP_ERROR_CHECK(err_code);
+}
+
+void config_client_msg_handler(const config_client_event_t* event)
+{
+    if (s_node_config_curr_state.config_step == NODE_CONFIG_STEP_IDLE)
+    {
+        NRF_LOG_INFO("Config client message received whild no configuration is occuring!");
+        return;
+    }
+
+    config_opcode_t expected_opcode = EXPECTED_OPCODES[s_node_config_curr_state.config_step];
+    config_opcode_t received_opcode = event->opcode;
+
+    if (received_opcode != expected_opcode)
+    {
+        NRF_LOG_INFO("Wrong opcode received: expected 0x%x, got 0x%x!",
+                     expected_opcode, received_opcode);
+
+        return;
+    }
+
+    switch (received_opcode)
+    {
+    default:
+        NRF_LOG_INFO("Opcode 0x%x received, but not managed yet!",
+                     received_opcode);
+        break;
+    }
 }
