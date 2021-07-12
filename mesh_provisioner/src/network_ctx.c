@@ -138,6 +138,10 @@ static void network_ctx_fetch(void)
         // FIXME Manage error.
     }
 
+    /* FIXME    Retrieve appkey (if not possible through DSM it will be
+    **          put in persistent config)
+    */
+
     g_network_ctx.appkey_handle = curr_handle;
 
     err_code = dsm_devkey_handle_get(local_addr_range.address_start,

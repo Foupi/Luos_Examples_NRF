@@ -19,6 +19,9 @@
 #include "config_client.h"          // config_client_*
 #include "config_opcodes.h"         // CONFIG_OPCODE_*
 
+// CUSTOM
+#include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
+
 /*      TYPEDEFS                                                    */
 
 typedef enum
@@ -88,8 +91,15 @@ static const uint8_t            FIRST_COMP_PAGE_IDX         = 0x00;
 */
 static void node_config_idle_to_composition_get(void);
 
-// Set current context on Network Transmit, then sets appkey.
+/* Set current context on Network Transmit, then sets network transmit
+** parameters.
+*/
 static void node_config_composition_get_to_network_transmit(void);
+
+/* Set current context on Appkey Add, then adds the appkey to remote
+** node.
+*/
+static void node_config_network_transmit_to_appkey_add(void);
 
 /*      INITIALIZATIONS                                             */
 
@@ -98,7 +108,7 @@ static const node_config_step_transition_t  STEP_TRANSITIONS[]  =
 {
     [NODE_CONFIG_STEP_IDLE]                 = node_config_idle_to_composition_get,
     [NODE_CONFIG_STEP_COMPOSITION_GET]      = node_config_composition_get_to_network_transmit,
-    [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = node_config_network_transmit_to_appkey_add,
     [NODE_CONFIG_STEP_APPKEY_ADD]           = /* FIXME */ NULL,
     [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = /* FIXME */ NULL,
     [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = /* FIXME */ NULL,
@@ -185,5 +195,19 @@ static void node_config_composition_get_to_network_transmit(void)
 
     err_code = config_client_network_transmit_set(NETWORK_TRANSMIT_COUNT,
         NETWORK_TRANSMIT_INTERVAL_STEPS);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_network_transmit_to_appkey_add(void)
+{
+    NRF_LOG_INFO("Network transmit parameters set!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_ADD;
+
+    ret_code_t err_code;
+
+    err_code = config_client_appkey_add(PROV_NETKEY_IDX,
+                                        PROV_APPKEY_IDX,
+                                        g_network_ctx.appkey);
     APP_ERROR_CHECK(err_code);
 }

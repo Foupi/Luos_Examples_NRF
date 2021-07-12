@@ -1,15 +1,6 @@
 #ifndef PROVISIONING_H
 #define PROVISIONING_H
 
-/*      DEFINES                                                     */
-
-// Provisioner element address.
-#define PROV_ELM_ADDRESS    0x0001
-
-// Key indexes.
-#define PROV_NETKEY_IDX     0x0000
-#define PROV_APPKEY_IDX     0x0000
-
 // Initializes the Mesh provisioning module with predefined parameters.
 void provisioning_init(void);
 

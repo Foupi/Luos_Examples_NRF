@@ -9,6 +9,15 @@
 // MESH SDK
 #include "device_state_manager.h"   // dsm_handle_t
 
+/*      DEFINES                                                     */
+
+// Provisioner element address.
+#define PROV_ELM_ADDRESS    0x0001
+
+// Key indexes.
+#define PROV_NETKEY_IDX     0x0000
+#define PROV_APPKEY_IDX     0x0000
+
 /*      TYPEDEFS                                                    */
 
 // Network context: keys and handles.
