@@ -48,10 +48,13 @@ typedef enum
 
 } node_config_step_t;
 
+// Configuration step transition function.
+typedef void (*node_config_step_transition_t)(void);
+
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Mapping between configuration steps and expected config opcodes.
-static const config_opcode_t    EXPECTED_OPCODES[]          =
+static const config_opcode_t                EXPECTED_OPCODES[]  =
 {
     [NODE_CONFIG_STEP_COMPOSITION_GET]      = CONFIG_OPCODE_COMPOSITION_DATA_STATUS,
     [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = CONFIG_OPCODE_NETWORK_TRANSMIT_STATUS,
@@ -78,6 +81,30 @@ static struct
 // Remote device first composition page index.
 static const uint8_t            FIRST_COMP_PAGE_IDX         = 0x00;
 
+/*      STATIC FUNCTIONS                                            */
+
+/* Set current context on Composition Get step, then requests
+** composition data.
+*/
+static void node_config_idle_to_composition_get(void);
+
+// Set current context on Network Transmit, then sets appkey.
+static void node_config_composition_get_to_network_transmit(void);
+
+/*      INITIALIZATIONS                                             */
+
+// Transition function for each configuration step.
+static const node_config_step_transition_t  STEP_TRANSITIONS[]  =
+{
+    [NODE_CONFIG_STEP_IDLE]                 = node_config_idle_to_composition_get,
+    [NODE_CONFIG_STEP_COMPOSITION_GET]      = node_config_composition_get_to_network_transmit,
+    [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_APPKEY_ADD]           = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = /* FIXME */ NULL,
+    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = /* FIXME */ NULL,
+};
+
+
 void node_config_start(uint16_t device_first_addr,
                        dsm_handle_t devkey_handle,
                        dsm_handle_t address_handle)
@@ -102,11 +129,9 @@ void node_config_start(uint16_t device_first_addr,
 
     NRF_LOG_INFO("Config Client bound with and set on remote Config Server!");
 
-    s_node_config_curr_state.config_step        = NODE_CONFIG_STEP_COMPOSITION_GET;
-    s_node_config_curr_state.elm_address        = device_first_addr;
+    s_node_config_curr_state.elm_address    = device_first_addr;
 
-    err_code = config_client_composition_data_get(FIRST_COMP_PAGE_IDX);
-    APP_ERROR_CHECK(err_code);
+    node_config_idle_to_composition_get();
 }
 
 void config_client_msg_handler(const config_client_event_t* event)
@@ -118,7 +143,7 @@ void config_client_msg_handler(const config_client_event_t* event)
     }
 
     config_opcode_t expected_opcode = EXPECTED_OPCODES[s_node_config_curr_state.config_step];
-    config_opcode_t received_opcode = event->opcode;
+    config_opcode_t                 received_opcode = event->opcode;
 
     if (received_opcode != expected_opcode)
     {
@@ -128,11 +153,37 @@ void config_client_msg_handler(const config_client_event_t* event)
         return;
     }
 
-    switch (received_opcode)
+    node_config_step_transition_t   next_transition = STEP_TRANSITIONS[s_node_config_curr_state.config_step];
+
+    if (next_transition == NULL)
     {
-    default:
-        NRF_LOG_INFO("Opcode 0x%x received, but not managed yet!",
-                     received_opcode);
-        break;
+        NRF_LOG_INFO("Opcode 0x%x received but not managed yet!");
+
+        return;
     }
+
+    next_transition();
+}
+
+static void node_config_idle_to_composition_get(void)
+{
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_COMPOSITION_GET;
+
+    ret_code_t err_code;
+
+    err_code = config_client_composition_data_get(FIRST_COMP_PAGE_IDX);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_composition_get_to_network_transmit(void)
+{
+    NRF_LOG_INFO("Composition data received!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_NETWORK_TRANSMIT;
+
+    ret_code_t err_code;
+
+    err_code = config_client_network_transmit_set(NETWORK_TRANSMIT_COUNT,
+        NETWORK_TRANSMIT_INTERVAL_STEPS);
+    APP_ERROR_CHECK(err_code);
 }
