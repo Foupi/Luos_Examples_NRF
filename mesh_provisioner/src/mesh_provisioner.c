@@ -15,6 +15,7 @@
 
 // CUSTOM
 #include "luos_mesh_common.h"   // mesh_start
+#include "network_ctx.h"        // network_ctx_init, g_network_ctx
 #include "provisioning.h"       // mesh_*, prov*
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
@@ -51,7 +52,10 @@ void MeshProvisioner_Init(void)
 
     network_ctx_init();
 
-    NRF_LOG_INFO("Network context initialized!");
+    NRF_LOG_INFO("Netkey handle: 0x%x; Appkey handle: 0x%x; Self devkey handle: 0x%x!",
+                 g_network_ctx.netkey_handle,
+                 g_network_ctx.appkey_handle,
+                 g_network_ctx.self_devkey_handle);
 
     mesh_start();
 

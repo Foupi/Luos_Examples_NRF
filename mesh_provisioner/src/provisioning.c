@@ -21,7 +21,6 @@
 #include "nrf_mesh_prov.h"          /* nrf_mesh_prov_*,
                                     ** NRF_MESH_PROV_*
                                     */
-#include "rand.h"                   // rand_hw_rng_get
 
 // MESH MODELS
 #include "config_server.h"          // config_server_*
@@ -32,6 +31,7 @@
                                     ** encryption_keys_generate,
                                     ** auth_data_provide
                                     */
+#include "network_ctx.h"            // network_ctx_*
 #include "provisioner_config.h"     // prov_conf_*
 
 /*      TYPEDEFS                                                    */
@@ -56,21 +56,10 @@ typedef enum
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if the device is provisioned.
-static bool                         s_device_provisioned    = false;
+bool                                g_device_provisioned    = false;
 
 // Provisioning context.
 static nrf_mesh_prov_ctx_t          s_prov_ctx;
-
-// Provisioner element address.
-static const uint16_t               PROV_ELM_ADDRESS        = 0x0001;
-
-// Key indexes.
-static const mesh_key_index_t       PROV_NETKEY_IDX         = 0x0000;
-static const mesh_key_index_t       PROV_APPKEY_IDX         = 0x0000;
-
-// Amounts of expected key indexes when fetching from persistent data.
-static const uint32_t               NB_NETKEY_IDX           = 1;
-static const uint32_t               NB_APPKEY_IDX           = 1;
 
 // Unprovisioned device attention duration, in seconds.
 static const uint32_t               ATTENTION_DURATION      = 5;
@@ -92,21 +81,6 @@ static struct
     dsm_handle_t                    address_handles[MAX_PROV_CONF_NODE_RECORDS];
 
 }                                   s_prov_curr_state;
-
-// Network context: keys and handles.
-static struct
-{
-    // Key handles.
-    dsm_handle_t    netkey_handle;
-    dsm_handle_t    appkey_handle;
-    dsm_handle_t    self_devkey_handle;
-
-    // Keys values.
-    uint8_t         netkey[NRF_MESH_KEY_SIZE];
-    uint8_t         appkey[NRF_MESH_KEY_SIZE];
-    uint8_t         self_devkey[NRF_MESH_KEY_SIZE];
-
-}                                   s_network_ctx;
 
 /*      INITIALIZATIONS                                             */
 
@@ -141,18 +115,6 @@ MESH_CONFIG_ENTRY(
     false
 );
 
-/*      STATIC FUNCTIONS                                            */
-
-/* Generates keys and handles, stores them in the DSM and in the static
-** context.
-*/
-static void network_ctx_generate(void);
-
-/* Fetches the handles stored in the DSM and keeps them in the static
-** context.
-*/
-static void network_ctx_fetch(void);
-
 /*      CALLBACKS                                                   */
 
 // On node reset event, erases persistent data and resets the board.
@@ -176,7 +138,7 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event);
 void mesh_init(void)
 {
     _mesh_init(config_server_event_cb, models_init_cb,
-               &s_device_provisioned);
+               &g_device_provisioned);
 }
 
 void provisioning_init(void)
@@ -188,7 +150,7 @@ void provisioning_init(void)
 
 void prov_conf_init(void)
 {
-    if (s_device_provisioned)
+    if (g_device_provisioned)
     {
         NRF_LOG_INFO("Retrieving persistent configuration!");
 
@@ -258,25 +220,6 @@ void prov_conf_init(void)
     }
 }
 
-void network_ctx_init(void)
-{
-    if (s_device_provisioned)
-    {
-        NRF_LOG_INFO("Fetching network context from persistent storage!");
-        network_ctx_fetch();
-    }
-    else
-    {
-        NRF_LOG_INFO("Generating network context!");
-        network_ctx_generate();
-    }
-
-    NRF_LOG_INFO("Netkey handle: 0x%x; Appkey handle: 0x%x; Self devkey handle: 0x%x!",
-                 s_network_ctx.netkey_handle,
-                 s_network_ctx.appkey_handle,
-                 s_network_ctx.self_devkey_handle);
-}
-
 void prov_scan_start(void)
 {
     ret_code_t err_code = nrf_mesh_prov_scan_start(mesh_unprov_event_cb);
@@ -299,99 +242,6 @@ void prov_scan_stop(void)
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
 }
 
-static void network_ctx_generate(void)
-{
-    ret_code_t                  err_code;
-
-    dsm_local_unicast_address_t local_addr_range;
-    memset(&local_addr_range, 0, sizeof(dsm_local_unicast_address_t));
-    local_addr_range.address_start  = PROV_ELM_ADDRESS;
-    local_addr_range.count          = ACCESS_ELEMENT_COUNT;
-
-    err_code = dsm_local_unicast_addresses_set(&local_addr_range);
-    APP_ERROR_CHECK(err_code);
-
-    rand_hw_rng_get(s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
-    err_code = dsm_subnet_add(PROV_NETKEY_IDX, s_network_ctx.netkey,
-                              &(s_network_ctx.netkey_handle));
-    APP_ERROR_CHECK(err_code);
-
-    rand_hw_rng_get(s_network_ctx.appkey, NRF_MESH_KEY_SIZE);
-    err_code = dsm_appkey_add(PROV_APPKEY_IDX,
-                              s_network_ctx.netkey_handle,
-                              s_network_ctx.appkey,
-                              &(s_network_ctx.appkey_handle));
-    APP_ERROR_CHECK(err_code);
-
-    rand_hw_rng_get(s_network_ctx.self_devkey, NRF_MESH_KEY_SIZE);
-    err_code = dsm_devkey_add(PROV_ELM_ADDRESS,
-                              s_network_ctx.netkey_handle,
-                              s_network_ctx.self_devkey,
-                              &(s_network_ctx.self_devkey_handle));
-    APP_ERROR_CHECK(err_code);
-
-    err_code = config_server_bind(s_network_ctx.self_devkey_handle);
-    APP_ERROR_CHECK(err_code);
-}
-
-static void network_ctx_fetch(void)
-{
-    ret_code_t                  err_code;
-    dsm_local_unicast_address_t local_addr_range;
-    dsm_local_unicast_addresses_get(&local_addr_range);
-
-    // Temporary variables to ease writing.
-    uint32_t                    nb_indexes          = 1;
-    mesh_key_index_t            key_index_buffer;
-    dsm_handle_t                curr_handle;
-
-    err_code = dsm_subnet_get_all(&key_index_buffer, &nb_indexes);
-    APP_ERROR_CHECK(err_code);
-    if (nb_indexes != NB_NETKEY_IDX)
-    {
-        // FIXME Manage error.
-        NRF_LOG_INFO("Number of indexes: %u! (Expected %u).",
-                     nb_indexes, NB_NETKEY_IDX);
-    }
-
-    curr_handle = dsm_net_key_index_to_subnet_handle(key_index_buffer);
-    if (curr_handle == DSM_HANDLE_INVALID)
-    {
-        // FIXME Manage error.
-    }
-
-    err_code = dsm_subnet_key_get(curr_handle, s_network_ctx.netkey);
-    APP_ERROR_CHECK(err_code);
-
-    s_network_ctx.netkey_handle = curr_handle;
-
-    err_code = dsm_appkey_get_all(s_network_ctx.netkey_handle,
-                                  &key_index_buffer, &nb_indexes);
-    APP_ERROR_CHECK(err_code);
-    if (nb_indexes != NB_APPKEY_IDX)
-    {
-        // FIXME Manage error.
-    }
-
-    curr_handle = dsm_appkey_index_to_appkey_handle(key_index_buffer);
-    if (curr_handle == DSM_HANDLE_INVALID)
-    {
-        // FIXME Manage error.
-    }
-
-    s_network_ctx.appkey_handle = curr_handle;
-
-    err_code = dsm_devkey_handle_get(local_addr_range.address_start,
-                                     &curr_handle);
-    APP_ERROR_CHECK(err_code);
-    if (curr_handle == DSM_HANDLE_INVALID)
-    {
-        // FIXME Manage error.
-    }
-
-    s_network_ctx.self_devkey_handle = curr_handle;
-}
-
 static void config_server_event_cb(const config_server_evt_t* event)
 {
     if (event->type == CONFIG_SERVER_EVT_NODE_RESET)
@@ -404,9 +254,9 @@ static void config_server_event_cb(const config_server_evt_t* event)
 
 static void models_init_cb(void)
 {
-    s_network_ctx.netkey_handle         = DSM_HANDLE_INVALID;
-    s_network_ctx.appkey_handle         = DSM_HANDLE_INVALID;
-    s_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
+    g_network_ctx.netkey_handle         = DSM_HANDLE_INVALID;
+    g_network_ctx.appkey_handle         = DSM_HANDLE_INVALID;
+    g_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
 
     NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
 }
@@ -502,7 +352,7 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         APP_ERROR_CHECK(err_code);
 
         err_code = dsm_devkey_add(device_first_address,
-            s_network_ctx.netkey_handle, device_devkey,
+            g_network_ctx.netkey_handle, device_devkey,
             s_prov_curr_state.devkey_handles + node_idx);
         APP_ERROR_CHECK(err_code);
 
@@ -574,7 +424,7 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
     memset(&prov_data, 0, sizeof(nrf_mesh_prov_provisioning_data_t));
     prov_data.netkey_index  = PROV_NETKEY_IDX;
     prov_data.address       = s_prov_curr_state.prov_conf_header.next_address;
-    memcpy(prov_data.netkey, s_network_ctx.netkey, NRF_MESH_KEY_SIZE);
+    memcpy(prov_data.netkey, g_network_ctx.netkey, NRF_MESH_KEY_SIZE);
 
     encryption_keys_generate();
 
