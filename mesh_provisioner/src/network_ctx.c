@@ -21,6 +21,7 @@
 #include "config_server.h"          // config_server_*
 
 // CUSTOM
+#include "app_health_client.h"      // app_health_client_*
 #include "mesh_init.h"              // g_device_provisioned
 #include "provisioning.h"           // PROV_*
 
@@ -33,6 +34,10 @@ static const uint32_t               NB_NETKEY_IDX           = 1;
 static const uint32_t               NB_APPKEY_IDX           = 1;
 
 /*      STATIC FUNCTIONS                                            */
+
+// Binds the models to the given handles.
+static void models_bind(dsm_handle_t devkey_handle,
+                        dsm_handle_t appkey_handle);
 
 /* Generates keys and handles, stores them in the DSM and in the static
 ** context.
@@ -56,6 +61,15 @@ void network_ctx_init(void)
         NRF_LOG_INFO("Generating network context!");
         network_ctx_generate();
     }
+}
+
+static void models_bind(dsm_handle_t devkey_handle,
+                        dsm_handle_t appkey_handle)
+{
+    ret_code_t err_code = config_server_bind(devkey_handle);
+    APP_ERROR_CHECK(err_code);
+
+    app_health_client_bind(appkey_handle);
 }
 
 static void network_ctx_generate(void)
@@ -89,8 +103,8 @@ static void network_ctx_generate(void)
                               &(g_network_ctx.self_devkey_handle));
     APP_ERROR_CHECK(err_code);
 
-    err_code = config_server_bind(g_network_ctx.self_devkey_handle);
-    APP_ERROR_CHECK(err_code);
+    models_bind(g_network_ctx.self_devkey_handle,
+                g_network_ctx.appkey_handle);
 }
 
 static void network_ctx_fetch(void)

@@ -13,6 +13,7 @@ set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 add_library( mesh_provisioner
     "${MESH_PROVISIONER_PATH}/src/mesh_provisioner.c"
 
+    "${MESH_PROVISIONER_PATH}/src/app_health_client.c"
     "${MESH_PROVISIONER_PATH}/src/mesh_init.c"
     "${MESH_PROVISIONER_PATH}/src/network_ctx.c"
     "${MESH_PROVISIONER_PATH}/src/node_config.c"
@@ -33,6 +34,7 @@ add_library( mesh_provisioner
     ${CONFIG_CLIENT_SOURCE_FILES}
     ${CONFIG_SERVER_SOURCE_FILES}
     ${HEALTH_SERVER_SOURCE_FILES}
+    ${HEALTH_CLIENT_SOURCE_FILES}
     ${MESH_APP_TIMER_SOURCE_FILES}
     ${${PLATFORM}_SOURCE_FILES}
     ${${nRF5_SDK_VERSION}_SOURCE_FILES}
@@ -48,6 +50,7 @@ target_include_directories( mesh_provisioner PUBLIC
     ${CONFIG_CLIENT_INCLUDE_DIRS}
     ${CONFIG_SERVER_INCLUDE_DIRS}
     ${HEALTH_SERVER_INCLUDE_DIRS}
+    ${HEALTH_CLIENT_INCLUDE_DIRS}
     ${${SOFTDEVICE}_INCLUDE_DIRS}
     ${${PLATFORM}_INCLUDE_DIRS}
     ${${BOARD}_INCLUDE_DIRS}
