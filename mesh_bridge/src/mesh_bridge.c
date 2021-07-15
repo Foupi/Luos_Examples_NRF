@@ -12,7 +12,8 @@
 
 // CUSTOM
 #include "luos_mesh_common.h"   // mesh_start
-#include "provisioning.h"       /* mesh_init, provisioning_init,
+#include "mesh_init.h"          // mesh_init
+#include "provisioning.h"       /* provisioning_init,
                                 ** persistent_conf_init,
                                 ** prov_listening_start
                                 */

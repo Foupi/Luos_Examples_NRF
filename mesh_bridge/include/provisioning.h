@@ -1,9 +1,6 @@
 #ifndef PROVISIONING_H
 #define PROVISIONING_H
 
-// Initializes the Mesh stack with predefined parameters.
-void mesh_init(void);
-
 // Initializes the Mesh provisioning module with predefined parameters.
 void provisioning_init(void);
 

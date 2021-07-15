@@ -19,16 +19,11 @@
                                     ** NRF_MESH_PROV_EVT_*
                                     */
 
-// MESH MODELS
-#include "config_server_events.h"   // config_server_evt_t
-
 // CUSTOM
-#include "luos_mesh_common.h"       // _mesh_init, _provisioning_init
+#include "luos_mesh_common.h"       // _provisioning_init
+#include "mesh_init.h"              // g_device_provisioned
 
 /*      STATIC VARIABLES & CONSTANTS                                */
-
-// Describes if the device is provisioned.
-static bool                 s_device_provisioned    = false;
 
 // Static provisioning context.
 static nrf_mesh_prov_ctx_t  s_prov_ctx;
@@ -37,12 +32,6 @@ static nrf_mesh_prov_ctx_t  s_prov_ctx;
 static const char           LUOS_DEVICE_URI[]       = "Luos Bridge";
 
 /*      CALLBACKS                                                   */
-
-// On node reset event, erases persistent data and resets the board.
-static void config_server_event_cb(const config_server_evt_t* event);
-
-// FIXME Initialize the models present on the node.
-static void models_init_cb(void);
 
 /* Invite received:     Turn on LEDs for the received amount of
 **                      seconds.
@@ -53,12 +42,6 @@ static void models_init_cb(void);
 */
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event);
 
-void mesh_init(void)
-{
-    _mesh_init(config_server_event_cb, models_init_cb,
-               &s_device_provisioned);
-}
-
 void provisioning_init(void)
 {
     _provisioning_init(&s_prov_ctx, mesh_prov_event_cb);
@@ -66,7 +49,7 @@ void provisioning_init(void)
 
 void persistent_conf_init(void)
 {
-    if (s_device_provisioned)
+    if (g_device_provisioned)
     {
         NRF_LOG_INFO("Fetching persistent configuration!");
 
@@ -89,21 +72,6 @@ void prov_listening_start(void)
     APP_ERROR_CHECK(err_code);
 
     NRF_LOG_INFO("Started listening for incoming links!");
-}
-
-static void config_server_event_cb(const config_server_evt_t* event)
-{
-    if (event->type == CONFIG_SERVER_EVT_NODE_RESET)
-    {
-        // FIXME Erase persistent data.
-
-        // FIXME Reset board.
-    }
-}
-
-static void models_init_cb(void)
-{
-    // FIXME Initializations.
 }
 
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
@@ -155,14 +123,14 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         APP_ERROR_CHECK(err_code);
 
         // Device is now provisioned.
-        s_device_provisioned = true;
+        g_device_provisioned = true;
     }
         break;
 
     case NRF_MESH_PROV_EVT_LINK_CLOSED:
         NRF_LOG_INFO("Provisioning link closed!");
 
-        if (!s_device_provisioned)
+        if (!g_device_provisioned)
         {
             NRF_LOG_INFO("Provisioning procedure was aborted: listening again!");
 
