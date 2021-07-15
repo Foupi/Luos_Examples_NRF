@@ -108,6 +108,14 @@ static const uint8_t            FIRST_COMP_PAGE_IDX         = 0x00;
 
 /*      STATIC FUNCTIONS                                            */
 
+/* Sets the publication parameters for the instance of the given model
+** ID located on the current configured element with the given address
+** and publish period.
+*/
+static void publish_set(const access_model_id_t* target_model_id,
+    const nrf_mesh_address_t* publish_address,
+    const access_publish_period_t* publish_period);
+
 /* Set current context on Composition Get step, then requests
 ** composition data.
 */
@@ -168,8 +176,8 @@ static const node_config_step_transition_t  STEP_TRANSITIONS[]              =
     [NODE_CONFIG_STEP_APPKEY_ADD]           = node_config_appkey_add_to_appkey_bind_health,
     [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = node_config_appkey_bind_health_to_publish_health,
     [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = node_config_publish_health_to_appkey_bind_luos_rtb,
-    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = NULL,
-    [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = NULL,
+    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = node_config_appkey_bind_luos_rtb_to_publish_luos_rtb,
+    [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = node_config_publish_luos_rtb_to_subscribe_luos_rtb,
     [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = node_config_success,
 };
 
@@ -286,12 +294,33 @@ void config_client_msg_handler(const config_client_event_t* event)
 
     if (next_transition == NULL)
     {
-        NRF_LOG_INFO("Opcode 0x%x received but not managed yet!");
+        NRF_LOG_INFO("Opcode 0x%x received but not managed yet!",
+                     received_opcode);
 
         return;
     }
 
     next_transition();
+}
+
+static void publish_set(const access_model_id_t* target_model_id,
+    const nrf_mesh_address_t* publish_address,
+    const access_publish_period_t* publish_period)
+{
+    ret_code_t                  err_code;
+
+    config_publication_state_t  pub_state;
+    memset(&pub_state, 0, sizeof(config_publication_state_t));
+    pub_state.element_address   = s_node_config_curr_state.elm_address;
+    pub_state.publish_address   = *publish_address;
+    pub_state.appkey_index      = PROV_APPKEY_IDX;
+    pub_state.publish_ttl       = ACCESS_DEFAULT_TTL;
+    pub_state.publish_period    = *publish_period;
+    pub_state.retransmit_count  = 1;
+    pub_state.model_id          = *target_model_id;
+
+    err_code = config_client_model_publication_set(&pub_state);
+    APP_ERROR_CHECK(err_code);
 }
 
 static void node_config_idle_to_composition_get(void)
@@ -350,8 +379,6 @@ static void node_config_appkey_bind_health_to_publish_health(void)
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_HEALTH;
 
-    ret_code_t                  err_code;
-
     nrf_mesh_address_t          health_client_address;
     memset(&health_client_address, 0, sizeof(nrf_mesh_address_t));
     health_client_address.type  = NRF_MESH_ADDRESS_TYPE_UNICAST;
@@ -362,18 +389,8 @@ static void node_config_appkey_bind_health_to_publish_health(void)
     publish_period.step_num     = 1;
     publish_period.step_res     = ACCESS_PUBLISH_RESOLUTION_10S;
 
-    config_publication_state_t  pub_state;
-    memset(&pub_state, 0, sizeof(config_publication_state_t));
-    pub_state.element_address   = s_node_config_curr_state.elm_address;
-    pub_state.publish_address   = health_client_address;
-    pub_state.appkey_index      = PROV_APPKEY_IDX;
-    pub_state.publish_ttl       = ACCESS_DEFAULT_TTL;
-    pub_state.publish_period    = publish_period;
-    pub_state.retransmit_count  = 1;
-    pub_state.model_id          = HEALTH_SERVER_ACCESS_MODEL_ID;
-
-    err_code = config_client_model_publication_set(&pub_state);
-    APP_ERROR_CHECK(err_code);
+    publish_set(&HEALTH_SERVER_ACCESS_MODEL_ID, &health_client_address,
+                &publish_period);
 }
 
 static void node_config_publish_health_to_appkey_bind_luos_rtb(void)
@@ -388,6 +405,46 @@ static void node_config_publish_health_to_appkey_bind_luos_rtb(void)
     err_code = config_client_model_app_bind(s_node_config_curr_state.elm_address,
                                             PROV_APPKEY_IDX,
                                             luos_rtb_model_id);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void)
+{
+    NRF_LOG_INFO("Appkey bound to remote Luos RTB model instance!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_LUOS_RTB;
+
+    access_model_id_t   luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
+
+    nrf_mesh_address_t      luos_group_address;
+    memset(&luos_group_address, 0, sizeof(nrf_mesh_address_t));
+    luos_group_address.type     = NRF_MESH_ADDRESS_TYPE_GROUP;
+    luos_group_address.value    = LUOS_GROUP_ADDRESS;
+
+    access_publish_period_t publish_period;
+    memset(&publish_period, 0, sizeof(access_publish_period_t));
+    publish_period.step_res     = ACCESS_PUBLISH_RESOLUTION_100MS;
+
+    publish_set(&luos_rtb_model_id, &luos_group_address,
+                &publish_period);
+}
+
+static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void)
+{
+    NRF_LOG_INFO("Publish address set for remote Luos RTB model instance!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB;
+
+    ret_code_t          err_code;
+    access_model_id_t   luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
+
+    nrf_mesh_address_t  luos_group_address;
+    memset(&luos_group_address, 0, sizeof(nrf_mesh_address_t));
+    luos_group_address.type     = NRF_MESH_ADDRESS_TYPE_GROUP;
+    luos_group_address.value    = LUOS_GROUP_ADDRESS;
+
+    err_code = config_client_model_subscription_add(s_node_config_curr_state.elm_address,
+        luos_group_address, luos_rtb_model_id);
     APP_ERROR_CHECK(err_code);
 }
 
