@@ -25,6 +25,7 @@
 
 // CUSTOM
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
+#include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 #include "provisioner_config.h"     // prov_conf_*
 #include "provisioning.h"           // prov_scan_start
 
@@ -44,14 +45,26 @@ typedef enum
     // Adding appkey to remode node.
     NODE_CONFIG_STEP_APPKEY_ADD,
 
-    // FIXME Binding remote health server instance to appkey.
+    // Binding remote health server instance to appkey.
     NODE_CONFIG_STEP_APPKEY_BIND_HEALTH,
 
-    /* FIXME    Setting publish address of remote health server instance
-    **          to address of the element hosting the health client
-    **          instance.
+    /* Setting publish address of remote health server instance to
+    ** address of the element hosting the health client instance.
     */
     NODE_CONFIG_STEP_PUBLISH_HEALTH,
+
+    // Binding remote Luos RTB model instance to appkey.
+    NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB,
+
+    /* Setting publish address of remote Luos RTB model instance to
+    ** Luos models group address.
+    */
+    NODE_CONFIG_STEP_PUBLISH_LUOS_RTB,
+
+    /* Adding Luos models group address to remote Luos RTB model
+    ** instance subscription addresses.
+    */
+    NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB,
 
     // FIXME Add steps for custom models.
 
@@ -70,6 +83,9 @@ static const config_opcode_t                EXPECTED_OPCODES[]  =
     [NODE_CONFIG_STEP_APPKEY_ADD]           = CONFIG_OPCODE_APPKEY_STATUS,
     [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = CONFIG_OPCODE_MODEL_APP_STATUS,
     [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = CONFIG_OPCODE_MODEL_PUBLICATION_STATUS,
+    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = CONFIG_OPCODE_MODEL_APP_STATUS,
+    [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = CONFIG_OPCODE_MODEL_PUBLICATION_STATUS,
+    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = CONFIG_OPCODE_MODEL_SUBSCRIPTION_STATUS,
 };
 
 // Node configuration state.
@@ -118,6 +134,23 @@ static void node_config_appkey_add_to_appkey_bind_health(void);
 */
 static void node_config_appkey_bind_health_to_publish_health(void);
 
+/* Sets current context on Appkey Bind to Luos RTB model, then binds the
+** remote Luos RTB model instance to the appkey.
+*/
+static void node_config_publish_health_to_appkey_bind_luos_rtb(void);
+
+/* Sets current context on Publish Luos RTB model, then defines the
+** publish parameters of the remode Luos RTB model instance to the Luos
+** models group address.
+*/
+static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void);
+
+/* Sets current context on Subscribe Luos RTB model, then adds the Luos
+** models group address to the subscription list of the remote Luos RTB
+** model instance.
+*/
+static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void);
+
 /* Increases the number of configured nodes in the persistent
 ** configuration, then sets the configuration state to Idle and starts
 ** scanning.
@@ -134,7 +167,10 @@ static const node_config_step_transition_t  STEP_TRANSITIONS[]              =
     [NODE_CONFIG_STEP_NETWORK_TRANSMIT]     = node_config_network_transmit_to_appkey_add,
     [NODE_CONFIG_STEP_APPKEY_ADD]           = node_config_appkey_add_to_appkey_bind_health,
     [NODE_CONFIG_STEP_APPKEY_BIND_HEALTH]   = node_config_appkey_bind_health_to_publish_health,
-    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = node_config_success,
+    [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = node_config_publish_health_to_appkey_bind_luos_rtb,
+    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = NULL,
+    [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = NULL,
+    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = node_config_success,
 };
 
 static const access_model_id_t              HEALTH_SERVER_ACCESS_MODEL_ID   =
@@ -337,6 +373,21 @@ static void node_config_appkey_bind_health_to_publish_health(void)
     pub_state.model_id          = HEALTH_SERVER_ACCESS_MODEL_ID;
 
     err_code = config_client_model_publication_set(&pub_state);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_publish_health_to_appkey_bind_luos_rtb(void)
+{
+    NRF_LOG_INFO("Publish address set for remote Health Server!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB;
+
+    ret_code_t          err_code;
+    access_model_id_t   luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
+
+    err_code = config_client_model_app_bind(s_node_config_curr_state.elm_address,
+                                            PROV_APPKEY_IDX,
+                                            luos_rtb_model_id);
     APP_ERROR_CHECK(err_code);
 }
 

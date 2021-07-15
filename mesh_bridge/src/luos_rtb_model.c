@@ -14,6 +14,7 @@
 
 // MESH SDK
 #include "access.h"                 // access_*
+#include "access_config.h"          // access_model_subscription_list_alloc
 
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
@@ -62,6 +63,9 @@ void luos_rtb_model_init(luos_rtb_model_t* instance,
     add_params.p_args               = instance;
 
     err_code = access_model_add(&add_params, &(instance->handle));
+    APP_ERROR_CHECK(err_code);
+
+    err_code = access_model_subscription_list_alloc(instance->handle);
     APP_ERROR_CHECK(err_code);
 }
 
