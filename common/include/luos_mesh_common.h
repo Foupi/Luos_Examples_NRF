@@ -23,6 +23,12 @@
     0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31, \
 }
 
+// Luos Company ID. FIXME Find how to generate an unique one.
+#define ACCESS_COMPANY_ID_LUOS                      0xCAFE
+
+// Group address for Luos models communication.
+#define LUOS_GROUP_ADDRESS                          0x0030
+
 /* Initializes the Mesh stack with predefined parameters and the given
 ** callbacks, and describes in the given boolean if the device is
 ** configured or not.

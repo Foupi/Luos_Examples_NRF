@@ -13,6 +13,7 @@ set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
 add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
 
+    "${MESH_BRIDGE_PATH}/src/luos_rtb_model.c"
     "${MESH_BRIDGE_PATH}/src/mesh_init.c"
     "${MESH_BRIDGE_PATH}/src/provisioning.c"
 

@@ -7,18 +7,22 @@
 
 // CUSTOM
 #include "luos_mesh_common.h"       // _mesh_init
+#include "luos_rtb_model.h"         // luos_rtb_model_*
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if the device is provisioned.
-bool g_device_provisioned   = false;
+bool                    g_device_provisioned   = false;
+
+// Luos RTB model instance.
+static luos_rtb_model_t s_luos_rtb_model;
 
 /*      CALLBACKS                                                   */
 
 // On node reset event, erases persistent data and resets the board.
 static void config_server_event_cb(const config_server_evt_t* event);
 
-// FIXME Initialize the models present on the node.
+// Initialize the Luos RTB model present on the node.
 static void models_init_cb(void);
 
 void mesh_init(void)
@@ -39,5 +43,8 @@ static void config_server_event_cb(const config_server_evt_t* event)
 
 static void models_init_cb(void)
 {
-    // FIXME Initializations.
+    luos_rtb_model_init_params_t    init_params;
+    // FIXME Fill parameters.
+
+    luos_rtb_model_init(&s_luos_rtb_model, &init_params);
 }
