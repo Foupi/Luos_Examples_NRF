@@ -1,6 +1,11 @@
 #ifndef LUOS_RTB_MODEL_H
 #define LUOS_RTB_MODEL_H
 
+/*      INCLUDES                                                    */
+
+// MESH SDK
+#include "access.h" // access_model_handle_t
+
 /*      TYPEDEFS                                                    */
 
 typedef struct luos_rtb_model_s luos_rtb_model_t;
@@ -14,6 +19,9 @@ typedef struct
 // A Luos RTB model instance.
 struct luos_rtb_model_s
 {
+    // Handle for the model instance.
+    access_model_handle_t   handle;
+
     // FIXME Fields necessary for the model's good behaviour.
 
 };
