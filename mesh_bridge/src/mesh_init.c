@@ -31,6 +31,11 @@ void mesh_init(void)
                &g_device_provisioned);
 }
 
+void mesh_rtb_get(void)
+{
+    luos_rtb_model_get(&s_luos_rtb_model);
+}
+
 static void config_server_event_cb(const config_server_evt_t* event)
 {
     if (event->type == CONFIG_SERVER_EVT_NODE_RESET)

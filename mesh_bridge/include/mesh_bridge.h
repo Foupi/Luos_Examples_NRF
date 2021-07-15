@@ -3,6 +3,9 @@
 
 /*      INCLUDES                                                    */
 
+// C STANDARD
+#include <stdbool.h>    // g_rtb_get_asked
+
 // LUOS
 #include "luos_list.h"  // *_MOD
 
@@ -21,5 +24,8 @@ void MeshBridge_Init(void);
 
 // FIXME Does nothing for now.
 void MeshBridge_Loop(void);
+
+// Describes if a RTB GET request was asked by user.
+extern bool g_rtb_get_asked;
 
 #endif /* MESH_BRIDGE_H */

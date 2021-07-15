@@ -15,6 +15,7 @@
 // MESH SDK
 #include "access.h"                 // access_*
 #include "access_config.h"          // access_model_subscription_list_alloc
+#include "nrf_mesh.h"               // NRF_MESH_TRANSMIC_SIZE_DEFAULT
 
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
@@ -49,8 +50,6 @@ static const access_opcode_handler_t    LUOS_RTB_MODEL_OPCODE_HANDLERS[]    =
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params)
 {
-    NRF_LOG_INFO("Initializing Luos RTB model instance!");
-
     ret_code_t                  err_code;
     access_model_id_t           luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
 
@@ -71,7 +70,19 @@ void luos_rtb_model_init(luos_rtb_model_t* instance,
 
 void luos_rtb_model_get(luos_rtb_model_t* instance)
 {
-    NRF_LOG_INFO("Luos RTB GET request sent!");
+    ret_code_t          err_code;
+    access_opcode_t     get_opcode  = LUOS_RTB_MODEL_GET_ACCESS_OPCODE;
+
+    access_message_tx_t get_req;
+    memset(&get_req, 0, sizeof(access_message_tx_t));
+    get_req.opcode          = get_opcode;
+    get_req.p_buffer        = /* FIXME */ NULL;
+    get_req.length          = /* FIXME */ 0;
+    get_req.transmic_size   = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
+    get_req.access_token    = nrf_mesh_unique_token_get();
+
+    err_code = access_model_publish(instance->handle, &get_req);
+    APP_ERROR_CHECK(err_code);
 }
 
 static void luos_rtb_model_get_cb(access_model_handle_t handle,

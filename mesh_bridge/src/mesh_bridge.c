@@ -2,6 +2,9 @@
 
 /*      INCLUDES                                                    */
 
+// C STANDARD
+#include <stdbool.h>            // bool
+
 // NRF
 #include "nrf_log.h"            // NRF_LOG_INFO
 
@@ -23,6 +26,9 @@
 #ifndef REV
 #define REV {0,0,1}
 #endif
+
+// Describes if a RTB GET request was asked by user.
+bool    g_rtb_get_asked = false;
 
 /*      CALLBACKS                                                   */
 
@@ -56,7 +62,14 @@ void MeshBridge_Init(void)
 }
 
 void MeshBridge_Loop(void)
-{}
+{
+    if (g_rtb_get_asked)
+    {
+        mesh_rtb_get();
+
+        g_rtb_get_asked = false;
+    }
+}
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 {}
