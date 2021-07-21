@@ -24,6 +24,7 @@
 #include "health_common.h"          // HEALTH_SERVER_MODEL_ID
 
 // CUSTOM
+#include "example_network_config.h" // NETWORK_*, *KEY_IDX
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 #include "provisioner_config.h"     // prov_conf_*
