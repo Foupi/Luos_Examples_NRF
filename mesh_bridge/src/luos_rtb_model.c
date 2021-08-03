@@ -149,7 +149,7 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
         return;
     }
 
-    luos_rtb_model_get_t*     get_req     = (luos_rtb_model_get_t*)(msg->p_data);
+    const luos_rtb_model_get_t* get_req = (luos_rtb_model_get_t*)(msg->p_data);
 
     if (get_req->transaction_id <= s_curr_transaction_id)
     {
@@ -211,8 +211,21 @@ static void luos_rtb_model_status_cb(access_model_handle_t handle,
     if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
         || src_addr == instance->element_address)
     {
+        // Either model is not ready, or this is a localhost message.
         return;
     }
 
-    NRF_LOG_INFO("Luos RTB STATUS message received!");
+    const luos_rtb_model_status_t*  status_msg  = (luos_rtb_model_status_t*)(msg->p_data);
+
+    if (status_msg->transaction_id < s_curr_transaction_id)
+    {
+        // This STATUS message is meant for a previous transaction.
+        return;
+    }
+
+    routing_table_t entry   = status_msg->entry;
+
+    NRF_LOG_INFO("Luos RTB STATUS message received: entry %u has ID 0x%x, type %s, alias %s!",
+                 status_msg->entry_idx, entry.id,
+                 RoutingTB_StringFromType(entry.type), entry.alias);
 }
