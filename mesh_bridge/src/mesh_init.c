@@ -62,6 +62,7 @@ static void config_server_event_cb(const config_server_evt_t* event)
 static void models_init_cb(void)
 {
     luos_rtb_model_init_params_t    init_params;
+    memset(&init_params, 0, sizeof(luos_rtb_model_init_params_t));
     // FIXME Fill parameters.
 
     luos_rtb_model_init(&s_luos_rtb_model, &init_params);

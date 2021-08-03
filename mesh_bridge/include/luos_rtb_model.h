@@ -4,7 +4,10 @@
 /*      INCLUDES                                                    */
 
 // MESH SDK
-#include "access.h" // access_model_handle_t
+#include "access.h"         // access_model_handle_t
+
+// LUOS
+#include "routing_table.h"  // routing_table_t
 
 /*      DEFINES                                                     */
 
@@ -13,10 +16,22 @@
 
 /*      TYPEDEFS                                                    */
 
+// Forward declaration
 typedef struct luos_rtb_model_s luos_rtb_model_t;
 
+/* Callback called on GET request to get local RTB entries.
+** Returns true and updates parameters with local RTB information if the
+** detection process is complete, returns false otherwise.
+*/
+typedef bool (*luos_rtb_model_get_rtb_entries_cb_t)(routing_table_t* rtb_entries,
+                uint16_t* nb_entries);
+
+// Parameters to initialize a Luos RTB model instance.
 typedef struct
 {
+    // Callback to retrieve local RTB entries on GET request.
+    luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
+
     // FIXME Fields necessary for the instance initialization.
 
 } luos_rtb_model_init_params_t;
@@ -25,10 +40,13 @@ typedef struct
 struct luos_rtb_model_s
 {
     // Handle for the model instance.
-    access_model_handle_t   handle;
+    access_model_handle_t               handle;
 
     // Unicast address of the element hosting the model instance.
-    uint16_t                element_address;
+    uint16_t                            element_address;
+
+    // Callback to retrieve local RTB entries on GET request.
+    luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
 
     // FIXME Fields necessary for the model's good behaviour.
 

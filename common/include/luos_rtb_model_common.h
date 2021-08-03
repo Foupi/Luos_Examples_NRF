@@ -33,4 +33,7 @@
 // Index of the element hosting the Luos RTB model instance.
 #define LUOS_RTB_MODEL_ELM_IDX                          0
 
+// Maximum number of exposed RTB entries for a Luos network.
+#define LUOS_RTB_MODEL_MAX_RTB_ENTRY                    5
+
 #endif /* ! LUOS_RTB_MODEL_COMMON_H */

@@ -55,10 +55,9 @@ static const access_opcode_handler_t    LUOS_RTB_MODEL_OPCODE_HANDLERS[]    =
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params)
 {
-    // FIXME Set instance parameters.
-
     memset(instance, 0, sizeof(luos_rtb_model_t));
-    instance->element_address   = LUOS_RTB_MODEL_DEFAULT_ELM_ADDR;
+    instance->element_address           = LUOS_RTB_MODEL_DEFAULT_ELM_ADDR;
+    instance->local_rtb_entries_get_cb  = params->local_rtb_entries_get_cb;
 
     ret_code_t                  err_code;
     access_model_id_t           luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
@@ -132,6 +131,12 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
     s_curr_transaction_id = get_req->transaction_id;
 
     NRF_LOG_INFO("Luos RTB GET request received!");
+
+    if ((instance->local_rtb_entries_get_cb) == NULL)
+    {
+        NRF_LOG_INFO("No callback to retrieve local RTB entries: leaving!");
+        return;
+    }
 }
 
 static void luos_rtb_model_status_cb(access_model_handle_t handle,
