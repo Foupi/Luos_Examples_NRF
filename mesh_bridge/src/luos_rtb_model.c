@@ -20,6 +20,11 @@
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 
+/*      STATIC VARIABLES & CONSTANTS                                */
+
+// Index of the current transaction
+uint16_t                                s_curr_transaction_id               = 0;
+
 /*      CALLBACKS                                                   */
 
 // FIXME Manage a Luos RTB model GET request.
@@ -84,11 +89,17 @@ void luos_rtb_model_get(luos_rtb_model_t* instance)
     ret_code_t          err_code;
     access_opcode_t     get_opcode  = LUOS_RTB_MODEL_GET_ACCESS_OPCODE;
 
+    s_curr_transaction_id++;
+
+    luos_rtb_get_t      get_msg;
+    memset(&get_msg, 0, sizeof(luos_rtb_get_t));
+    get_msg.transaction_id  = s_curr_transaction_id;
+
     access_message_tx_t get_req;
     memset(&get_req, 0, sizeof(access_message_tx_t));
     get_req.opcode          = get_opcode;
-    get_req.p_buffer        = /* FIXME */ NULL;
-    get_req.length          = /* FIXME */ 0;
+    get_req.p_buffer        = (uint8_t*)(&get_msg);
+    get_req.length          = sizeof(luos_rtb_get_t);
     get_req.transmic_size   = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
     get_req.access_token    = nrf_mesh_unique_token_get();
 
@@ -106,8 +117,19 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
     if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
         || src_addr == instance->element_address)
     {
+        // Either model is not ready, or this is a localhost message.
         return;
     }
+
+    luos_rtb_get_t*     get_req     = (luos_rtb_get_t*)(msg->p_data);
+
+    if (get_req->transaction_id <= s_curr_transaction_id)
+    {
+        // Transaction either already occured or is currently occuring.
+        return;
+    }
+
+    s_curr_transaction_id = get_req->transaction_id;
 
     NRF_LOG_INFO("Luos RTB GET request received!");
 }

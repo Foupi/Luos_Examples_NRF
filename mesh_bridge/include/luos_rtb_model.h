@@ -34,6 +34,14 @@ struct luos_rtb_model_s
 
 };
 
+// Payload type for a Luos RTB model GET message.
+typedef struct
+{
+    // Current transaction index.
+    uint16_t    transaction_id;
+
+} luos_rtb_get_t;
+
 // Initialize the given instance with the given parameters.
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params);
