@@ -8,6 +8,10 @@
 // MESH MODELS
 #include "config_server_events.h"   // config_server_evt_t
 
+// LUOS
+#include "luos_list.h"              // FIXME VOID_MOD
+#include "routing_table.h"          // routing_table_t
+
 // CUSTOM
 #include "luos_mesh_common.h"       // _mesh_init
 #include "luos_rtb_model.h"         // luos_rtb_model_*
@@ -27,6 +31,10 @@ static void config_server_event_cb(const config_server_evt_t* event);
 
 // Initialize the Luos RTB model present on the node.
 static void models_init_cb(void);
+
+// FIXME Fills the table with one hardcoded RTB entry.
+static bool get_rtb_entries(routing_table_t* rtb_entries,
+                            uint16_t* nb_entries);
 
 void mesh_init(void)
 {
@@ -63,7 +71,27 @@ static void models_init_cb(void)
 {
     luos_rtb_model_init_params_t    init_params;
     memset(&init_params, 0, sizeof(luos_rtb_model_init_params_t));
+    init_params.local_rtb_entries_get_cb    = get_rtb_entries;
     // FIXME Fill parameters.
 
     luos_rtb_model_init(&s_luos_rtb_model, &init_params);
+}
+
+static const char   STUB_ENTRY_ALIAS[]  = "coucou";
+
+static bool get_rtb_entries(routing_table_t* rtb_entries,
+                            uint16_t* nb_entries)
+{
+    // FIXME Stub function!
+
+    routing_table_t entry;
+    memset(&entry, 0, sizeof(routing_table_t));
+    entry.mode  = CONTAINER;
+    entry.id    = 1;
+    entry.type  = VOID_MOD;
+    memcpy(entry.alias, STUB_ENTRY_ALIAS, sizeof(STUB_ENTRY_ALIAS));
+
+    memcpy(rtb_entries, &entry, sizeof(routing_table_t));
+    *nb_entries = 1;
+    return true;
 }

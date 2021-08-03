@@ -17,6 +17,9 @@
 #include "access_config.h"          // access_model_subscription_list_alloc
 #include "nrf_mesh.h"               // NRF_MESH_TRANSMIC_SIZE_DEFAULT
 
+// LUOS
+#include "routing_table.h"          // routing_table_t
+
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 
@@ -136,6 +139,31 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
     {
         NRF_LOG_INFO("No callback to retrieve local RTB entries: leaving!");
         return;
+    }
+
+    routing_table_t     local_rtb_entries[LUOS_RTB_MODEL_MAX_RTB_ENTRY];
+    uint16_t            nb_local_entries;
+    bool                detection_complete;
+
+    memset(local_rtb_entries, 0, LUOS_RTB_MODEL_MAX_RTB_ENTRY * sizeof(routing_table_t));
+
+    detection_complete  = instance->local_rtb_entries_get_cb(local_rtb_entries,
+        &nb_local_entries);
+    if (!detection_complete)
+    {
+        NRF_LOG_INFO("Local RTB cannot be retrieved: detection not complete!");
+    }
+
+    for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
+         entry_idx++)
+    {
+        // FIXME Send entry as STATUS message.
+
+        routing_table_t entry = local_rtb_entries[entry_idx];
+
+        NRF_LOG_INFO("Entry %u: ID = 0x%x, type = %s, alias = %s!",
+                     entry_idx, entry.id, RoutingTB_StringFromType(entry.type),
+                     entry.alias);
     }
 }
 
