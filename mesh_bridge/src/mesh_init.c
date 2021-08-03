@@ -2,6 +2,9 @@
 
 /*      INCLUDES                                                    */
 
+// NRF
+#include "nrf_log.h"                // NRF_LOG_INFO
+
 // MESH MODELS
 #include "config_server_events.h"   // config_server_evt_t
 
@@ -38,11 +41,16 @@ void mesh_rtb_get(void)
 
 static void config_server_event_cb(const config_server_evt_t* event)
 {
-    if (event->type == CONFIG_SERVER_EVT_NODE_RESET)
+    switch (event->type)
     {
+    case CONFIG_SERVER_EVT_NODE_RESET:
         // FIXME Erase persistent data.
 
         // FIXME Reset board.
+        break;
+
+    default:
+        break;
     }
 }
 

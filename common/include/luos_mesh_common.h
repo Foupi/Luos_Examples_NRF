@@ -27,7 +27,7 @@
 #define ACCESS_COMPANY_ID_LUOS                      0xCAFE
 
 // Group address for Luos models communication.
-#define LUOS_GROUP_ADDRESS                          0x0030
+#define LUOS_GROUP_ADDRESS                          0xF00D
 
 /* Initializes the Mesh stack with predefined parameters and the given
 ** callbacks, and describes in the given boolean if the device is
