@@ -19,6 +19,9 @@
 // Forward declaration
 typedef struct luos_rtb_model_s luos_rtb_model_t;
 
+// Callback called on GET request.
+typedef void (*luos_rtb_model_get_cb_t)(void);
+
 /* Callback called on GET request to get local RTB entries.
 ** Returns true and updates parameters with local RTB information if the
 ** detection process is complete, returns false otherwise.
@@ -26,13 +29,21 @@ typedef struct luos_rtb_model_s luos_rtb_model_t;
 typedef bool (*luos_rtb_model_get_rtb_entries_cb_t)(routing_table_t* rtb_entries,
                 uint16_t* nb_entries);
 
+// Callback called on STATUS message.
+typedef void (*luos_rtb_model_status_cb_t)(uint16_t src_addr,
+    const routing_table_t* entry, uint16_t entry_idx);
+
 // Parameters to initialize a Luos RTB model instance.
 typedef struct
 {
+    // User callback called on GET request.
+    luos_rtb_model_get_cb_t             get_cb;
+
     // Callback to retrieve local RTB entries on GET request.
     luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
 
-    // FIXME Fields necessary for the instance initialization.
+    // User callback called on STATUS message.
+    luos_rtb_model_status_cb_t          status_cb;
 
 } luos_rtb_model_init_params_t;
 
@@ -45,11 +56,14 @@ struct luos_rtb_model_s
     // Unicast address of the element hosting the model instance.
     uint16_t                            element_address;
 
+    // User callback called on GET request.
+    luos_rtb_model_get_cb_t             get_cb;
+
     // Callback to retrieve local RTB entries on GET request.
     luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
 
-    // FIXME Fields necessary for the model's good behaviour.
-
+    // User callback called on STATUS message.
+    luos_rtb_model_status_cb_t          status_cb;
 };
 
 // Payload type for a Luos RTB model GET message.
