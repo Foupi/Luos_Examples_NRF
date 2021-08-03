@@ -28,6 +28,13 @@
 // Index of the current transaction
 uint16_t                                s_curr_transaction_id               = 0;
 
+/*      STATIC FUNCTIONS                                            */
+
+// Reply the given status to the given message using the given instance.
+static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
+    const access_message_rx_t* msg,
+    const luos_rtb_model_status_t* reply_status);
+
 /*      CALLBACKS                                                   */
 
 // FIXME Manage a Luos RTB model GET request.
@@ -93,19 +100,38 @@ void luos_rtb_model_get(luos_rtb_model_t* instance)
 
     s_curr_transaction_id++;
 
-    luos_rtb_get_t      get_msg;
-    memset(&get_msg, 0, sizeof(luos_rtb_get_t));
+    luos_rtb_model_get_t      get_msg;
+    memset(&get_msg, 0, sizeof(luos_rtb_model_get_t));
     get_msg.transaction_id  = s_curr_transaction_id;
 
     access_message_tx_t get_req;
     memset(&get_req, 0, sizeof(access_message_tx_t));
     get_req.opcode          = get_opcode;
     get_req.p_buffer        = (uint8_t*)(&get_msg);
-    get_req.length          = sizeof(luos_rtb_get_t);
+    get_req.length          = sizeof(luos_rtb_model_get_t);
     get_req.transmic_size   = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
     get_req.access_token    = nrf_mesh_unique_token_get();
 
     err_code = access_model_publish(instance->handle, &get_req);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
+    const access_message_rx_t* msg,
+    const luos_rtb_model_status_t* reply_status)
+{
+    ret_code_t          err_code;
+    access_opcode_t     status_opcode   = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
+
+    access_message_tx_t reply_msg;
+    memset(&reply_msg, 0, sizeof(access_message_tx_t));
+    reply_msg.opcode        = status_opcode;
+    reply_msg.p_buffer      = (uint8_t*)reply_status;
+    reply_msg.length        = sizeof(luos_rtb_model_status_t);
+    reply_msg.transmic_size = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
+    reply_msg.access_token  = nrf_mesh_unique_token_get();
+
+    err_code = access_model_reply(instance->handle, msg, &reply_msg);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -123,7 +149,7 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
         return;
     }
 
-    luos_rtb_get_t*     get_req     = (luos_rtb_get_t*)(msg->p_data);
+    luos_rtb_model_get_t*     get_req     = (luos_rtb_model_get_t*)(msg->p_data);
 
     if (get_req->transaction_id <= s_curr_transaction_id)
     {
@@ -164,6 +190,14 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
         NRF_LOG_INFO("Entry %u: ID = 0x%x, type = %s, alias = %s!",
                      entry_idx, entry.id, RoutingTB_StringFromType(entry.type),
                      entry.alias);
+
+        luos_rtb_model_status_t reply_status;
+        memset(&reply_status, 0, sizeof(reply_status));
+        reply_status.transaction_id = s_curr_transaction_id;
+        reply_status.entry_idx      = entry_idx;
+        memcpy(&(reply_status.entry), &entry, sizeof(routing_table_t));
+
+        luos_rtb_model_reply_entry(instance, msg, &reply_status);
     }
 }
 
