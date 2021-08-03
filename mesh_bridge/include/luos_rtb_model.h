@@ -6,6 +6,11 @@
 // MESH SDK
 #include "access.h" // access_model_handle_t
 
+/*      DEFINES                                                     */
+
+// Default element address.
+#define LUOS_RTB_MODEL_DEFAULT_ELM_ADDR 0xFFFF
+
 /*      TYPEDEFS                                                    */
 
 typedef struct luos_rtb_model_s luos_rtb_model_t;
@@ -22,6 +27,9 @@ struct luos_rtb_model_s
     // Handle for the model instance.
     access_model_handle_t   handle;
 
+    // Unicast address of the element hosting the model instance.
+    uint16_t                element_address;
+
     // FIXME Fields necessary for the model's good behaviour.
 
 };
@@ -29,6 +37,12 @@ struct luos_rtb_model_s
 // Initialize the given instance with the given parameters.
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params);
+
+/* Sets the given instance's element address according to the given
+** device address.
+*/
+void luos_rtb_model_set_address(luos_rtb_model_t* instance,
+                                uint16_t device_address);
 
 // Sends a Luos RTB GET request through the given model instance.
 void luos_rtb_model_get(luos_rtb_model_t* instance);

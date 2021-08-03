@@ -50,6 +50,11 @@ static const access_opcode_handler_t    LUOS_RTB_MODEL_OPCODE_HANDLERS[]    =
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params)
 {
+    // FIXME Set instance parameters.
+
+    memset(instance, 0, sizeof(luos_rtb_model_t));
+    instance->element_address   = LUOS_RTB_MODEL_DEFAULT_ELM_ADDR;
+
     ret_code_t                  err_code;
     access_model_id_t           luos_rtb_model_id   = LUOS_RTB_MODEL_ACCESS_ID;
 
@@ -66,6 +71,12 @@ void luos_rtb_model_init(luos_rtb_model_t* instance,
 
     err_code = access_model_subscription_list_alloc(instance->handle);
     APP_ERROR_CHECK(err_code);
+}
+
+void luos_rtb_model_set_address(luos_rtb_model_t* instance,
+                                uint16_t device_address)
+{
+    instance->element_address = device_address + LUOS_RTB_MODEL_ELM_IDX;
 }
 
 void luos_rtb_model_get(luos_rtb_model_t* instance)
@@ -89,6 +100,15 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
                                   const access_message_rx_t* msg,
                                   void* arg)
 {
+    luos_rtb_model_t*   instance    = (luos_rtb_model_t*)arg;
+    uint16_t            src_addr    = msg->meta_data.src.value;
+
+    if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
+        || src_addr == instance->element_address)
+    {
+        return;
+    }
+
     NRF_LOG_INFO("Luos RTB GET request received!");
 }
 
@@ -96,5 +116,14 @@ static void luos_rtb_model_status_cb(access_model_handle_t handle,
                                      const access_message_rx_t* msg,
                                      void* arg)
 {
+    luos_rtb_model_t*   instance    = (luos_rtb_model_t*)arg;
+    uint16_t            src_addr    = msg->meta_data.src.value;
+
+    if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
+        || src_addr == instance->element_address)
+    {
+        return;
+    }
+
     NRF_LOG_INFO("Luos RTB STATUS message received!");
 }

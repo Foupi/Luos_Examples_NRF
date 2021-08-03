@@ -34,6 +34,11 @@ void mesh_init(void)
                &g_device_provisioned);
 }
 
+void mesh_models_set_addresses(uint16_t device_address)
+{
+    luos_rtb_model_set_address(&s_luos_rtb_model, device_address);
+}
+
 void mesh_rtb_get(void)
 {
     luos_rtb_model_get(&s_luos_rtb_model);

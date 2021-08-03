@@ -21,7 +21,9 @@
 
 // CUSTOM
 #include "luos_mesh_common.h"       // _provisioning_init
-#include "mesh_init.h"              // g_device_provisioned
+#include "mesh_init.h"              /* g_device_provisioned,
+                                    ** mesh_models_set_addresses
+                                    */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -121,6 +123,8 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         err_code = mesh_stack_provisioning_data_store(prov_data,
                                                       device_key);
         APP_ERROR_CHECK(err_code);
+
+        mesh_models_set_addresses(prov_data->address);
 
         // Device is now provisioned.
         g_device_provisioned = true;
