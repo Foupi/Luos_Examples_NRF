@@ -1,5 +1,5 @@
-if ( NOT CONTAINERS_PATH )
-    message( STATUS "Path to Luos containers not set!" )
+if ( NOT LUOS_MESH_MODELS_PATH )
+    message( STATUS "Path to Luos Mesh models not set!" )
     return()
 endif ()
 
@@ -8,35 +8,21 @@ if ( NOT CONTAINERS_COMMON_PATH )
     return()
 endif ()
 
-set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
+set( LUOS_RTB_MODEL_PATH "${LUOS_MESH_MODELS_PATH}/luos_rtb_model" )
 
-add_library( mesh_bridge
-    "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
-
-    "${MESH_BRIDGE_PATH}/src/mesh_init.c"
-    "${MESH_BRIDGE_PATH}/src/provisioning.c"
-
-    "${CONTAINERS_COMMON_PATH}/src/luos_mesh_common.c"
+add_library( luos_rtb_model
+    "${LUOS_RTB_MODEL_PATH}/src/luos_rtb_model.c"
 
     ${MESH_CORE_SOURCE_FILES}
-    ${MESH_BEARER_SOURCE_FILES}
-    ${PROV_COMMON_SOURCE_FILES}
-    ${PROV_PROVISIONEE_SOURCE_FILES}
-    ${PROV_PROVISIONER_SOURCE_FILES}    # prov_provisioner_auth_data
-    ${PROV_BEARER_ADV_SOURCE_FILES}
     ${ACCESS_SOURCE_FILES}
-    ${DFU_SOURCE_FILES}
-    ${MESH_STACK_SOURCE_FILES}
     ${CONFIG_SERVER_SOURCE_FILES}
     ${HEALTH_SERVER_SOURCE_FILES}
-    ${MESH_APP_TIMER_SOURCE_FILES}
     ${${PLATFORM}_SOURCE_FILES}
     ${${nRF5_SDK_VERSION}_SOURCE_FILES}
 )
 
-target_include_directories( mesh_bridge PUBLIC
-    "${MESH_BRIDGE_PATH}/include"
-
+target_include_directories( luos_rtb_model PUBLIC
+    "${LUOS_RTB_MODEL_PATH}/include"
     "${CONTAINERS_COMMON_PATH}/include"
 
     ${MESH_INCLUDE_DIRS}
@@ -57,12 +43,9 @@ add_compile_definitions(
     CONFIG_APP_IN_CORE
 )
 
-target_link_libraries( mesh_bridge PUBLIC
+target_link_libraries( luos_rtb_model PUBLIC
     #Luos
     luos
-
-    #Models
-    luos_rtb_model
 
     # NRF
     # External

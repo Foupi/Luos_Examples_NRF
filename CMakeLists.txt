@@ -4,6 +4,9 @@ if ( NOT CONTAINERS_PATH )
 endif ()
 
 set( CONTAINERS_COMMON_PATH "${CONTAINERS_PATH}/common" )
+set( LUOS_MESH_MODELS_PATH  "${CONTAINERS_COMMON_PATH}/mesh_models" )
+
+add_subdirectory("common/mesh_models")
 
 add_subdirectory("rtb_builder")
 
