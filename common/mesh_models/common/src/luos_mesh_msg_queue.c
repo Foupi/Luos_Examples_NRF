@@ -6,9 +6,6 @@
 #include <stdbool.h>        // bool
 #include <string.h>         // memcpy
 
-// MESH SDK
-#include "access.h"         // access_*
-
 // CUSTOM
 #include "luos_rtb_model.h" // luos_rtb_model_*
 

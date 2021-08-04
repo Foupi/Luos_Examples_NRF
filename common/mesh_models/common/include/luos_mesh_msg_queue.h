@@ -7,7 +7,7 @@
 #include <stdbool.h>        // bool
 
 // MESH SDK
-#include "access.h"         // access_message_rx_t
+#include "access.h"         // access_*
 
 // CUSTOM
 #include "luos_rtb_model.h" // luos_rtb_model_*
@@ -72,6 +72,8 @@ typedef struct
 {
     // Corresponding model.
     tx_queue_elm_model_t    model;
+
+    access_model_handle_t   model_handle;
 
     // Union of model messages.
     union
