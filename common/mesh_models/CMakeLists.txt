@@ -3,4 +3,6 @@ if ( NOT LUOS_MESH_MODELS_PATH )
     return()
 endif ()
 
+set( LUOS_MESH_MODELS_COMMON_PATH   "${LUOS_MESH_MODELS_PATH}/common" )
+
 add_subdirectory("luos_rtb_model")

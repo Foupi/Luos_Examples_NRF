@@ -173,6 +173,7 @@ static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
     reply_msg.access_token  = nrf_mesh_unique_token_get();
 
     err_code = access_model_reply(instance->handle, msg, &reply_msg);
+    NRF_LOG_INFO("Reply error code: 0x%x!", err_code);
     APP_ERROR_CHECK(err_code);
 }
 

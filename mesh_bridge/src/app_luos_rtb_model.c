@@ -61,22 +61,31 @@ static void rtb_model_get_cb(void)
     NRF_LOG_INFO("Luos RTB GET request received!");
 }
 
-static const char   STUB_ENTRY_ALIAS[]  = "coucou";
+static const char   STUB_ENTRY1_ALIAS[] = "coucou";
+static const char   STUB_ENTRY2_ALIAS[] = "Pierre";
 
 static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries)
 {
     // FIXME Stub function!
 
-    routing_table_t entry;
-    memset(&entry, 0, sizeof(routing_table_t));
-    entry.mode  = CONTAINER;
-    entry.id    = 1;
-    entry.type  = VOID_MOD;
-    memcpy(entry.alias, STUB_ENTRY_ALIAS, sizeof(STUB_ENTRY_ALIAS));
+    routing_table_t entry_1;
+    memset(&entry_1, 0, sizeof(routing_table_t));
+    entry_1.mode  = CONTAINER;
+    entry_1.id    = 1;
+    entry_1.type  = VOID_MOD;
+    memcpy(entry_1.alias, STUB_ENTRY1_ALIAS, sizeof(STUB_ENTRY1_ALIAS));
+    memcpy(rtb_entries, &entry_1, sizeof(routing_table_t));
 
-    memcpy(rtb_entries, &entry, sizeof(routing_table_t));
-    *nb_entries = 1;
+    routing_table_t entry_2;
+    memset(&entry_2, 0, sizeof(routing_table_t));
+    entry_2.mode  = CONTAINER;
+    entry_2.id    = 8;
+    entry_2.type  = VOID_MOD;
+    memcpy(entry_2.alias, STUB_ENTRY2_ALIAS, sizeof(STUB_ENTRY2_ALIAS));
+    memcpy(rtb_entries + 1, &entry_2, sizeof(routing_table_t));
+
+    *nb_entries = 2;
     return true;
 }
 

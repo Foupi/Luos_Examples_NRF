@@ -8,6 +8,7 @@
 // CUSTOM
 #include "app_luos_rtb_model.h"     // app_luos_rtb_model_*
 #include "luos_mesh_common.h"       // _mesh_init
+#include "mesh_msg_queue_manager.h" // luos_mesh_msg_queue_manager_init
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -26,6 +27,8 @@ void mesh_init(void)
 {
     _mesh_init(config_server_event_cb, models_init_cb,
                &g_device_provisioned);
+
+    luos_mesh_msg_queue_manager_init();
 }
 
 void mesh_models_set_addresses(uint16_t device_address)
