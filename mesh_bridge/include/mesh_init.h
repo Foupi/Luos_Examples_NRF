@@ -15,9 +15,6 @@ void mesh_init(void);
 */
 void mesh_models_set_addresses(uint16_t device_address);
 
-// Sends a RTB GET request to remote devices.
-void mesh_rtb_get(void);
-
 // Describes if the device is provisioned.
 extern bool g_device_provisioned;
 

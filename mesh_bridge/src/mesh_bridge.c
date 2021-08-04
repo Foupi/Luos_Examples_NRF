@@ -14,6 +14,7 @@
                                 */
 
 // CUSTOM
+#include "app_luos_rtb_model.h" // app_luos_rtb_model_get
 #include "luos_mesh_common.h"   // mesh_start
 #include "mesh_init.h"          // mesh_init
 #include "provisioning.h"       /* provisioning_init,
@@ -65,7 +66,7 @@ void MeshBridge_Loop(void)
 {
     if (g_rtb_get_asked)
     {
-        mesh_rtb_get();
+        app_luos_rtb_model_get();
 
         g_rtb_get_asked = false;
     }
