@@ -101,4 +101,11 @@ void luos_rtb_model_set_address(luos_rtb_model_t* instance,
 // Sends a Luos RTB GET request through the given model instance.
 void luos_rtb_model_get(luos_rtb_model_t* instance);
 
+/* Publishes the given RTB entries on the given instance's publish
+** address.
+*/
+void luos_rtb_model_publish_entries(luos_rtb_model_t* instance,
+                                    const routing_table_t* entries,
+                                    uint16_t nb_entries);
+
 #endif /* ! LUOS_RTB_MODEL_H */

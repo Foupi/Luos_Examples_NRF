@@ -35,6 +35,10 @@ static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
     const access_message_rx_t* msg,
     const luos_rtb_model_status_t* reply_status);
 
+// Publishes the given status using the given instance.
+static void luos_rtb_model_publish_entry(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status);
+
 /*      CALLBACKS                                                   */
 
 // Manage a Luos RTB model GET request.
@@ -118,6 +122,41 @@ void luos_rtb_model_get(luos_rtb_model_t* instance)
     APP_ERROR_CHECK(err_code);
 }
 
+void luos_rtb_model_publish_entries(luos_rtb_model_t* instance,
+                                    const routing_table_t* entries,
+                                    uint16_t nb_entries)
+{
+    for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
+    {
+        luos_rtb_model_status_t publish_status;
+        memset(&publish_status, 0, sizeof(luos_rtb_model_status_t));
+        publish_status.transaction_id   = s_curr_transaction_id;
+        publish_status.entry_idx        = entry_idx;
+        memcpy(&(publish_status.entry), entries + entry_idx,
+               sizeof(routing_table_t));
+
+        luos_rtb_model_publish_entry(instance, &publish_status);
+    }
+}
+
+static void luos_rtb_model_publish_entry(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status)
+{
+    ret_code_t          err_code;
+    access_opcode_t     status_opcode   = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
+
+    access_message_tx_t published_msg;
+    memset(&published_msg, 0, sizeof(access_message_tx_t));
+    published_msg.opcode        = status_opcode;
+    published_msg.p_buffer      = (uint8_t*)(status);
+    published_msg.length        = sizeof(luos_rtb_model_status_t);
+    published_msg.transmic_size = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
+    published_msg.access_token  = nrf_mesh_unique_token_get();
+
+    err_code = access_model_publish(instance->handle, &published_msg);
+    APP_ERROR_CHECK(err_code);
+}
+
 static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
     const access_message_rx_t* msg,
     const luos_rtb_model_status_t* reply_status)
@@ -195,13 +234,12 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
     for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
          entry_idx++)
     {
-        routing_table_t         entry   = local_rtb_entries[entry_idx];
-
         luos_rtb_model_status_t reply_status;
         memset(&reply_status, 0, sizeof(reply_status));
         reply_status.transaction_id = s_curr_transaction_id;
         reply_status.entry_idx      = entry_idx;
-        memcpy(&(reply_status.entry), &entry, sizeof(routing_table_t));
+        memcpy(&(reply_status.entry), local_rtb_entries + entry_idx,
+               sizeof(routing_table_t));
 
         luos_rtb_model_reply_entry(instance, msg, &reply_status);
     }

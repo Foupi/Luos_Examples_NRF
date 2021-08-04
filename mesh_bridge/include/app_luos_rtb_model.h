@@ -6,7 +6,6 @@
 // C STANDARD
 #include <stdint.h> // uint16_t
 
-
 /* Initializes the internal Luos RTB model instance with predefined
 ** callbacks.
 */
