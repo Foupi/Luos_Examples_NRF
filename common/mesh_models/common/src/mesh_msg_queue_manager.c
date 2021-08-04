@@ -14,6 +14,7 @@
 
 // MESH SDK
 #include "access.h"                 // access_*
+#include "nrf_mesh_events.h"        // nrf_mesh_evt_*
 #include "nrf_mesh.h"               // NRF_MESH_TRANSMIC_SIZE_DEFAULT
 
 // CUSTOM
@@ -24,7 +25,10 @@
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if a message can be sent.
-static bool s_is_possible_to_send   = true;
+static bool                 s_is_possible_to_send   = true;
+
+// Token of the currently sent message.
+static nrf_mesh_tx_token_t  s_curr_tx_token         = 0x0000;
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -37,11 +41,19 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
 /*      CALLBACKS                                                   */
 
+// Toggles the send boolean and tries to pop the next message.
+static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event);
+
 /*      INITIALIZATIONS                                             */
+
+static nrf_mesh_evt_handler_t   mesh_tx_complete_event_handler  =
+{
+    .evt_cb = mesh_tx_complete_event_cb,
+};
 
 void luos_mesh_msg_queue_manager_init(void)
 {
-
+    nrf_mesh_evt_handler_add(&mesh_tx_complete_event_handler);
 }
 
 void luos_mesh_msg_prepare(const tx_queue_elm_t* message)
@@ -83,6 +95,11 @@ static void send_mesh_msg(void)
         // Unknown type.
         return;
     }
+
+    luos_mesh_msg_queue_pop();
+    s_curr_tx_token = message.access_token;
+
+    NRF_LOG_INFO("Message sent: current token is 0x%x!", s_curr_tx_token);
 
     s_is_possible_to_send = false;
 }
@@ -139,6 +156,32 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
     default:
         // Unknown command.
+        return;
+    }
+}
+
+static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
+{
+    nrf_mesh_tx_token_t token;
+
+    switch (event->type)
+    {
+    case NRF_MESH_EVT_TX_COMPLETE:
+        token = event->params.tx_complete.token;
+
+        if (token == s_curr_tx_token)
+        {
+            NRF_LOG_INFO("Transmission complete for token 0x%x!", token);
+
+            s_is_possible_to_send = true;
+            send_mesh_msg();
+
+            s_curr_tx_token = 0x0000;
+        }
+
+        break;
+
+    default:
         return;
     }
 }

@@ -142,19 +142,20 @@ void luos_rtb_model_publish_entries(luos_rtb_model_t* instance,
 static void luos_rtb_model_publish_entry(luos_rtb_model_t* instance,
     const luos_rtb_model_status_t* status)
 {
-    ret_code_t          err_code;
-    access_opcode_t     status_opcode   = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
+    tx_queue_luos_rtb_model_elm_t   rtb_model_msg;
+    memset(&rtb_model_msg, 0, sizeof(tx_queue_luos_rtb_model_elm_t));
+    rtb_model_msg.cmd       = TX_QUEUE_CMD_STATUS;
+    memcpy(&(rtb_model_msg.content.status), status,
+           sizeof(luos_rtb_model_status_t));
 
-    access_message_tx_t published_msg;
-    memset(&published_msg, 0, sizeof(access_message_tx_t));
-    published_msg.opcode        = status_opcode;
-    published_msg.p_buffer      = (uint8_t*)(status);
-    published_msg.length        = sizeof(luos_rtb_model_status_t);
-    published_msg.transmic_size = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
-    published_msg.access_token  = nrf_mesh_unique_token_get();
+    tx_queue_elm_t                  new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model           = TX_QUEUE_MODEL_LUOS_RTB;
+    new_msg.model_handle    = instance->handle;
+    memcpy(&(new_msg.content.luos_rtb_model_msg), &rtb_model_msg,
+           sizeof(tx_queue_luos_rtb_model_elm_t));
 
-    err_code = access_model_publish(instance->handle, &published_msg);
-    APP_ERROR_CHECK(err_code);
+    luos_mesh_msg_prepare(&new_msg);
 }
 
 static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
@@ -169,7 +170,7 @@ static void luos_rtb_model_reply_entry(luos_rtb_model_t* instance,
     memcpy(&(rtb_model_msg.content.status_reply.status), reply_status,
            sizeof(luos_rtb_model_status_t));
 
-    tx_queue_elm_t  new_msg;
+    tx_queue_elm_t                  new_msg;
     memset(&new_msg, 0, sizeof(tx_queue_elm_t));
     new_msg.model           = TX_QUEUE_MODEL_LUOS_RTB;
     new_msg.model_handle    = instance->handle;
