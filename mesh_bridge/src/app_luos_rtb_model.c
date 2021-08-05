@@ -56,12 +56,16 @@ static luos_rtb_model_t s_luos_rtb_model;
 APP_TIMER_DEF(s_entries_reception_timer);
 
 // Delay to wait for first RTB entry.
-#define                 WAIT_FIRST_ENTRY_DELAY_MS       1000
-static const uint32_t   WAIT_FIRST_ENTRY_DELAY_TICKS    = APP_TIMER_TICKS(WAIT_FIRST_ENTRY_DELAY_MS);
+#define                 WAIT_FIRST_ENTRY_DELAY_MS           2000
+static const uint32_t   WAIT_FIRST_ENTRY_DELAY_TICKS        = APP_TIMER_TICKS(WAIT_FIRST_ENTRY_DELAY_MS);
 
-// Delay to wait for next RTB entry.
-#define                 WAIT_NEXT_ENTRY_DELAY_MS        500
-static const uint32_t   WAIT_NEXT_ENTRY_DELAY_TICKS     = APP_TIMER_TICKS(WAIT_NEXT_ENTRY_DELAY_MS);
+// Delay to wait for next replied RTB entry.
+#define                 WAIT_NEXT_ENTRY_REPLY_DELAY_MS      500
+static const uint32_t   WAIT_NEXT_ENTRY_REPLY_DELAY_TICKS   = APP_TIMER_TICKS(WAIT_NEXT_ENTRY_REPLY_DELAY_MS);
+
+// Delay to wait for next published RTB entry.
+#define                 WAIT_NEXT_ENTRY_PUBLISH_DELAY_MS    4000    // FIXME Publication takes a very long time...
+static const uint32_t   WAIT_NEXT_ENTRY_PUBLISH_DELAY_TICKS = APP_TIMER_TICKS(WAIT_NEXT_ENTRY_PUBLISH_DELAY_MS);
 
 static struct
 {
@@ -137,6 +141,8 @@ void app_luos_rtb_model_get(void)
 static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries)
 {
+    ret_code_t          err_code;
+
     uint16_t            local_nb_entries    = RoutingTB_GetLastEntry();
     if (local_nb_entries == 0)
     {
@@ -171,12 +177,16 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     // FIXME Create callback for end of RTB entries enqueuing?
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_REPLYING)
     {
-        NRF_LOG_INFO("Switch to RECEIVING mode!");
+        NRF_LOG_INFO("Replied with local RTB: switch to RECEIVING mode!");
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_RECEIVING;
+
+        err_code = app_timer_start(s_entries_reception_timer,
+                                   WAIT_FIRST_ENTRY_DELAY_TICKS, NULL);
+        APP_ERROR_CHECK(err_code);
     }
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
     {
-        NRF_LOG_INFO("Ext-RTB procedure complete: switch back to IDLE mode!");
+        NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
     }
 
@@ -215,8 +225,18 @@ static void rtb_model_status_cb(uint16_t src_addr,
                  src_addr, entry_idx, entry->id,
                  RoutingTB_StringFromType(entry->type), entry->alias);
 
-    err_code = app_timer_start(s_entries_reception_timer,
-                               WAIT_NEXT_ENTRY_DELAY_TICKS, NULL);
+    if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_GETTING)
+    {
+        err_code = app_timer_start(s_entries_reception_timer,
+                                   WAIT_NEXT_ENTRY_REPLY_DELAY_TICKS,
+                                   NULL);
+    }
+    else
+    {
+        err_code = app_timer_start(s_entries_reception_timer,
+                                   WAIT_NEXT_ENTRY_PUBLISH_DELAY_TICKS,
+                                   NULL);
+    }
     APP_ERROR_CHECK(err_code);
 }
 
@@ -227,7 +247,23 @@ static void entries_reception_timeout_cb(void* context)
         NRF_LOG_INFO("Reception timeout for remote nodes entries: switch to PUBLISHING mode!");
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_PUBLISHING;
 
-        // FIXME Publish RTB.
+        routing_table_t local_rtb_entries[LUOS_RTB_MODEL_MAX_RTB_ENTRY];
+        uint16_t        nb_local_entries;
+        bool            detection_complete;
+
+        memset(local_rtb_entries, 0, LUOS_RTB_MODEL_MAX_RTB_ENTRY * sizeof(routing_table_t));
+
+        detection_complete = get_rtb_entries(local_rtb_entries,
+                                             &nb_local_entries);
+        if (!detection_complete)
+        {
+            NRF_LOG_INFO("Local RTB cannot be retrieved: detection not complete!");
+            return;
+        }
+
+        luos_rtb_model_publish_entries(&s_luos_rtb_model,
+                                       local_rtb_entries,
+                                       nb_local_entries);
     }
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
     {
