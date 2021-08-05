@@ -3,32 +3,35 @@
 /*      INCLUDES                                                    */
 
 // NRF
-#include "nrf_log.h"        // NRF_LOG_INFO
+#include "nrf_log.h"                // NRF_LOG_INFO
 
 // C STANDARD
-#include <stdint.h>         // uint16_t
-#include <string.h>         // memset
+#include <stdint.h>                 // uint16_t
+#include <string.h>                 // memset
 
 // LUOS
-#include "luos_list.h"      // FIXME VOID_MOD
-#include "routing_table.h"  // routing_table_t
+#include "luos_list.h"              // FIXME VOID_MOD
+#include "routing_table.h"          // routing_table_t
 
 // CUSTOM
-#include "luos_rtb_model.h" // luos_rtb_model_*
+#include "luos_rtb_model.h"         // luos_rtb_model_*
+#include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Luos RTB model instance.
 static luos_rtb_model_t s_luos_rtb_model;
 
+/*      STATIC FUNCTIONS                                            */
+
+// FIXME Retrieves local RTB and stores it in the given arguments.
+static bool get_rtb_entries(routing_table_t* rtb_entries,
+                            uint16_t* nb_entries);
+
 /*      CALLBACKS                                                   */
 
 // FIXME Logs message.
 static void rtb_model_get_cb(void);
-
-// FIXME Fills the table with one hardcoded RTB entry.
-static bool get_rtb_entries(routing_table_t* rtb_entries,
-                            uint16_t* nb_entries);
 
 // FIXME Logs message.
 static void rtb_model_status_cb(uint16_t src_addr,
@@ -61,31 +64,39 @@ static void rtb_model_get_cb(void)
     NRF_LOG_INFO("Luos RTB GET request received!");
 }
 
-static const char   STUB_ENTRY1_ALIAS[] = "coucou";
-static const char   STUB_ENTRY2_ALIAS[] = "Pierre";
-
 static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries)
 {
-    // FIXME Stub function!
+    uint16_t            local_nb_entries    = RoutingTB_GetLastEntry();
+    if (local_nb_entries == 0)
+    {
+        // Local routing table is empty: detection was not performed.
+        return false;
+    }
 
-    routing_table_t entry_1;
-    memset(&entry_1, 0, sizeof(routing_table_t));
-    entry_1.mode  = CONTAINER;
-    entry_1.id    = 1;
-    entry_1.type  = VOID_MOD;
-    memcpy(entry_1.alias, STUB_ENTRY1_ALIAS, sizeof(STUB_ENTRY1_ALIAS));
-    memcpy(rtb_entries, &entry_1, sizeof(routing_table_t));
+    routing_table_t*    local_rtb           = RoutingTB_Get();
+    uint16_t            returned_nb_entries = 0;
+    for (uint16_t entry_idx = 0; entry_idx < local_nb_entries;
+         entry_idx++)
+    {
+        if (local_rtb[entry_idx].mode != CONTAINER)
+        {
+            // Only export containers.
+            continue;
+        }
 
-    routing_table_t entry_2;
-    memset(&entry_2, 0, sizeof(routing_table_t));
-    entry_2.mode  = CONTAINER;
-    entry_2.id    = 8;
-    entry_2.type  = VOID_MOD;
-    memcpy(entry_2.alias, STUB_ENTRY2_ALIAS, sizeof(STUB_ENTRY2_ALIAS));
-    memcpy(rtb_entries + 1, &entry_2, sizeof(routing_table_t));
+        memcpy(rtb_entries + returned_nb_entries, local_rtb + entry_idx,
+               sizeof(routing_table_t));
+        returned_nb_entries++;
 
-    *nb_entries = 2;
+        if (returned_nb_entries >= LUOS_RTB_MODEL_MAX_RTB_ENTRY)
+        {
+            // Do not export any more entries.
+            break;
+        }
+    }
+
+    *nb_entries                             = returned_nb_entries;
     return true;
 }
 

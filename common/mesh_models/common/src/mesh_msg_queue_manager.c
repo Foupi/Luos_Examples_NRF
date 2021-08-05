@@ -121,8 +121,6 @@ static void send_mesh_msg(void)
     luos_mesh_msg_queue_pop();
     s_curr_tx_token = message.access_token;
 
-    NRF_LOG_INFO("Message sent: current token is 0x%x!", s_curr_tx_token);
-
     s_is_possible_to_send = false;
 }
 
@@ -194,8 +192,6 @@ static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
 
         if (token == s_curr_tx_token)
         {
-            NRF_LOG_INFO("Transmission complete for token 0x%x!", token);
-
             s_is_possible_to_send = true;
             s_curr_tx_token = DEFAULT_STATIC_TOKEN;
 
