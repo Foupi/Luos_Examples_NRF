@@ -11,6 +11,7 @@
 
 // NRF APPS
 #include "app_error.h"              // APP_ERROR_CHECK
+#include "app_timer.h"              // app_timer_*
 
 // MESH SDK
 #include "access.h"                 // access_*
@@ -27,8 +28,15 @@
 // Describes if a message can be sent.
 static bool                 s_is_possible_to_send   = true;
 
+// Default value for currently sent message token.
+static const uint32_t       DEFAULT_STATIC_TOKEN    = 0xFFFF;
+
 // Token of the currently sent message.
-static nrf_mesh_tx_token_t  s_curr_tx_token         = 0x0000;
+static nrf_mesh_tx_token_t  s_curr_tx_token         = DEFAULT_STATIC_TOKEN;
+
+// Wait time between TX complete event and next message sent.
+#define                     WAIT_TIME_MS            5
+static const uint32_t       WAIT_TIME_TICKS         = APP_TIMER_TICKS(WAIT_TIME_MS);
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -41,8 +49,13 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
 /*      CALLBACKS                                                   */
 
-// Toggles the send boolean and tries to pop the next message.
+/* If the event token matches the current one, toggles the send boolean
+** and starts the timer to send the next message.
+*/
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event);
+
+// Sends the first message in the queue.
+static void timer_to_send_event_cb(void* context);
 
 /*      INITIALIZATIONS                                             */
 
@@ -51,9 +64,18 @@ static nrf_mesh_evt_handler_t   mesh_tx_complete_event_handler  =
     .evt_cb = mesh_tx_complete_event_cb,
 };
 
+// Timer waiting between TX event and message sending.
+APP_TIMER_DEF(s_timer_to_send);
+
 void luos_mesh_msg_queue_manager_init(void)
 {
+    ret_code_t  err_code;
+
     nrf_mesh_evt_handler_add(&mesh_tx_complete_event_handler);
+    err_code = app_timer_create(&s_timer_to_send,
+                                APP_TIMER_MODE_SINGLE_SHOT,
+                                timer_to_send_event_cb);
+    APP_ERROR_CHECK(err_code);
 }
 
 void luos_mesh_msg_prepare(const tx_queue_elm_t* message)
@@ -162,6 +184,7 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
 {
+    ret_code_t          err_code;
     nrf_mesh_tx_token_t token;
 
     switch (event->type)
@@ -174,9 +197,14 @@ static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
             NRF_LOG_INFO("Transmission complete for token 0x%x!", token);
 
             s_is_possible_to_send = true;
-            send_mesh_msg();
+            s_curr_tx_token = DEFAULT_STATIC_TOKEN;
 
-            s_curr_tx_token = 0x0000;
+            /* SAR session not being freed, next message has to be sent
+            ** later.
+            */
+            err_code = app_timer_start(s_timer_to_send, WAIT_TIME_TICKS,
+                                       NULL);
+            APP_ERROR_CHECK(err_code);
         }
 
         break;
@@ -184,4 +212,9 @@ static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
     default:
         return;
     }
+}
+
+static void timer_to_send_event_cb(void* context)
+{
+    send_mesh_msg();
 }
