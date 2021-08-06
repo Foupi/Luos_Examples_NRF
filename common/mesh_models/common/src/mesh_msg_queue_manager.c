@@ -29,7 +29,7 @@
 static bool                 s_is_possible_to_send   = true;
 
 // Default value for currently sent message token.
-static const uint32_t       DEFAULT_STATIC_TOKEN    = 0xFFFF;
+#define                     DEFAULT_STATIC_TOKEN    0xFFFF;
 
 // Token of the currently sent message.
 static nrf_mesh_tx_token_t  s_curr_tx_token         = DEFAULT_STATIC_TOKEN;
