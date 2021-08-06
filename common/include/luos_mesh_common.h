@@ -29,6 +29,9 @@
 // Group address for Luos models communication.
 #define LUOS_GROUP_ADDRESS                          0xF00D
 
+// Maximum number of nodes in the Luos Mesh network.
+#define LUOS_MESH_NETWORK_MAX_NODES                 5
+
 /* Initializes the Mesh stack with predefined parameters and the given
 ** callbacks, and describes in the given boolean if the device is
 ** configured or not.

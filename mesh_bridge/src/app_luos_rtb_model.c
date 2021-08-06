@@ -20,6 +20,7 @@
 // CUSTOM
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
+#include "remote_container_table.h" // remote_container_*
 
 /*      TYPEDEFS                                                    */
 
@@ -111,6 +112,8 @@ void app_luos_rtb_model_init(void)
     APP_ERROR_CHECK(err_code);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+
+    remote_container_table_clear();
 }
 
 void app_luos_rtb_model_address_set(uint16_t device_address)
@@ -127,6 +130,8 @@ void app_luos_rtb_model_get(void)
     }
 
     ret_code_t err_code;
+
+    remote_container_table_clear();
 
     luos_rtb_model_get(&s_luos_rtb_model);
 
@@ -201,6 +206,8 @@ static void rtb_model_get_cb(void)
         return;
     }
 
+    remote_container_table_clear();
+
     NRF_LOG_INFO("Luos RTB GET request received: switch to REPLYING mode!");
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_REPLYING;
 }
@@ -224,6 +231,13 @@ static void rtb_model_status_cb(uint16_t src_addr,
     NRF_LOG_INFO("Luos RTB STATUS message received from node 0x%x: entry %u has ID 0x%x, type %s, alias %s!",
                  src_addr, entry_idx, entry->id,
                  RoutingTB_StringFromType(entry->type), entry->alias);
+
+    bool        insertion_complete;
+    insertion_complete = remote_container_table_add_entry(src_addr, entry);
+    if (!insertion_complete)
+    {
+        NRF_LOG_INFO("Remote container table full: could not insert received entry!");
+    }
 
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_GETTING)
     {
