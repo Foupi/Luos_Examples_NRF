@@ -84,7 +84,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
 /*      CALLBACKS                                                   */
 
 // FIXME Logs message.
-static void rtb_model_get_cb(void);
+static void rtb_model_get_cb(uint16_t src_addr);
 
 // FIXME Logs message.
 static void rtb_model_status_cb(uint16_t src_addr,
@@ -198,7 +198,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     return true;
 }
 
-static void rtb_model_get_cb(void)
+static void rtb_model_get_cb(uint16_t src_addr)
 {
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
     {
@@ -206,7 +206,7 @@ static void rtb_model_get_cb(void)
         return;
     }
 
-    remote_container_table_clear();
+    remote_container_table_clear_address(src_addr);
 
     NRF_LOG_INFO("Luos RTB GET request received: switch to REPLYING mode!");
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_REPLYING;

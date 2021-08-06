@@ -35,4 +35,9 @@ bool remote_container_table_add_entry(uint16_t node_address,
 // Clears the remote containers table.
 void remote_container_table_clear(void);
 
+/* Removes the entries corresponding to containers hosted by the given
+** unicast address.
+*/
+void remote_container_table_clear_address(uint16_t node_address);
+
 #endif /* ! REMOTE_CONTAINER_TABLE_H */

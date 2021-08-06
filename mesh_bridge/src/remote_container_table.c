@@ -74,8 +74,48 @@ bool remote_container_table_add_entry(uint16_t node_address,
 
 void remote_container_table_clear(void)
 {
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t  curr_entry;
+        curr_entry = s_remote_container_table.remote_containers[entry_idx];
+
+        Luos_DestroyContainer(curr_entry.local_instance);
+    }
+
     memset(&s_remote_container_table, 0,
            sizeof(s_remote_container_table));
+}
+
+void remote_container_table_clear_address(uint16_t node_address)
+{
+    uint16_t    entry_idx   = 0;
+    while (entry_idx < s_remote_container_table.nb_remote_containers)
+    {
+        remote_container_t  curr_entry;
+        curr_entry = s_remote_container_table.remote_containers[entry_idx];
+
+        if (curr_entry.node_addr != node_address)
+        {
+            entry_idx++;
+            continue;
+        }
+
+        Luos_DestroyContainer(curr_entry.local_instance);
+        uint16_t    last_entry_idx = s_remote_container_table.nb_remote_containers - 1;
+        for (uint16_t replacement_idx = entry_idx;
+             replacement_idx < last_entry_idx; replacement_idx++)
+        {
+            remote_container_t* replaced_entry;
+            remote_container_t* replacing_entry;
+
+            replaced_entry  = s_remote_container_table.remote_containers + replacement_idx;
+            replacing_entry = replaced_entry + 1;
+            memcpy(replaced_entry, replacing_entry, sizeof(remote_container_t));
+        }
+        s_remote_container_table.nb_remote_containers--;
+    }
 }
 
 static void RemoteContainer_MsgHandler(container_t* container,

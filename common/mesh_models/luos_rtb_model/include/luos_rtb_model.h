@@ -20,7 +20,7 @@
 typedef struct luos_rtb_model_s luos_rtb_model_t;
 
 // Callback called on GET request.
-typedef void (*luos_rtb_model_get_cb_t)(void);
+typedef void (*luos_rtb_model_get_cb_t)(uint16_t src_addr);
 
 /* Callback called on GET request to get local RTB entries.
 ** Returns true and updates parameters with local RTB information if the

@@ -210,7 +210,7 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
     }
     else
     {
-        instance->get_cb();
+        instance->get_cb(src_addr);
     }
 
     if ((instance->local_rtb_entries_get_cb) == NULL)
