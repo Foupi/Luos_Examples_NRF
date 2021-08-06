@@ -8,6 +8,11 @@ if ( NOT CONTAINERS_COMMON_PATH )
     return()
 endif ()
 
+if ( NOT LUOS_MESH_MODELS_PATH )
+    message( STATUS "Path to Luos models not set!" )
+    return()
+endif ()
+
 set( MESH_PROVISIONER_PATH  "${CONTAINERS_PATH}/mesh_provisioner" )
 
 add_library( mesh_provisioner
@@ -45,6 +50,7 @@ target_include_directories( mesh_provisioner PUBLIC
     "${MESH_PROVISIONER_PATH}/include"
 
     "${CONTAINERS_COMMON_PATH}/include"
+    "${LUOS_MESH_MODELS_PATH}/luos_rtb_model/include"
 
     ${MESH_INCLUDE_DIRS}
     ${CONFIG_CLIENT_INCLUDE_DIRS}
