@@ -50,16 +50,8 @@ void RTBBuilder_Loop(void)
 {
     if (g_detection_asked)
     {
-        #ifdef DEBUG
-        NRF_LOG_INFO("Detection asked!");
-        #endif /* DEBUG */
-
         // Run detection
         RoutingTB_DetectContainers(s_rtb_builder);
-
-        #ifdef DEBUG
-        NRF_LOG_INFO("Detection complete!");
-        #endif /* DEBUG */
 
         // Log RTB
         routing_table_t* rtb = RoutingTB_Get();
@@ -74,6 +66,9 @@ static void print_rtb(const routing_table_t* rtb,
                       uint16_t last_entry_index)
 {
     #ifdef DEBUG
+    NRF_LOG_INFO("Routing table contains %u entries!",
+                 last_entry_index);
+
     for (uint16_t entry_idx = 0; entry_idx < last_entry_index;
          entry_idx++)
     {
