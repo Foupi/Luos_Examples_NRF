@@ -12,6 +12,11 @@
 
 /*      DEFINES                                                     */
 
+// Index of RTB Builder type among Luos types.
+#ifndef RTB_MOD
+#define RTB_MOD         LUOS_LAST_TYPE
+#endif
+
 // Start index of RTB messages (default: end of Luos cmds)
 #ifndef RTB_MSG_BEGIN
 #define RTB_MSG_BEGIN   LUOS_PROTOCOL_NB
@@ -19,11 +24,16 @@
 
 typedef enum
 {
+    // Received commands:
     // Build the routing table.
     RTB_BUILD   = RTB_MSG_BEGIN,
 
     // Log the routing table.
     RTB_PRINT,
+
+    // Sent messages:
+    // Routing table built.
+    RTB_COMPLETE,
 
     // Start index for next messages.
     RTB_MSG_END,
@@ -31,7 +41,7 @@ typedef enum
 } rtb_builder_cmd_t;
 
 // Type of the RTB container.
-#define RTB_TYPE        VOID_MOD
+#define RTB_TYPE        RTB_MOD
 
 // Default alias of the RTB container.
 #define RTB_ALIAS       "rtb_builder"

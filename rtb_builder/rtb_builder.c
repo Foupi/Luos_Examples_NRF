@@ -31,8 +31,8 @@ static container_t* s_rtb_builder       = NULL;
 /*      STATIC FUNCTIONS                                            */
 
 // Logs each entry from the given routing table.
-static void print_rtb(const routing_table_t* rtb,
-                      uint16_t last_entry_index);
+static void     print_rtb(const routing_table_t* rtb,
+                          uint16_t last_entry_index);
 
 /*      CALLBACKS                                                   */
 
@@ -101,4 +101,12 @@ static void print_rtb(const routing_table_t* rtb,
 
 static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
 {
+    switch (msg->header.cmd)
+    {
+    case RTB_PRINT:
+        NRF_LOG_INFO("Routing table print requested!");
+        break;
+    default:
+        break;
+    }
 }
