@@ -41,6 +41,8 @@ target_include_directories( mesh_bridge PUBLIC
 
     "${CONTAINERS_COMMON_PATH}/include"
 
+    "${CONTAINERS_PATH}/rtb_builder"
+
     ${MESH_INCLUDE_DIRS}
     ${CONFIG_SERVER_INCLUDE_DIRS}
     ${HEALTH_SERVER_INCLUDE_DIRS}

@@ -4,10 +4,13 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>    // g_rtb_get_asked
+#include <stdbool.h>        // g_rtb_get_asked
 
 // LUOS
-#include "luos_list.h"  // LUOS_PROTOCOL_NB, LUOS_LAST_TYPE
+#include "luos_list.h"      // LUOS_PROTOCOL_NB, LUOS_LAST_TYPE
+
+// CUSTOM
+#include "app_luos_list.h"  // MESH_BRIDGE_*
 
 /*      DEFINES                                                     */
 
