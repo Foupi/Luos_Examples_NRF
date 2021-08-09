@@ -104,7 +104,13 @@ static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
     switch (msg->header.cmd)
     {
     case RTB_PRINT:
-        NRF_LOG_INFO("Routing table print requested!");
+    {
+        // Log RTB
+        routing_table_t* rtb = RoutingTB_Get();
+        uint16_t last_entry_index = RoutingTB_GetLastEntry();
+
+        print_rtb(rtb, last_entry_index);
+    }
         break;
     default:
         break;
