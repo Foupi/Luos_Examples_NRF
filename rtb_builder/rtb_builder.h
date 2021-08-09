@@ -8,19 +8,25 @@
 
 // LUOS
 #include "luos.h"       // container_t
-#include "luos_list.h"  // LUOS_PROTOCOL_NB, VOID_MOD
+#include "luos_list.h"  // LUOS_PROTOCOL_NB
 
 /*      DEFINES                                                     */
 
 // Index of RTB Builder type among Luos types.
 #ifndef RTB_MOD
 #define RTB_MOD         LUOS_LAST_TYPE
-#endif
+#endif  /* ! RTB_MOD */
 
 // Start index of RTB messages (default: end of Luos cmds)
 #ifndef RTB_MSG_BEGIN
 #define RTB_MSG_BEGIN   LUOS_PROTOCOL_NB
-#endif
+#endif /* ! RTB_MSG_BEGIN */
+
+// Type and default alias for the RTB container.
+#define RTB_TYPE        RTB_MOD
+#define RTB_ALIAS       "rtb_builder"
+
+/*      TYPEDEFS                                                    */
 
 typedef enum
 {
@@ -39,12 +45,6 @@ typedef enum
     RTB_MSG_END,
 
 } rtb_builder_cmd_t;
-
-// Type of the RTB container.
-#define RTB_TYPE        RTB_MOD
-
-// Default alias of the RTB container.
-#define RTB_ALIAS       "rtb_builder"
 
 // Creates the container.
 void RTBBuilder_Init(void);

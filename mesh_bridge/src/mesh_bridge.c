@@ -39,21 +39,9 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 void MeshBridge_Init(void)
 {
     mesh_init();
-
-    NRF_LOG_INFO("Mesh stack initialized!");
-
     provisioning_init();
-
-    NRF_LOG_INFO("Provisioning context initialized!");
-
     persistent_conf_init();
-
-    NRF_LOG_INFO("Persistent configuration initialized!");
-
     mesh_start();
-
-    NRF_LOG_INFO("Mesh stack started!");
-
     prov_listening_start();
 
     revision_t revision = { .unmap = REV };
@@ -73,4 +61,14 @@ void MeshBridge_Loop(void)
 }
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
-{}
+{
+    switch(msg->header.cmd)
+    {
+    case MESH_BRIDGE_EXT_RTB_CMD:
+        app_luos_rtb_model_get();
+        break;
+
+    default:
+        break;
+    }
+}
