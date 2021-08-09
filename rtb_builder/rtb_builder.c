@@ -103,6 +103,20 @@ static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
 {
     switch (msg->header.cmd)
     {
+    case RTB_BUILD:
+    {
+        RoutingTB_DetectContainers(s_rtb_builder);
+
+        msg_t answer;
+        memset(&answer, 0, sizeof(msg_t));
+        answer.header.target_mode   = ID;
+        answer.header.target        = 2; // FIXME Should compute new ID of source...
+        answer.header.cmd           = RTB_COMPLETE;
+
+        Luos_SendMsg(s_rtb_builder, &answer);
+    }
+        break;
+
     case RTB_PRINT:
     {
         // Log RTB
