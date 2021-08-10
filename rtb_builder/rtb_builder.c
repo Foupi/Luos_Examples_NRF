@@ -13,6 +13,7 @@
 #endif /* DEBUG */
 
 // LUOS
+#include "context.h"        // ctx
 #include "luos.h"           // Luos_CreateContainer, container_t
 #include "routing_table.h"  // routing_table_t, RoutingTB_*
 
@@ -33,6 +34,14 @@ static container_t* s_rtb_builder       = NULL;
 // Logs each entry from the given routing table.
 static void     print_rtb(const routing_table_t* rtb,
                           uint16_t last_entry_index);
+
+/* Finds the ID the container corresponding to the given ID will have
+** after a detection process is completed by this container.
+*/
+static uint16_t find_future_container_id(uint16_t container_id);
+
+// Finds in the routing table the ID of the node hosting the given ID.
+static uint16_t find_node_id(uint16_t container_id);
 
 /*      CALLBACKS                                                   */
 
@@ -99,18 +108,42 @@ static void print_rtb(const routing_table_t* rtb,
     #endif /* DEBUG */
 }
 
+static uint16_t find_future_container_id(uint16_t container_id)
+{
+    uint16_t    host_node = find_node_id(container_id);
+    if (host_node == ctx.node.node_id)
+    {
+        // FIXME Computation.
+        return 2;
+    }
+    else
+    {
+        // FIXME Iterate over RTB.
+        return 0;
+    }
+}
+
+static uint16_t find_node_id(uint16_t container_id)
+{
+    // FIXME Iterate over RTB.
+    return 1;
+}
+
 static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
 {
     switch (msg->header.cmd)
     {
     case RTB_BUILD:
     {
+        uint16_t    msg_src = msg->header.source;
+        uint16_t    new_src = find_future_container_id(msg_src);
+
         RoutingTB_DetectContainers(s_rtb_builder);
 
         msg_t answer;
         memset(&answer, 0, sizeof(msg_t));
         answer.header.target_mode   = ID;
-        answer.header.target        = 2; // FIXME Should compute new ID of source...
+        answer.header.target        = new_src;
         answer.header.cmd           = RTB_COMPLETE;
 
         Luos_SendMsg(s_rtb_builder, &answer);
