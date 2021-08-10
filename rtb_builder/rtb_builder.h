@@ -3,9 +3,6 @@
 
 /*      INCLUDES                                                    */
 
-// C STANDARD
-#include <stdbool.h>    // bool
-
 // LUOS
 #include "luos.h"       // container_t
 #include "luos_list.h"  // LUOS_PROTOCOL_NB
@@ -51,8 +48,5 @@ void RTBBuilder_Init(void);
 
 // If a detection was asked, prepare the routing table.
 void RTBBuilder_Loop(void);
-
-// Describes if a detection was asked.
-extern bool g_detection_asked;
 
 #endif /* RTB_BUILDER_H */

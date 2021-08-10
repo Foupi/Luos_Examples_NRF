@@ -22,9 +22,6 @@
 #define REV {0,0,1}
 #endif
 
-// Global detection boolean.
-bool                g_detection_asked   = false;
-
 // Static container instance.
 static container_t* s_rtb_builder       = NULL;
 
@@ -47,20 +44,7 @@ void RTBBuilder_Init(void)
 }
 
 void RTBBuilder_Loop(void)
-{
-    if (g_detection_asked)
-    {
-        // Run detection
-        RoutingTB_DetectContainers(s_rtb_builder);
-
-        // Log RTB
-        routing_table_t* rtb = RoutingTB_Get();
-        uint16_t last_entry_index = RoutingTB_GetLastEntry();
-
-        print_rtb(rtb, last_entry_index);
-        g_detection_asked       = false;
-    }
-}
+{}
 
 static void print_rtb(const routing_table_t* rtb,
                       uint16_t last_entry_index)
@@ -131,6 +115,7 @@ static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
         print_rtb(rtb, last_entry_index);
     }
         break;
+
     default:
         break;
     }
