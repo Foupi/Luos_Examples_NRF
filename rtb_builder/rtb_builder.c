@@ -125,8 +125,35 @@ static uint16_t find_future_container_id(uint16_t container_id)
 
 static uint16_t find_node_id(uint16_t container_id)
 {
-    // FIXME Iterate over RTB.
-    return 1;
+    routing_table_t* rtb    = RoutingTB_Get();
+    uint16_t last_entry_idx = RoutingTB_GetLastEntry();
+
+    uint16_t node_id = 1;
+    uint16_t entry_idx = 1; // Index 0 is entry for Node 1.
+    while (entry_idx < last_entry_idx)
+    {
+        routing_table_t entry   = rtb[entry_idx];
+
+        if (entry.mode == NODE)
+        {
+            node_id = entry.node_id;
+        }
+        else if (entry.mode == CONTAINER)
+        {
+            if (entry.id == container_id)
+            {
+                return node_id;
+            }
+        }
+        else
+        {
+            break;
+        }
+
+        entry_idx++;
+    }
+    // Not found.
+    return 0;
 }
 
 static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg)
