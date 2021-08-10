@@ -15,11 +15,13 @@
 #include <string.h>                 // memset
 
 // LUOS
+#include "luos.h"                   // container_t
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
+#include "mesh_bridge.h"            // MESH_BRIDGE_*
 #include "remote_container_table.h" // remote_container_*
 
 /*      TYPEDEFS                                                    */
@@ -84,6 +86,15 @@ static struct
 
     }                       local_container_table;
 
+    // Container from which Ext-RTB complete msg shall be sent.
+    container_t*            mesh_bridge_container;
+
+    // ID of the Mesh Bridge container.
+    uint16_t                mesh_bridge_id;
+
+    // ID of the container requesting the Ext-RTB procedure.
+    uint16_t                ext_rtb_src_id;
+
 }                       s_luos_rtb_model_ctx;
 
 /*      STATIC FUNCTIONS                                            */
@@ -94,6 +105,9 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
 
 // Stores routing table inside the static local containers table.
 static bool retrieve_local_rtb(void);
+
+// Complete Ext-RTB procedure.
+static void ext_rtb_complete(void);
 
 /*      CALLBACKS                                                   */
 
@@ -141,7 +155,9 @@ void app_luos_rtb_model_address_set(uint16_t device_address)
     luos_rtb_model_set_address(&s_luos_rtb_model, device_address);
 }
 
-void app_luos_rtb_model_get(void)
+void app_luos_rtb_model_engage_ext_rtb(container_t* mesh_bridge_container,
+                                       uint16_t src_id,
+                                       uint16_t mesh_bridge_id)
 {
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
     {
@@ -160,7 +176,10 @@ void app_luos_rtb_model_get(void)
     APP_ERROR_CHECK(err_code);
 
     NRF_LOG_INFO("Engaging ext-RTB procedure: switch to GETTING state!");
-    s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_GETTING;
+    s_luos_rtb_model_ctx.curr_state             = LUOS_RTB_MODEL_STATE_GETTING;
+    s_luos_rtb_model_ctx.mesh_bridge_container  = mesh_bridge_container;
+    s_luos_rtb_model_ctx.mesh_bridge_id         = mesh_bridge_id;
+    s_luos_rtb_model_ctx.ext_rtb_src_id         = src_id;
 }
 
 static bool get_rtb_entries(routing_table_t* rtb_entries,
@@ -195,7 +214,8 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
     {
         NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
-        s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+
+        ext_rtb_complete();
     }
 
     return true;
@@ -232,6 +252,43 @@ static bool retrieve_local_rtb(void)
     }
 
     return true;
+}
+
+static void ext_rtb_complete(void)
+{
+    if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
+    {
+        uint16_t    new_src_id  = RoutingTB_FindFutureContainerID(
+            s_luos_rtb_model_ctx.ext_rtb_src_id,
+            s_luos_rtb_model_ctx.mesh_bridge_id);
+
+        s_luos_rtb_model_ctx.ext_rtb_src_id = new_src_id;
+    }
+    else if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_RECEIVING)
+    {
+        // Wrong state: leave.
+        return;
+    }
+
+    RoutingTB_DetectContainers(s_luos_rtb_model_ctx.mesh_bridge_container);
+
+    if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
+    {
+        msg_t ext_rtb_complete_msg;
+        memset(&ext_rtb_complete_msg, 0, sizeof(msg_t));
+        ext_rtb_complete_msg.header.target_mode = ID;
+        ext_rtb_complete_msg.header.target      = s_luos_rtb_model_ctx.ext_rtb_src_id;
+        ext_rtb_complete_msg.header.cmd         = MESH_BRIDGE_EXT_RTB_COMPLETE;
+
+        Luos_SendMsg(s_luos_rtb_model_ctx.mesh_bridge_container,
+                     &ext_rtb_complete_msg);
+    }
+    else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
+    {
+        // FIXME Signal new RTB to network.
+    }
+
+    s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
 }
 
 static void rtb_model_get_cb(uint16_t src_addr)

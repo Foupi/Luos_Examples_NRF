@@ -52,7 +52,9 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
     switch(msg->header.cmd)
     {
     case MESH_BRIDGE_EXT_RTB_CMD:
-        app_luos_rtb_model_get();
+        app_luos_rtb_model_engage_ext_rtb(container,
+                                          msg->header.source,
+                                          msg->header.target);
         break;
 
     default:
