@@ -2,9 +2,6 @@
 
 /*      INCLUDES                                                    */
 
-// C STANDARD
-#include <stdbool.h>            // bool
-
 // NRF
 #include "nrf_log.h"            // NRF_LOG_INFO
 
@@ -28,12 +25,9 @@
 #define REV {0,0,1}
 #endif
 
-// Describes if a RTB GET request was asked by user.
-bool    g_rtb_get_asked = false;
-
 /*      CALLBACKS                                                   */
 
-// FIXME Does nothing for now.
+// Starts the Ext-RTB procedure on the right command.
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 
 void MeshBridge_Init(void)
@@ -51,14 +45,7 @@ void MeshBridge_Init(void)
 }
 
 void MeshBridge_Loop(void)
-{
-    if (g_rtb_get_asked)
-    {
-        app_luos_rtb_model_get();
-
-        g_rtb_get_asked = false;
-    }
-}
+{}
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 {
