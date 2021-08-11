@@ -38,10 +38,14 @@ void MeshBridge_Init(void)
     mesh_start();
     prov_listening_start();
 
-    revision_t revision = { .unmap = REV };
+    revision_t      revision = { .unmap = REV };
 
-    Luos_CreateContainer(MeshBridge_MsgHandler, MESH_BRIDGE_TYPE,
-                         MESH_BRIDGE_ALIAS, revision);
+    container_t*    container;
+    container = Luos_CreateContainer(MeshBridge_MsgHandler,
+                                     MESH_BRIDGE_TYPE,
+                                     MESH_BRIDGE_ALIAS, revision);
+
+    app_luos_rtb_model_container_set(container);
 }
 
 void MeshBridge_Loop(void)
@@ -52,8 +56,7 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
     switch(msg->header.cmd)
     {
     case MESH_BRIDGE_EXT_RTB_CMD:
-        app_luos_rtb_model_engage_ext_rtb(container,
-                                          msg->header.source,
+        app_luos_rtb_model_engage_ext_rtb(msg->header.source,
                                           msg->header.target);
         break;
 

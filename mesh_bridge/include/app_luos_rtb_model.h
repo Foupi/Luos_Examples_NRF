@@ -19,9 +19,11 @@ void app_luos_rtb_model_init(void);
 */
 void app_luos_rtb_model_address_set(uint16_t device_address);
 
+// Sets the internal container for Ext-RTB procedure completion message.
+void app_luos_rtb_model_container_set(container_t* mesh_bridge_container);
+
 // Sends a Luos RTB model GET request to remote devices.
-void app_luos_rtb_model_engage_ext_rtb(container_t* mesh_bridge_container,
-                                       uint16_t src_id,
+void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
                                        uint16_t mesh_bridge_id);
 
 #endif /* ! APP_LUOS_RTB_MODEL_H */

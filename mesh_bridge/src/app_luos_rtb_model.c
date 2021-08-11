@@ -90,10 +90,10 @@ static struct
     container_t*            mesh_bridge_container;
 
     // ID of the Mesh Bridge container.
-    uint16_t                mesh_bridge_id;
+    uint16_t                curr_mesh_bridge_id;
 
     // ID of the container requesting the Ext-RTB procedure.
-    uint16_t                ext_rtb_src_id;
+    uint16_t                curr_ext_rtb_src_id;
 
 }                       s_luos_rtb_model_ctx;
 
@@ -155,8 +155,12 @@ void app_luos_rtb_model_address_set(uint16_t device_address)
     luos_rtb_model_set_address(&s_luos_rtb_model, device_address);
 }
 
-void app_luos_rtb_model_engage_ext_rtb(container_t* mesh_bridge_container,
-                                       uint16_t src_id,
+void app_luos_rtb_model_container_set(container_t* mesh_bridge_container)
+{
+    s_luos_rtb_model_ctx.mesh_bridge_container = mesh_bridge_container;
+}
+
+void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
                                        uint16_t mesh_bridge_id)
 {
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
@@ -177,9 +181,8 @@ void app_luos_rtb_model_engage_ext_rtb(container_t* mesh_bridge_container,
 
     NRF_LOG_INFO("Engaging ext-RTB procedure: switch to GETTING state!");
     s_luos_rtb_model_ctx.curr_state             = LUOS_RTB_MODEL_STATE_GETTING;
-    s_luos_rtb_model_ctx.mesh_bridge_container  = mesh_bridge_container;
-    s_luos_rtb_model_ctx.mesh_bridge_id         = mesh_bridge_id;
-    s_luos_rtb_model_ctx.ext_rtb_src_id         = src_id;
+    s_luos_rtb_model_ctx.curr_mesh_bridge_id    = mesh_bridge_id;
+    s_luos_rtb_model_ctx.curr_ext_rtb_src_id    = src_id;
 }
 
 static bool get_rtb_entries(routing_table_t* rtb_entries,
@@ -259,10 +262,10 @@ static void ext_rtb_complete(void)
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
     {
         uint16_t    new_src_id  = RoutingTB_FindFutureContainerID(
-            s_luos_rtb_model_ctx.ext_rtb_src_id,
-            s_luos_rtb_model_ctx.mesh_bridge_id);
+            s_luos_rtb_model_ctx.curr_ext_rtb_src_id,
+            s_luos_rtb_model_ctx.curr_mesh_bridge_id);
 
-        s_luos_rtb_model_ctx.ext_rtb_src_id = new_src_id;
+        s_luos_rtb_model_ctx.curr_ext_rtb_src_id = new_src_id;
     }
     else if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_RECEIVING)
     {
@@ -277,7 +280,7 @@ static void ext_rtb_complete(void)
         msg_t ext_rtb_complete_msg;
         memset(&ext_rtb_complete_msg, 0, sizeof(msg_t));
         ext_rtb_complete_msg.header.target_mode = ID;
-        ext_rtb_complete_msg.header.target      = s_luos_rtb_model_ctx.ext_rtb_src_id;
+        ext_rtb_complete_msg.header.target      = s_luos_rtb_model_ctx.curr_ext_rtb_src_id;
         ext_rtb_complete_msg.header.cmd         = MESH_BRIDGE_EXT_RTB_COMPLETE;
 
         Luos_SendMsg(s_luos_rtb_model_ctx.mesh_bridge_container,
