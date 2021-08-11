@@ -34,6 +34,7 @@ void mesh_init(void)
 
 void mesh_models_set_addresses(uint16_t device_address)
 {
+    app_luos_msg_model_address_set(device_address);
     app_luos_rtb_model_address_set(device_address);
 }
 

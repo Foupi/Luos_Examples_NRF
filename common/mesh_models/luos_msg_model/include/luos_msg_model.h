@@ -12,6 +12,11 @@
 // LUOS
 #include "robus_struct.h"   // msg_t
 
+/*      DEFINES                                                     */
+
+// Default element address.
+#define LUOS_MSG_MODEL_DEFAULT_ELM_ADDR 0xFFFF
+
 /*      TYPEDEFS                                                    */
 
 // Forward declaration.
@@ -54,6 +59,12 @@ struct luos_msg_model_s
 // Initialize the given instance with the given parameters.
 void luos_msg_model_init(luos_msg_model_t* instance,
                          const luos_msg_model_init_params_t* params);
+
+/* Sets the given instance's element address according to the given
+** device address.
+*/
+void luos_msg_model_set_address(luos_msg_model_t* instance,
+                                uint16_t device_address);
 
 // Sends a Luos MSG SET commabd through the given model instance.
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,

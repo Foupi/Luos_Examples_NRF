@@ -18,14 +18,26 @@ set( LUOS_MSG_MODEL_PATH "${LUOS_MESH_MODELS_PATH}/luos_msg_model" )
 add_library( luos_msg_model
     "${LUOS_MSG_MODEL_PATH}/src/luos_msg_model.c"
 
-    # FIXME Mesh sources
+    ${MESH_CORE_SOURCE_FILES}
+    ${ACCESS_SOURCE_FILES}
+    ${CONFIG_SERVER_SOURCE_FILES}
+    ${HEALTH_SERVER_SOURCE_FILES}
+    ${${PLATFORM}_SOURCE_FILES}
+    ${${nRF5_SDK_VERSION}_SOURCE_FILES}
 )
 
 target_include_directories( luos_msg_model PUBLIC
     "${LUOS_MSG_MODEL_PATH}/include"
     "${LUOS_MESH_MODELS_COMMON_PATH}/include"
+    "${CONTAINERS_COMMON_PATH}/include"
 
-    # FIXME Mesh includes
+    ${MESH_INCLUDE_DIRS}
+    ${CONFIG_SERVER_INCLUDE_DIRS}
+    ${HEALTH_SERVER_INCLUDE_DIRS}
+    ${${SOFTDEVICE}_INCLUDE_DIRS}
+    ${${PLATFORM}_INCLUDE_DIRS}
+    ${${BOARD}_INCLUDE_DIRS}
+    ${${nRF5_SDK_VERSION}_INCLUDE_DIRS}
 )
 
 add_compile_definitions(
@@ -41,7 +53,16 @@ target_link_libraries( luos_msg_model PUBLIC
     #Luos
     luos
 
-    # FIXME Log libraries
+    # NRF
+    # External
+    nrf5_ext_fprintf
+    nrf5_ext_segger_rtt
+    # Logger
+    nrf5_log
+    nrf5_log_backend_serial
+    nrf5_log_backend_rtt
+    nrf5_log_default_backends
 
-    # FIXME uECC
+    # Mesh
+    uECC_${PLATFORM}
 )

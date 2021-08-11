@@ -30,4 +30,7 @@
     ACCESS_OPCODE_VENDOR(LUOS_MSG_MODEL_STATUS_OPCODE,  \
                          ACCESS_COMPANY_ID_LUOS)
 
+// Index of the element hosting the Luos MSG model instance.
+#define LUOS_MSG_MODEL_ELM_IDX                          0
+
 #endif /* ! LUOS_MSG_MODEL_COMMON_H */
