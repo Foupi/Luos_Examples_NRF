@@ -35,6 +35,6 @@ uint16_t local_container_table_get_nb_entries(void);
 routing_table_t* local_container_table_get_entry(uint16_t entry_idx);
 
 // Updates the local IDs of each entry in the local container table.
-void local_container_table_update_local_ids(void);
+void local_container_table_update_local_ids(uint16_t bridge_id);
 
 #endif /* ! LOCAL_CONTAINER_TABLE_H */

@@ -99,9 +99,21 @@ routing_table_t* local_container_table_get_entry(uint16_t entry_idx)
     return &(local_container->exposed_entry);
 }
 
-void local_container_table_update_local_ids(void)
+void local_container_table_update_local_ids(uint16_t bridge_id)
 {
-    // FIXME for loop
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_local_container_table.nb_local_containers;
+         entry_idx++)
+    {
+        local_container_t*  entry;
+        uint16_t            new_id;
+
+        entry   = s_local_container_table.local_containers + entry_idx;
+        new_id  = RoutingTB_FindFutureContainerID(entry->local_id,
+                                                  bridge_id);
+
+        entry->local_id = new_id;
+    }
 }
 
 static bool is_entry_to_store(routing_table_t* entry)

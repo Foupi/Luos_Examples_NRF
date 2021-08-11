@@ -97,6 +97,9 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
 // Complete Ext-RTB procedure.
 static void ext_rtb_complete(void);
 
+// Find Mesh Bridge container ID in the local routing table.
+static uint16_t find_mesh_bridge_id(void);
+
 /*      CALLBACKS                                                   */
 
 /* Clears the remote containers table for the given address and switches
@@ -227,13 +230,17 @@ static void ext_rtb_complete(void)
 
         s_luos_rtb_model_ctx.curr_ext_rtb_src_id = new_src_id;
     }
-    else if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_RECEIVING)
+    else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
+    {
+        s_luos_rtb_model_ctx.curr_mesh_bridge_id = find_mesh_bridge_id();
+    }
+    else
     {
         // Wrong state: leave.
         return;
     }
 
-    local_container_table_update_local_ids();
+    local_container_table_update_local_ids(s_luos_rtb_model_ctx.curr_mesh_bridge_id);
 
     RoutingTB_DetectContainers(s_luos_rtb_model_ctx.mesh_bridge_container);
 
@@ -258,6 +265,24 @@ static void ext_rtb_complete(void)
                  &ext_rtb_complete_msg);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+}
+
+static uint16_t find_mesh_bridge_id(void)
+{
+    routing_table_t*    rtb         = RoutingTB_Get();
+    uint16_t            nb_entries  = RoutingTB_GetLastEntry();
+
+    for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
+    {
+        routing_table_t entry = rtb[entry_idx];
+
+        if (entry.mode == CONTAINER && entry.type == MESH_BRIDGE_MOD)
+        {
+            return entry.id;
+        }
+    }
+
+    return 0;
 }
 
 static void rtb_model_get_cb(uint16_t src_addr)
