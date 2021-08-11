@@ -20,6 +20,7 @@
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
+#include "local_container_table.h"  // local_container_*
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 #include "mesh_bridge.h"            // MESH_BRIDGE_*
