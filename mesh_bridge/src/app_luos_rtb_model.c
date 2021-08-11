@@ -77,17 +77,6 @@ static struct
     // Current state.
     luos_rtb_model_state_t  curr_state;
 
-    // Table of local containers.
-    struct
-    {
-        // Number of local containers.
-        uint16_t        nb_local_containers;
-
-        // Table of entries.
-        routing_table_t local_containers[LUOS_RTB_MODEL_MAX_RTB_ENTRY];
-
-    }                       local_container_table;
-
     // Container from which Ext-RTB complete msg shall be sent.
     container_t*            mesh_bridge_container;
 
@@ -104,9 +93,6 @@ static struct
 // Retrieves local RTB and stores it in the given arguments.
 static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries);
-
-// Stores routing table inside the static local containers table.
-static bool retrieve_local_rtb(void);
 
 // Complete Ext-RTB procedure.
 static void ext_rtb_complete(void);
@@ -146,9 +132,6 @@ void app_luos_rtb_model_init(void)
     APP_ERROR_CHECK(err_code);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
-    memset(&(s_luos_rtb_model_ctx.local_container_table), 0,
-           sizeof(s_luos_rtb_model_ctx.local_container_table));
-
     remote_container_table_clear();
 }
 
@@ -191,20 +174,28 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries)
 {
     ret_code_t          err_code;
-
-    if (s_luos_rtb_model_ctx.local_container_table.nb_local_containers == 0)
+    uint16_t            nb_local_entries    = local_container_table_get_nb_entries();
+    if (nb_local_entries == 0)
     {
         // Local routing table has not been stored in static context.
-        bool    detection_complete = retrieve_local_rtb();
-        if (!detection_complete)
-        {
-            return false;
-        }
+        nb_local_entries = local_container_table_fill();
+
+        // If nb local entries is still 0, loop will be skipped.
     }
 
-    memcpy(rtb_entries, s_luos_rtb_model_ctx.local_container_table.local_containers,
-           s_luos_rtb_model_ctx.local_container_table.nb_local_containers * sizeof(routing_table_t));
-    *nb_entries = s_luos_rtb_model_ctx.local_container_table.nb_local_containers;
+    for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
+         entry_idx++)
+    {
+        routing_table_t* entry = local_container_table_get_entry(entry_idx);
+        if (entry == NULL)
+        {
+            // FIXME Manage error.
+            return false;
+        }
+
+        memcpy(rtb_entries + entry_idx, entry, sizeof(routing_table_t));
+    }
+    *nb_entries = nb_local_entries;
 
     // FIXME Create callback for end of RTB entries enqueuing?
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_REPLYING)
@@ -223,40 +214,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
         ext_rtb_complete();
     }
 
-    return true;
-}
-
-static bool retrieve_local_rtb(void)
-{
-    uint16_t            local_nb_entries    = RoutingTB_GetLastEntry();
-    if (local_nb_entries == 0)
-    {
-        // Local routing table is empty: detection was not performed.
-        return false;
-    }
-
-    routing_table_t*    local_rtb           = RoutingTB_Get();
-    for (uint16_t entry_idx = 0; entry_idx < local_nb_entries;
-         entry_idx++)
-    {
-        if (local_rtb[entry_idx].mode != CONTAINER)
-        {
-            // Only export containers.
-            continue;
-        }
-
-        memcpy(s_luos_rtb_model_ctx.local_container_table.local_containers + s_luos_rtb_model_ctx.local_container_table.nb_local_containers,
-               local_rtb + entry_idx, sizeof(routing_table_t));
-        s_luos_rtb_model_ctx.local_container_table.nb_local_containers++;
-
-        if (s_luos_rtb_model_ctx.local_container_table.nb_local_containers >= LUOS_RTB_MODEL_MAX_RTB_ENTRY)
-        {
-            // Do not export any more entries.
-            break;
-        }
-    }
-
-    return true;
+    return (nb_local_entries != 0);
 }
 
 static void ext_rtb_complete(void)
@@ -274,6 +232,8 @@ static void ext_rtb_complete(void)
         // Wrong state: leave.
         return;
     }
+
+    local_container_table_update_local_ids();
 
     RoutingTB_DetectContainers(s_luos_rtb_model_ctx.mesh_bridge_container);
 

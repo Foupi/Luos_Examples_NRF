@@ -23,10 +23,10 @@ typedef struct
 
 } local_container_t;
 
-/* Fills the local container table. Returns true if a routing table
-** exists, false otherwise.
+/* Fills the local container table, and returns its new number of local
+** entries.
 */
-bool local_container_table_fill(void);
+uint16_t local_container_table_fill(void);
 
 // Returns the number of local container entries.
 uint16_t local_container_table_get_nb_entries(void);

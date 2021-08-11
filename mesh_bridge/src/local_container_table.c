@@ -25,10 +25,10 @@ static struct
 
 } s_local_container_table   = { 0 };
 
-bool local_container_table_fill(void)
+uint16_t local_container_table_fill(void)
 {
     // FIXME
-    return false;
+    return 0;
 }
 
 uint16_t local_container_table_get_nb_entries(void)
