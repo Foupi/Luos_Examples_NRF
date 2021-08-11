@@ -13,6 +13,7 @@ set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
 add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
 
+    "${MESH_BRIDGE_PATH}/src/app_luos_msg_model.c"
     "${MESH_BRIDGE_PATH}/src/app_luos_rtb_model.c"
     "${MESH_BRIDGE_PATH}/src/local_container_table.c"
     "${MESH_BRIDGE_PATH}/src/mesh_init.c"
@@ -67,6 +68,7 @@ target_link_libraries( mesh_bridge PUBLIC
     luos
 
     #Models
+    luos_msg_model
     luos_rtb_model
 
     # NRF

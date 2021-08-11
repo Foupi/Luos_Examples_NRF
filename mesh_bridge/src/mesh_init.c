@@ -6,6 +6,7 @@
 #include "config_server_events.h"   // config_server_evt_t
 
 // CUSTOM
+#include "app_luos_msg_model.h"     // app_luos_msg_model_*
 #include "app_luos_rtb_model.h"     // app_luos_rtb_model_*
 #include "luos_mesh_common.h"       // _mesh_init
 #include "mesh_msg_queue_manager.h" // luos_mesh_msg_queue_manager_init
@@ -54,4 +55,5 @@ static void config_server_event_cb(const config_server_evt_t* event)
 static void models_init_cb(void)
 {
     app_luos_rtb_model_init();
+    app_luos_msg_model_init();
 }

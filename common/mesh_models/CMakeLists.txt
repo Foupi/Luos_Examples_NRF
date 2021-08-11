@@ -6,3 +6,4 @@ endif ()
 set( LUOS_MESH_MODELS_COMMON_PATH   "${LUOS_MESH_MODELS_PATH}/common" )
 
 add_subdirectory("luos_rtb_model")
+add_subdirectory("luos_msg_model")
