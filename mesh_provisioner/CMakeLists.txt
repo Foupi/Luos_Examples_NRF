@@ -50,6 +50,7 @@ target_include_directories( mesh_provisioner PUBLIC
     "${MESH_PROVISIONER_PATH}/include"
 
     "${CONTAINERS_COMMON_PATH}/include"
+    "${LUOS_MESH_MODELS_PATH}/luos_msg_model/include"
     "${LUOS_MESH_MODELS_PATH}/luos_rtb_model/include"
 
     ${MESH_INCLUDE_DIRS}

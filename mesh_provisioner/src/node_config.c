@@ -26,6 +26,7 @@
 // CUSTOM
 #include "example_network_config.h" // NETWORK_*, *KEY_IDX
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
+#include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 #include "provisioner_config.h"     // prov_conf_*
 #include "provisioning.h"           // prov_scan_start
@@ -67,7 +68,18 @@ typedef enum
     */
     NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB,
 
-    // FIXME Add steps for custom models.
+    // Binding remote Luos MSG instance to appkey.
+    NODE_CONFIG_STEP_APPKEY_BIND_LUOS_MSG,
+
+    /* Setting publish address of remote Luos MSG model instance to
+    ** Luos models group address.
+    */
+    NODE_CONFIG_STEP_PUBLISH_LUOS_MSG,
+
+    /* Adding Luos models group address to remote Luos MSG model
+    ** instance subscription addresses.
+    */
+    NODE_CONFIG_STEP_SUBSCRIBE_LUOS_MSG,
 
 } node_config_step_t;
 
@@ -87,6 +99,9 @@ static const config_opcode_t                EXPECTED_OPCODES[]  =
     [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = CONFIG_OPCODE_MODEL_APP_STATUS,
     [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = CONFIG_OPCODE_MODEL_PUBLICATION_STATUS,
     [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = CONFIG_OPCODE_MODEL_SUBSCRIPTION_STATUS,
+    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_MSG] = CONFIG_OPCODE_MODEL_APP_STATUS,
+    [NODE_CONFIG_STEP_PUBLISH_LUOS_MSG]     = CONFIG_OPCODE_MODEL_PUBLICATION_STATUS,
+    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_MSG]   = CONFIG_OPCODE_MODEL_SUBSCRIPTION_STATUS,
 };
 
 // Node configuration state.
@@ -149,7 +164,7 @@ static void node_config_appkey_bind_health_to_publish_health(void);
 static void node_config_publish_health_to_appkey_bind_luos_rtb(void);
 
 /* Sets current context on Publish Luos RTB model, then defines the
-** publish parameters of the remode Luos RTB model instance to the Luos
+** publish parameters of the remote Luos RTB model instance to the Luos
 ** models group address.
 */
 static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void);
@@ -159,6 +174,23 @@ static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void);
 ** model instance.
 */
 static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void);
+
+/* Sets current context on Appkey Bind to Luos MSG model, then binds the
+** remote Luos MSG model instance to the appkey.
+*/
+static void node_config_subscribe_luos_rtb_to_appkey_bind_luos_msg(void);
+
+/* Sets current context on Publish Luos MSG model, then defines the
+** publish parameters of the remote Luos MSG model instance to the Luos
+** models group address.
+*/
+static void node_config_appkey_bind_luos_msg_to_publish_luos_msg(void);
+
+/* Sets current context on Subscribe Luos MSG model, then adds the Luos
+** models group address to the subscription list of the remote Luos MSG
+** model instance.
+*/
+static void node_config_publish_luos_msg_to_subscribe_luos_msg(void);
 
 /* Increases the number of configured nodes in the persistent
 ** configuration, then sets the configuration state to Idle and starts
@@ -179,7 +211,10 @@ static const node_config_step_transition_t  STEP_TRANSITIONS[]              =
     [NODE_CONFIG_STEP_PUBLISH_HEALTH]       = node_config_publish_health_to_appkey_bind_luos_rtb,
     [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB] = node_config_appkey_bind_luos_rtb_to_publish_luos_rtb,
     [NODE_CONFIG_STEP_PUBLISH_LUOS_RTB]     = node_config_publish_luos_rtb_to_subscribe_luos_rtb,
-    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = node_config_success,
+    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB]   = node_config_subscribe_luos_rtb_to_appkey_bind_luos_msg,
+    [NODE_CONFIG_STEP_APPKEY_BIND_LUOS_MSG] = node_config_appkey_bind_luos_msg_to_publish_luos_msg,
+    [NODE_CONFIG_STEP_PUBLISH_LUOS_MSG]     = node_config_publish_luos_msg_to_subscribe_luos_msg,
+    [NODE_CONFIG_STEP_SUBSCRIBE_LUOS_MSG]   = node_config_success,
 };
 
 static const access_model_id_t              HEALTH_SERVER_ACCESS_MODEL_ID   =
@@ -446,6 +481,61 @@ static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void)
 
     err_code = config_client_model_subscription_add(s_node_config_curr_state.elm_address,
         luos_group_address, luos_rtb_model_id);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_subscribe_luos_rtb_to_appkey_bind_luos_msg(void)
+{
+    NRF_LOG_INFO("Remote Luos RTB model instance subsribed to Luos group address!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_LUOS_MSG;
+
+    ret_code_t          err_code;
+    access_model_id_t   luos_msg_model_id   = LUOS_MSG_MODEL_ACCESS_ID;
+
+    err_code = config_client_model_app_bind(s_node_config_curr_state.elm_address,
+                                            PROV_APPKEY_IDX,
+                                            luos_msg_model_id);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void node_config_appkey_bind_luos_msg_to_publish_luos_msg(void)
+{
+    NRF_LOG_INFO("Appkey bound to remote Luos MSG model instance!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_LUOS_MSG;
+
+    access_model_id_t   luos_msg_model_id   = LUOS_MSG_MODEL_ACCESS_ID;
+
+    nrf_mesh_address_t      luos_group_address;
+    memset(&luos_group_address, 0, sizeof(nrf_mesh_address_t));
+    luos_group_address.type     = NRF_MESH_ADDRESS_TYPE_GROUP;
+    luos_group_address.value    = LUOS_GROUP_ADDRESS;
+
+    access_publish_period_t publish_period;
+    memset(&publish_period, 0, sizeof(access_publish_period_t));
+    publish_period.step_res     = ACCESS_PUBLISH_RESOLUTION_100MS;
+
+    publish_set(&luos_msg_model_id, &luos_group_address,
+                &publish_period);
+}
+
+static void node_config_publish_luos_msg_to_subscribe_luos_msg(void)
+{
+    NRF_LOG_INFO("Publish address set for remote Luos MSG model instance!");
+
+    s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_SUBSCRIBE_LUOS_MSG;
+
+    ret_code_t          err_code;
+    access_model_id_t   luos_msg_model_id   = LUOS_MSG_MODEL_ACCESS_ID;
+
+    nrf_mesh_address_t  luos_group_address;
+    memset(&luos_group_address, 0, sizeof(nrf_mesh_address_t));
+    luos_group_address.type     = NRF_MESH_ADDRESS_TYPE_GROUP;
+    luos_group_address.value    = LUOS_GROUP_ADDRESS;
+
+    err_code = config_client_model_subscription_add(s_node_config_curr_state.elm_address,
+        luos_group_address, luos_msg_model_id);
     APP_ERROR_CHECK(err_code);
 }
 
