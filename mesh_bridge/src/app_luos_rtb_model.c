@@ -15,6 +15,7 @@
 #include <string.h>                 // memset
 
 // LUOS
+#include "config.h"                 // BROADCAST_VAL
 #include "luos.h"                   // container_t
 #include "routing_table.h"          // routing_table_t
 
@@ -275,21 +276,25 @@ static void ext_rtb_complete(void)
 
     RoutingTB_DetectContainers(s_luos_rtb_model_ctx.mesh_bridge_container);
 
+    msg_t ext_rtb_complete_msg;
+    memset(&ext_rtb_complete_msg, 0, sizeof(msg_t));
+
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
     {
-        msg_t ext_rtb_complete_msg;
-        memset(&ext_rtb_complete_msg, 0, sizeof(msg_t));
         ext_rtb_complete_msg.header.target_mode = ID;
         ext_rtb_complete_msg.header.target      = s_luos_rtb_model_ctx.curr_ext_rtb_src_id;
-        ext_rtb_complete_msg.header.cmd         = MESH_BRIDGE_EXT_RTB_COMPLETE;
-
-        Luos_SendMsg(s_luos_rtb_model_ctx.mesh_bridge_container,
-                     &ext_rtb_complete_msg);
     }
-    else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
+    else
     {
-        // FIXME Signal new RTB to network.
+        // Receiving mode: no source container.
+        ext_rtb_complete_msg.header.target_mode = BROADCAST;
+        ext_rtb_complete_msg.header.target      = BROADCAST_VAL;
     }
+
+    ext_rtb_complete_msg.header.cmd = MESH_BRIDGE_EXT_RTB_COMPLETE;
+
+    Luos_SendMsg(s_luos_rtb_model_ctx.mesh_bridge_container,
+                 &ext_rtb_complete_msg);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
 }
@@ -379,6 +384,6 @@ static void entries_reception_timeout_cb(void* context)
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
     {
         NRF_LOG_INFO("Reception timeout for remote node entries, end of ext-RTB procedure: switch back to IDLE mode!");
-        s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+        ext_rtb_complete();
     }
 }
