@@ -40,11 +40,9 @@ void app_luos_msg_model_address_set(uint16_t device_address)
     luos_msg_model_set_address(&s_msg_model, device_address);
 }
 
-void app_luos_msg_model_send_msg(msg_t* msg)
+void app_luos_msg_model_send_msg(uint16_t node_addr, msg_t* msg)
 {
-    // FIXME Translate addresses and find node address.
-
-    luos_msg_model_set(&s_msg_model, 0x0003, msg);
+    luos_msg_model_set(&s_msg_model, node_addr, msg);
 }
 
 static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)

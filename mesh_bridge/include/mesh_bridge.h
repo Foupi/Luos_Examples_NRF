@@ -3,9 +3,6 @@
 
 /*      INCLUDES                                                    */
 
-// C STANDARD
-#include <stdbool.h>        // bool
-
 // LUOS
 #include "luos_list.h"      // LUOS_PROTOCOL_NB, LUOS_LAST_TYPE
 
@@ -52,8 +49,5 @@ void MeshBridge_Init(void);
 
 // Does nothing.
 void MeshBridge_Loop(void);
-
-// FIXME Quick test solution.
-extern bool g_set_ask;
 
 #endif /* MESH_BRIDGE_H */

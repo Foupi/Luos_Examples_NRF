@@ -18,6 +18,7 @@
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
+#include "app_luos_msg_model.h"     // app_luos_msg_model_send_msg
 #include "local_container_table.h"  // local_container_table_*
 #include "luos_mesh_common.h"       // LUOS_MESH_NETWORK_MAX_NODES
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
@@ -182,4 +183,9 @@ static void RemoteContainer_MsgHandler(container_t* container,
 
     NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
                  remote_id, node_addr, new_src);
+
+    msg->header.source  = new_src;
+    msg->header.target  = remote_id;
+
+    app_luos_msg_model_send_msg(node_addr, msg);
 }
