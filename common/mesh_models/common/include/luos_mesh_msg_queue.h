@@ -10,6 +10,7 @@
 #include "access.h"         // access_*
 
 // CUSTOM
+#include "luos_msg_model.h" // luos_msg_model_*
 #include "luos_rtb_model.h" // luos_rtb_model_*
 
 /*      TYPEDEFS                                                    */
@@ -21,6 +22,9 @@ typedef enum
 
     // Luos RTB model.
     TX_QUEUE_MODEL_LUOS_RTB,
+
+    // Luos MSG model.
+    TX_QUEUE_MODEL_LUOS_MSG,
 
 } tx_queue_elm_model_t;
 
@@ -35,13 +39,16 @@ typedef enum
     // STATUS message in reply to a GET or SET message.
     TX_QUEUE_CMD_STATUS_REPLY,
 
+    // SET message.
+    TX_QUEUE_CMD_SET,
+
 } tx_queue_cmd_t;
 
 // Element of the TX queue corresponding to a Luos RTB model message.
 typedef struct
 {
     // Corresponding command.
-    tx_queue_cmd_t          cmd;
+    tx_queue_cmd_t  cmd;
 
     // Union of message types.
     union
@@ -63,9 +70,25 @@ typedef struct
 
         }                       status_reply;
 
-    }                       content;
+    }               content;
 
 } tx_queue_luos_rtb_model_elm_t;
+
+// Element of the TX queue corresponding to a Luos RTB model message.
+typedef struct
+{
+    // Corresponding command.
+    tx_queue_cmd_t  cmd;
+
+    // Union of message types.
+    union
+    {
+        // Corresponding to a Luos MSG SET command.
+        luos_msg_model_set_t    set;
+
+    }               content;
+
+} tx_queue_luos_msg_model_elm_t;
 
 // Element of the TX queue.
 typedef struct
@@ -80,6 +103,9 @@ typedef struct
     {
         // Content corresponding to a Luos RTB model message.
         tx_queue_luos_rtb_model_elm_t   luos_rtb_model_msg;
+
+        // Content corresponding to a Luos MSG model message.
+        tx_queue_luos_msg_model_elm_t   luos_msg_model_msg;
 
     }                       content;
 

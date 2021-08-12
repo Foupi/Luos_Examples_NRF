@@ -56,6 +56,13 @@ struct luos_msg_model_s
     luos_msg_model_status_cb_t  status_cb;
 };
 
+// Payload type for a Luos MSG model SET command.
+typedef struct 
+{
+    // FIXME Struct fields.
+
+} luos_msg_model_set_t;
+
 // Initialize the given instance with the given parameters.
 void luos_msg_model_init(luos_msg_model_t* instance,
                          const luos_msg_model_init_params_t* params);

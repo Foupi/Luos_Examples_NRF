@@ -18,6 +18,9 @@ set( LUOS_MSG_MODEL_PATH "${LUOS_MESH_MODELS_PATH}/luos_msg_model" )
 add_library( luos_msg_model
     "${LUOS_MSG_MODEL_PATH}/src/luos_msg_model.c"
 
+    "${LUOS_MESH_MODELS_COMMON_PATH}/src/luos_mesh_msg_queue.c"
+    "${LUOS_MESH_MODELS_COMMON_PATH}/src/mesh_msg_queue_manager.c"
+
     ${MESH_CORE_SOURCE_FILES}
     ${ACCESS_SOURCE_FILES}
     ${CONFIG_SERVER_SOURCE_FILES}
@@ -28,6 +31,8 @@ add_library( luos_msg_model
 
 target_include_directories( luos_msg_model PUBLIC
     "${LUOS_MSG_MODEL_PATH}/include"
+
+    "${LUOS_MESH_MODELS_PATH}/luos_rtb_model/include"
     "${LUOS_MESH_MODELS_COMMON_PATH}/include"
     "${CONTAINERS_COMMON_PATH}/include"
 

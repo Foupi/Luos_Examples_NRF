@@ -20,6 +20,8 @@
 
 // CUSTOM
 #include "luos_mesh_msg_queue.h"    // tx_queue_elm_t
+#include "luos_msg_model.h"         // luos_msg_model_*
+#include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*_ACCESS_OPCODE
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*_ACCESS_OPCODE
 
@@ -43,8 +45,12 @@ static const uint32_t       WAIT_TIME_TICKS         = APP_TIMER_TICKS(WAIT_TIME_
 // Publishes or replies the last queue element if there is one.
 static void send_mesh_msg(void);
 
-// Prepares the given message with the given characteristics.
+// Prepares the given Luos RTB message with the given characteristics.
 static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
+                                    access_message_tx_t* msg);
+
+// Prepares the given Luos MSG message with the given characteristics.
+static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
                                     access_message_tx_t* msg);
 
 /*      CALLBACKS                                                   */
@@ -113,6 +119,10 @@ static void send_mesh_msg(void)
         send_luos_rtb_model_msg(last_queue_elm, &message);
         break;
 
+    case TX_QUEUE_MODEL_LUOS_MSG:
+        send_luos_msg_model_msg(last_queue_elm, &message);
+        break;
+
     default:
         // Unknown type.
         return;
@@ -142,7 +152,6 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
         err_code                = access_model_publish(elm->model_handle,
                                                        msg);
-        APP_ERROR_CHECK(err_code);
     }
         break;
 
@@ -156,7 +165,6 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
         err_code                = access_model_publish(elm->model_handle,
                                                        msg);
-        APP_ERROR_CHECK(err_code);
     }
         break;
 
@@ -170,7 +178,6 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 
         err_code                = access_model_reply(elm->model_handle,
             &(rtb_model_msg.content.status_reply.src_msg), msg);
-        APP_ERROR_CHECK(err_code);
     }
         break;
 
@@ -178,6 +185,37 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
         // Unknown command.
         return;
     }
+
+    APP_ERROR_CHECK(err_code);
+}
+
+static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
+                                    access_message_tx_t* msg)
+{
+    ret_code_t                      err_code;
+    tx_queue_luos_msg_model_elm_t   msg_model_msg   = elm->content.luos_msg_model_msg;
+
+    switch (msg_model_msg.cmd)
+    {
+    case TX_QUEUE_CMD_SET:
+    {
+        access_opcode_t opcode  = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
+
+        msg->opcode             = opcode;
+        msg->p_buffer           = (uint8_t*)(&(msg_model_msg.content.set));
+        msg->length             = sizeof(luos_msg_model_set_t);
+
+        err_code                = access_model_publish(elm->model_handle,
+                                                       msg);
+    }
+        break;
+
+    default:
+        // Unknown command.
+        return;
+    }
+
+    APP_ERROR_CHECK(err_code);
 }
 
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)

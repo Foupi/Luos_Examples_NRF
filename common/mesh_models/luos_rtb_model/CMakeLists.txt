@@ -31,6 +31,8 @@ add_library( luos_rtb_model
 
 target_include_directories( luos_rtb_model PUBLIC
     "${LUOS_RTB_MODEL_PATH}/include"
+
+    "${LUOS_MESH_MODELS_PATH}/luos_msg_model/include"
     "${LUOS_MESH_MODELS_COMMON_PATH}/include"
     "${CONTAINERS_COMMON_PATH}/include"
 

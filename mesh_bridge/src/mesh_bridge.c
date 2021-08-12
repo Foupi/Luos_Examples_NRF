@@ -11,6 +11,7 @@
                                 */
 
 // CUSTOM
+#include "app_luos_msg_model.h" // app_luos_msg_model_send_msg
 #include "app_luos_rtb_model.h" // app_luos_rtb_model_get
 #include "luos_mesh_common.h"   // mesh_start
 #include "mesh_init.h"          // mesh_init
@@ -24,6 +25,8 @@
 #ifndef REV
 #define REV {0,0,1}
 #endif
+
+bool g_set_ask = false;
 
 /*      CALLBACKS                                                   */
 
@@ -49,7 +52,13 @@ void MeshBridge_Init(void)
 }
 
 void MeshBridge_Loop(void)
-{}
+{
+    if (g_set_ask)
+    {
+        app_luos_msg_model_send_msg(NULL);
+        g_set_ask = false;
+    }
+}
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 {

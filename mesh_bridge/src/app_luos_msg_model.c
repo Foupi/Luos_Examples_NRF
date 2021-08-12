@@ -6,6 +6,9 @@
 #include <stdint.h>         // uint16_t
 #include <string.h>         // memset
 
+// LUOS
+#include "robus_struct.h"   // msg_t
+
 // CUSTOM
 #include "luos_msg_model.h" // luos_msg_model_*
 
@@ -26,4 +29,11 @@ void app_luos_msg_model_init(void)
 void app_luos_msg_model_address_set(uint16_t device_address)
 {
     luos_msg_model_set_address(&s_msg_model, device_address);
+}
+
+void app_luos_msg_model_send_msg(msg_t* msg)
+{
+    // FIXME Translate addresses and find node address.
+
+    luos_msg_model_set(&s_msg_model, 0x0000, msg);
 }

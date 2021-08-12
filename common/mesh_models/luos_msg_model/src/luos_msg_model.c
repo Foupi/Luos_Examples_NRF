@@ -22,6 +22,7 @@
 
 // CUSTOM
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
+#include "mesh_msg_queue_manager.h" // luos_mesh_msg_prepare
 
 /*      CALLBACKS                                                   */
 
@@ -86,7 +87,23 @@ void luos_msg_model_set_address(luos_msg_model_t* instance,
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
                         const msg_t* msg)
 {
-    // FIXME Create and enqueue set request.
+    NRF_LOG_INFO("Preparing to send SET request!");
+
+    luos_msg_model_set_t            set_cmd;
+    // FIXME Fill message.
+
+    tx_queue_luos_msg_model_elm_t   msg_model_msg;
+    memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
+    msg_model_msg.cmd                   = TX_QUEUE_CMD_SET;
+    msg_model_msg.content.set           = set_cmd;
+
+    tx_queue_elm_t                  new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model                       = TX_QUEUE_MODEL_LUOS_MSG;
+    new_msg.model_handle                = instance->handle;
+    new_msg.content.luos_msg_model_msg  = msg_model_msg;
+
+    luos_mesh_msg_prepare(&new_msg);
 }
 
 static void luos_msg_model_set_cb(access_model_handle_t handle,
