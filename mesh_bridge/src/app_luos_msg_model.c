@@ -20,11 +20,16 @@
 // Static Luos MSG model instance.
 static luos_msg_model_t s_msg_model;
 
+/*      CALLBACKS                                                   */
+
+// FIXME Logs message.
+static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg);
+
 void app_luos_msg_model_init(void)
 {
     luos_msg_model_init_params_t params;
     memset(&params, 0 , sizeof(luos_msg_model_init_params_t));
-    // FIXME set params.
+    params.set_cb   = msg_model_set_cb;
 
     luos_msg_model_init(&s_msg_model, &params);
 }
@@ -40,4 +45,10 @@ void app_luos_msg_model_send_msg(msg_t* msg)
     // FIXME Translate addresses and find node address.
 
     luos_msg_model_set(&s_msg_model, 0x0003, msg);
+}
+
+static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
+{
+    NRF_LOG_INFO("Luos MSG SET command received from node 0x%x!",
+                 src_addr);
 }

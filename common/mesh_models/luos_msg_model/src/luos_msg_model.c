@@ -141,7 +141,16 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
         return;
     }
 
-    NRF_LOG_INFO("Luos MSG SET received!");
+    if (instance->set_cb == NULL)
+    {
+        NRF_LOG_INFO("No user-defined callback for SET commands on Luos MSG model!");
+    }
+    else
+    {
+        instance->set_cb(src_addr, NULL); // FIXME msg_t*
+    }
+
+    // FIXME Send status reply.
 }
 
 static void luos_msg_model_status_cb(access_model_handle_t handle,
