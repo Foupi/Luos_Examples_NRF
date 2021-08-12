@@ -55,7 +55,18 @@ void MeshBridge_Loop(void)
 {
     if (g_set_ask)
     {
-        app_luos_msg_model_send_msg(NULL);
+        msg_t dummy_msg;
+        memset(&dummy_msg, 0, sizeof(msg_t));
+        dummy_msg.header.target_mode    = ID;
+        dummy_msg.header.target         = 8;
+        dummy_msg.header.source         = 5;
+        dummy_msg.header.cmd            = IO_STATE;
+        dummy_msg.header.size           = 1;
+        dummy_msg.data[0]               = 0x01;
+
+        NRF_LOG_INFO("Luos msg size: %u!", sizeof(msg_t));
+
+        app_luos_msg_model_send_msg(&dummy_msg);
         g_set_ask = false;
     }
 }

@@ -51,4 +51,17 @@ static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
 {
     NRF_LOG_INFO("Luos MSG SET command received from node 0x%x!",
                  src_addr);
+
+    header_t    recv_header = recv_msg->header;
+    uint16_t    data_size   = recv_header.size;
+
+    NRF_LOG_INFO("Received message target: %u (mode 0x%x), from container %u!",
+                 recv_header.target, recv_header.target_mode,
+                 recv_header.source);
+    NRF_LOG_INFO("Message contains the command 0x%x, of size %u!",
+                 recv_header.cmd, data_size);
+    if (data_size > 0)
+    {
+        NRF_LOG_HEXDUMP_INFO(recv_msg->data, data_size);
+    }
 }

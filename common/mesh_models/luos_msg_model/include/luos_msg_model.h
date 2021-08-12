@@ -60,10 +60,13 @@ struct luos_msg_model_s
 typedef struct 
 {
     // Current transaction index.
-    uint16_t transaction_id;
+    uint16_t    transaction_id;
 
     // Unicast address of the destination element.
-    uint16_t                            dst_addr;
+    uint16_t    dst_addr;
+
+    // Luos message.
+    msg_t       msg;
 
 } luos_msg_model_set_t;
 

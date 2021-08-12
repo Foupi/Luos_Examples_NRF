@@ -53,6 +53,9 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
                                     access_message_tx_t* msg);
 
+// Returns the size of the given Luos MSG SET command.
+static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd);
+
 /*      CALLBACKS                                                   */
 
 /* If the event token matches the current one, toggles the send boolean
@@ -199,13 +202,16 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
     {
     case TX_QUEUE_CMD_SET:
     {
-        access_opcode_t opcode  = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
+        access_opcode_t opcode      = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
+        uint16_t        msg_size    = luos_msg_model_set_cmd_size(&(msg_model_msg.content.set));
 
-        msg->opcode             = opcode;
-        msg->p_buffer           = (uint8_t*)(&(msg_model_msg.content.set));
-        msg->length             = sizeof(luos_msg_model_set_t);
+        NRF_LOG_INFO("Message size: %u!", msg_size);
 
-        err_code                = access_model_publish(elm->model_handle,
+        msg->opcode                 = opcode;
+        msg->p_buffer               = (uint8_t*)(&(msg_model_msg.content.set));
+        msg->length                 = msg_size;
+
+        err_code                    = access_model_publish(elm->model_handle,
                                                        msg);
     }
         break;
@@ -216,6 +222,20 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
     }
 
     APP_ERROR_CHECK(err_code);
+}
+
+static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd)
+{
+    // Basic struct size.
+    uint16_t base_size                      = sizeof(luos_msg_model_set_t);
+
+    // Struct size without msg_t data array space.
+    uint16_t size_without_msg_payload_space = base_size - MAX_DATA_MSG_SIZE;
+
+    // Actual message payload size.
+    uint16_t msg_payload_size               = set_cmd->msg.header.size;
+
+    return size_without_msg_payload_space + msg_payload_size;
 }
 
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)

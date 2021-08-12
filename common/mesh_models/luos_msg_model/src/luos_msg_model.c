@@ -97,17 +97,20 @@ void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
     luos_msg_model_set_t            set_cmd;
     set_cmd.transaction_id          = s_curr_transaction_id;
     set_cmd.dst_addr                = dst_addr;
+    memcpy(&(set_cmd.msg), msg, sizeof(msg_t));
 
     tx_queue_luos_msg_model_elm_t   msg_model_msg;
     memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
     msg_model_msg.cmd                   = TX_QUEUE_CMD_SET;
-    msg_model_msg.content.set           = set_cmd;
+    memcpy(&(msg_model_msg.content.set), &set_cmd,
+           sizeof(luos_msg_model_set_t));
 
     tx_queue_elm_t                  new_msg;
     memset(&new_msg, 0, sizeof(tx_queue_elm_t));
     new_msg.model                       = TX_QUEUE_MODEL_LUOS_MSG;
     new_msg.model_handle                = instance->handle;
-    new_msg.content.luos_msg_model_msg  = msg_model_msg;
+    memcpy(&(new_msg.content.luos_msg_model_msg), &msg_model_msg,
+           sizeof(tx_queue_luos_msg_model_elm_t));
 
     luos_mesh_msg_prepare(&new_msg);
 }
@@ -127,13 +130,14 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
     }
 
     const luos_msg_model_set_t* set_cmd = (luos_msg_model_set_t*)(msg->p_data);
+
     if (set_cmd->transaction_id <= s_curr_transaction_id)
     {
         // Transaction either already occured or is currently occuring.
         return;
     }
 
-    s_curr_transaction_id   = set_cmd->transaction_id;
+    s_curr_transaction_id       = set_cmd->transaction_id;
 
     if (set_cmd->dst_addr != instance->element_address)
     {
@@ -141,13 +145,15 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
         return;
     }
 
+    const   msg_t*  luos_msg    = &(set_cmd->msg);
+
     if (instance->set_cb == NULL)
     {
         NRF_LOG_INFO("No user-defined callback for SET commands on Luos MSG model!");
     }
     else
     {
-        instance->set_cb(src_addr, NULL); // FIXME msg_t*
+        instance->set_cb(src_addr, luos_msg);
     }
 
     // FIXME Send status reply.
