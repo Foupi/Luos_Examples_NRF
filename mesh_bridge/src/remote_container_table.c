@@ -7,6 +7,9 @@
 #include <stdint.h>                 // uint16_t
 #include <string.h>                 // memcpy, memset
 
+// NRF
+#include "nrf_log.h"                // NRF_LOG_INFO
+
 // LUOS
 #include "luos.h"                   /* container_t,
                                     ** Luos_CreateContainer, msg_t,
@@ -15,6 +18,7 @@
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
+#include "local_container_table.h"  // local_container_table_*
 #include "luos_mesh_common.h"       // LUOS_MESH_NETWORK_MAX_NODES
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 
@@ -41,9 +45,16 @@ static struct
 #define REV {0,0,1}
 #endif
 
+/*      STATIC FUNCTIONS                                            */
+
+/* Returns the remote container entry corresponding to the given
+** container, or NULL if it does not exist.
+*/
+static remote_container_t*  remote_container_table_get_entry(const container_t* container_addr);
+
 /*      CALLBACKS                                                   */
 
-// FIXME Does nothing for now.
+// FIXME Logs message.
 static void RemoteContainer_MsgHandler(container_t* container,
                                        msg_t* msg);
 
@@ -118,6 +129,57 @@ void remote_container_table_clear_address(uint16_t node_address)
     }
 }
 
+static remote_container_t*  remote_container_table_get_entry(const container_t* container_addr)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t* entry = s_remote_container_table.remote_containers + entry_idx;
+
+        if (entry->local_instance == container_addr)
+        {
+            return entry;
+        }
+    }
+
+    return NULL;
+}
+
 static void RemoteContainer_MsgHandler(container_t* container,
                                        msg_t* msg)
-{}
+{
+    if (msg->header.target_mode != ID)
+    {
+        // Let's let the complicated cases behind for now...
+        return;
+    }
+
+    uint16_t            src_id          = msg->header.source;
+    uint16_t            target_id       = msg->header.target;
+
+    NRF_LOG_INFO("Message received by container %u, from container %u!",
+                 target_id, src_id);
+
+    routing_table_t*    exposed_entry   = local_container_table_get_entry_from_local_id(src_id);
+    if (exposed_entry == NULL)
+    {
+        NRF_LOG_INFO("Local container entry not found!");
+        return;
+    }
+
+    uint16_t            new_src         = exposed_entry->id;
+
+    remote_container_t* remote_entry    = remote_container_table_get_entry(container);
+    if (remote_entry == NULL)
+    {
+        NRF_LOG_INFO("Remote container entry not found!");
+        return;
+    }
+
+    uint16_t            node_addr       = remote_entry->node_addr;
+    uint16_t            remote_id       = remote_entry->remote_rtb_entry.id;
+
+    NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
+                 remote_id, node_addr, new_src);
+}

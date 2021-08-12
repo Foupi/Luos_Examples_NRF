@@ -87,7 +87,7 @@ uint16_t local_container_table_get_nb_entries(void)
     return s_local_container_table.nb_local_containers;
 }
 
-routing_table_t* local_container_table_get_entry(uint16_t entry_idx)
+routing_table_t* local_container_table_get_entry_from_idx(uint16_t entry_idx)
 {
     if (entry_idx >= s_local_container_table.nb_local_containers)
     {
@@ -97,6 +97,22 @@ routing_table_t* local_container_table_get_entry(uint16_t entry_idx)
 
     local_container_t*  local_container = s_local_container_table.local_containers + entry_idx;
     return &(local_container->exposed_entry);
+}
+
+routing_table_t* local_container_table_get_entry_from_local_id(uint16_t id)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_local_container_table.nb_local_containers;
+         entry_idx++)
+    {
+        local_container_t*  entry   = s_local_container_table.local_containers + entry_idx;
+        if (entry->local_id == id)
+        {
+            return &(entry->exposed_entry);
+        }
+    }
+
+    return NULL;
 }
 
 void local_container_table_update_local_ids(uint16_t bridge_id)

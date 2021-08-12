@@ -32,7 +32,12 @@ uint16_t local_container_table_fill(void);
 uint16_t local_container_table_get_nb_entries(void);
 
 // Returns the entry located at the given index, or NULL if it is empty.
-routing_table_t* local_container_table_get_entry(uint16_t entry_idx);
+routing_table_t* local_container_table_get_entry_from_idx(uint16_t entry_idx);
+
+/* Returns the entry corresponding to the given local ID, or NULL if it
+** is not found.
+*/
+routing_table_t* local_container_table_get_entry_from_local_id(uint16_t id);
 
 // Updates the local IDs of each entry in the local container table.
 void local_container_table_update_local_ids(uint16_t bridge_id);

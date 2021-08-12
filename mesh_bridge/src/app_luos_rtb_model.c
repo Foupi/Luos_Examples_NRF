@@ -189,7 +189,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
          entry_idx++)
     {
-        routing_table_t* entry = local_container_table_get_entry(entry_idx);
+        routing_table_t* entry = local_container_table_get_entry_from_idx(entry_idx);
         if (entry == NULL)
         {
             // FIXME Manage error.
