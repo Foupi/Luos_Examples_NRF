@@ -96,6 +96,7 @@ void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
 
     luos_msg_model_set_t            set_cmd;
     set_cmd.transaction_id          = s_curr_transaction_id;
+    set_cmd.dst_addr                = dst_addr;
 
     tx_queue_luos_msg_model_elm_t   msg_model_msg;
     memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
@@ -133,6 +134,12 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
     }
 
     s_curr_transaction_id   = set_cmd->transaction_id;
+
+    if (set_cmd->dst_addr != instance->element_address)
+    {
+        // Model instance is not the message destination.
+        return;
+    }
 
     NRF_LOG_INFO("Luos MSG SET received!");
 }

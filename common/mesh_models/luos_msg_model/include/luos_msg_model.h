@@ -62,6 +62,9 @@ typedef struct
     // Current transaction index.
     uint16_t transaction_id;
 
+    // Unicast address of the destination element.
+    uint16_t                            dst_addr;
+
 } luos_msg_model_set_t;
 
 // Initialize the given instance with the given parameters.
