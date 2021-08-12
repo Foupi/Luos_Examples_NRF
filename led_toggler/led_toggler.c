@@ -36,8 +36,8 @@ static void LedToggler_MsgHandler(container_t* container, msg_t* msg);
 void LedToggler_Init(void)
 {
     revision_t revision = {.unmap = REV};
-    Luos_CreateContainer(LedToggler_MsgHandler, STATE_MOD,
-                         "led_toggler", revision);
+    Luos_CreateContainer(LedToggler_MsgHandler, LED_TOGGLER_TYPE,
+                         LED_TOGGLER_ALIAS, revision);
 }
 
 void LedToggler_Loop(void)
