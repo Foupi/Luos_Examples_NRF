@@ -59,7 +59,8 @@ struct luos_msg_model_s
 // Payload type for a Luos MSG model SET command.
 typedef struct 
 {
-    // FIXME Struct fields.
+    // Current transaction index.
+    uint16_t transaction_id;
 
 } luos_msg_model_set_t;
 

@@ -27,7 +27,7 @@
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Index of the current transaction
-uint16_t                                s_curr_transaction_id               = 0;
+static uint16_t s_curr_transaction_id   = 0;
 
 /*      STATIC FUNCTIONS                                            */
 

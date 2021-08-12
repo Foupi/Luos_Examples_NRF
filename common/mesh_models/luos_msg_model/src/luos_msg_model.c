@@ -24,6 +24,11 @@
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
 #include "mesh_msg_queue_manager.h" // luos_mesh_msg_prepare
 
+/*      STATIC VARIABLES & CONSTANTS                                */
+
+// Index of the current transaction.
+static uint16_t s_curr_transaction_id   = 0;
+
 /*      CALLBACKS                                                   */
 
 // Manage a Luos MSG SET command.
@@ -87,10 +92,10 @@ void luos_msg_model_set_address(luos_msg_model_t* instance,
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
                         const msg_t* msg)
 {
-    NRF_LOG_INFO("Preparing to send SET request!");
+    s_curr_transaction_id++;
 
     luos_msg_model_set_t            set_cmd;
-    // FIXME Fill message.
+    set_cmd.transaction_id          = s_curr_transaction_id;
 
     tx_queue_luos_msg_model_elm_t   msg_model_msg;
     memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
@@ -110,6 +115,25 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
                                   const access_message_rx_t* msg,
                                   void* arg)
 {
+    luos_msg_model_t*           instance  = (luos_msg_model_t*)arg;
+    uint16_t                    src_addr    = msg->meta_data.src.value;
+
+    if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
+        || src_addr == instance->element_address)
+    {
+        // Either model is not ready, or this is a localhost message.
+        return;
+    }
+
+    const luos_msg_model_set_t* set_cmd = (luos_msg_model_set_t*)(msg->p_data);
+    if (set_cmd->transaction_id <= s_curr_transaction_id)
+    {
+        // Transaction either already occured or is currently occuring.
+        return;
+    }
+
+    s_curr_transaction_id   = set_cmd->transaction_id;
+
     NRF_LOG_INFO("Luos MSG SET received!");
 }
 
