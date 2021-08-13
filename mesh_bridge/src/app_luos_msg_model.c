@@ -117,5 +117,16 @@ static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
     NRF_LOG_INFO("Local IDs retrieved! source: %u; target: %u!",
                  local_src, local_dst);
 
-    // FIXME Send message.
+    msg_t local_msg;
+    memset(&local_msg, 0, sizeof(local_msg));
+    local_msg.header.target_mode    = ID;
+    local_msg.header.target         = local_dst;
+    local_msg.header.cmd            = recv_msg->header.cmd;
+    if (data_size > 0)
+    {
+        local_msg.header.size       = data_size;
+        memcpy(local_msg.data, recv_msg->data, data_size);
+    }
+
+    Luos_SendMsg(remote_entry->local_instance, &local_msg);
 }
