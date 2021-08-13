@@ -39,6 +39,11 @@ routing_table_t* local_container_table_get_entry_from_idx(uint16_t entry_idx);
 */
 routing_table_t* local_container_table_get_entry_from_local_id(uint16_t id);
 
+/* Returns the entry corresponding to the given exposed ID, or NULL if
+** it is not found.
+*/
+local_container_t* local_container_table_get_entry_from_exposed_id(uint16_t id);
+
 // Updates the local IDs of each entry in the local container table.
 void local_container_table_update_local_ids(uint16_t bridge_id);
 

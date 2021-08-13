@@ -97,16 +97,25 @@ static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
         NRF_LOG_HEXDUMP_INFO(recv_msg->data, data_size);
     }
 
-    remote_container_t* entry   = remote_container_table_get_entry_from_addr_and_remote_id(src_addr, msg_src);
-    if (entry == NULL)
+    remote_container_t* remote_entry   = remote_container_table_get_entry_from_addr_and_remote_id(src_addr, msg_src);
+    if (remote_entry == NULL)
     {
         NRF_LOG_INFO("Remote container entry not found!");
+        return;
     }
 
-    uint16_t    local_src   = entry->local_id;
+    local_container_t*  local_entry     = local_container_table_get_entry_from_exposed_id(msg_dst);
+    if (local_entry == NULL)
+    {
+        NRF_LOG_INFO("Local container entry not found!");
+        return;
+    }
 
-    NRF_LOG_INFO("Local instance of remote source: %u!", local_src);
-    // FIXME Retrieve target ID from local containers table.
+    uint16_t    local_src   = remote_entry->local_id;
+    uint16_t    local_dst   = local_entry->local_id;
+
+    NRF_LOG_INFO("Local IDs retrieved! source: %u; target: %u!",
+                 local_src, local_dst);
 
     // FIXME Send message.
 }
