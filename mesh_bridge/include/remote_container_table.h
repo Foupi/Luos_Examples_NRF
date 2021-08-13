@@ -21,6 +21,9 @@ typedef struct
     // Unicast address of the Mesh node hosting the remote container.
     uint16_t        node_addr;
 
+    // ID of the remote container in the local RTB.
+    uint16_t        local_id;
+
     // Instance of the remote container on the local system.
     container_t*    local_instance;
 
