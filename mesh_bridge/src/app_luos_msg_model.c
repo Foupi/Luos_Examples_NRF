@@ -3,17 +3,20 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdint.h>         // uint16_t
-#include <string.h>         // memset
+#include <stdint.h>                 // uint16_t
+#include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"        // NRF_LOG_INFO
+#include "nrf_log.h"                // NRF_LOG_INFO
 
 // LUOS
-#include "robus_struct.h"   // msg_t
+#include "robus_struct.h"           // msg_t
+#include "routing_table.h"          // routing_table_t
 
 // CUSTOM
-#include "luos_msg_model.h" // luos_msg_model_*
+#include "local_container_table.h"  // local_container_table_*
+#include "luos_msg_model.h"         // luos_msg_model_*
+#include "remote_container_table.h" // remote_container_table_*
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -36,12 +39,42 @@ void app_luos_msg_model_init(void)
 
 void app_luos_msg_model_address_set(uint16_t device_address)
 {
-    NRF_LOG_INFO("Device address is 0x%x!", device_address);
     luos_msg_model_set_address(&s_msg_model, device_address);
 }
 
-void app_luos_msg_model_send_msg(uint16_t node_addr, msg_t* msg)
+void app_luos_msg_model_send_msg(msg_t* msg)
 {
+    uint16_t            src_id          = msg->header.source;
+    uint16_t            target_id       = msg->header.target;
+
+    NRF_LOG_INFO("Message received by container %u, from container %u!",
+                 target_id, src_id);
+
+    routing_table_t*    exposed_entry   = local_container_table_get_entry_from_local_id(src_id);
+    if (exposed_entry == NULL)
+    {
+        NRF_LOG_INFO("Local container entry not found!");
+        return;
+    }
+
+    uint16_t            new_src         = exposed_entry->id;
+
+    remote_container_t* remote_entry    = remote_container_table_get_entry_from_local_id(target_id);
+    if (remote_entry == NULL)
+    {
+        NRF_LOG_INFO("Remote container entry not found!");
+        return;
+    }
+
+    uint16_t            node_addr       = remote_entry->node_addr;
+    uint16_t            remote_id       = remote_entry->remote_rtb_entry.id;
+
+    NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
+                 remote_id, node_addr, new_src);
+
+    msg->header.source  = new_src;
+    msg->header.target  = remote_id;
+
     luos_msg_model_set(&s_msg_model, node_addr, msg);
 }
 

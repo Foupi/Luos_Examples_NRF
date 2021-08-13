@@ -47,12 +47,10 @@ static struct
 #define REV {0,0,1}
 #endif
 
-/*      STATIC FUNCTIONS                                            */
+// Number of local containers hosted by the Mesh Bridge node.
+static uint16_t s_nb_local_containers   = 0;
 
-/* Returns the remote container entry corresponding to the given
-** container, or NULL if it does not exist.
-*/
-static remote_container_t*  remote_container_table_get_entry(const container_t* container_addr);
+/*      STATIC FUNCTIONS                                            */
 
 /* Returns the number of non-remote containers in the node hosting the
 ** Mesh Bridge container.
@@ -81,11 +79,19 @@ bool remote_container_table_add_entry(uint16_t node_address,
     memcpy(&(insertion_entry->remote_rtb_entry), entry,
            sizeof(routing_table_t));
 
-    uint16_t            nb_local_containers = get_nb_local_containers_in_mesh_bridge_node();
-    insertion_entry->local_id       = nb_local_containers + s_remote_container_table.nb_remote_containers;
+    if (s_nb_local_containers == 0)
+    {
+        s_nb_local_containers = get_nb_local_containers_in_mesh_bridge_node();
+    }
+    uint16_t            first_available_id  = s_nb_local_containers + 1; // Since container indexes start at 1.
+
+    insertion_entry->local_id       = first_available_id + s_remote_container_table.nb_remote_containers;
     insertion_entry->local_instance = Luos_CreateContainer(
         RemoteContainer_MsgHandler, entry->type, entry->alias, revision
     );
+
+    NRF_LOG_INFO("Remote container %s received ID %u!",
+                 entry->alias, insertion_entry->local_id);
 
     s_remote_container_table.nb_remote_containers++;
 
@@ -156,23 +162,6 @@ remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t loca
     return NULL;
 }
 
-static remote_container_t* remote_container_table_get_entry(const container_t* container_addr)
-{
-    for (uint16_t entry_idx = 0;
-         entry_idx < s_remote_container_table.nb_remote_containers;
-         entry_idx++)
-    {
-        remote_container_t* entry = s_remote_container_table.remote_containers + entry_idx;
-
-        if (entry->local_instance == container_addr)
-        {
-            return entry;
-        }
-    }
-
-    return NULL;
-}
-
 static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
 {
     routing_table_t*    rtb         = RoutingTB_Get();
@@ -205,18 +194,9 @@ static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
     }
 
     uint16_t nb_local_containers = 0;
-    node_entry++;   // To mach first container entry.
+    node_entry++;   // To match first container entry.
     while (node_entry[nb_local_containers].mode == CONTAINER)
     {
-        uint16_t            curr_cont_id    = node_entry[nb_local_containers].id;
-        remote_container_t* found_entry     = remote_container_table_get_entry_from_local_id(curr_cont_id);
-
-        if (found_entry != NULL)
-        {
-            // Entry was found, it means we reached remote containers.
-            break;
-        }
-
         nb_local_containers++;
     }
 
@@ -232,36 +212,5 @@ static void RemoteContainer_MsgHandler(container_t* container,
         return;
     }
 
-    uint16_t            src_id          = msg->header.source;
-    uint16_t            target_id       = msg->header.target;
-
-    NRF_LOG_INFO("Message received by container %u, from container %u!",
-                 target_id, src_id);
-
-    routing_table_t*    exposed_entry   = local_container_table_get_entry_from_local_id(src_id);
-    if (exposed_entry == NULL)
-    {
-        NRF_LOG_INFO("Local container entry not found!");
-        return;
-    }
-
-    uint16_t            new_src         = exposed_entry->id;
-
-    remote_container_t* remote_entry    = remote_container_table_get_entry(container);
-    if (remote_entry == NULL)
-    {
-        NRF_LOG_INFO("Remote container entry not found!");
-        return;
-    }
-
-    uint16_t            node_addr       = remote_entry->node_addr;
-    uint16_t            remote_id       = remote_entry->remote_rtb_entry.id;
-
-    NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
-                 remote_id, node_addr, new_src);
-
-    msg->header.source  = new_src;
-    msg->header.target  = remote_id;
-
-    app_luos_msg_model_send_msg(node_addr, msg);
+    app_luos_msg_model_send_msg(msg);
 }

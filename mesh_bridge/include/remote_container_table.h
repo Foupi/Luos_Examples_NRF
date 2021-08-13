@@ -43,4 +43,9 @@ void remote_container_table_clear(void);
 */
 void remote_container_table_clear_address(uint16_t node_address);
 
+/* Returns the remote container entry corresponding to the given local
+** ID, or NULL if it does not exist.
+*/
+remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t local_id);
+
 #endif /* ! REMOTE_CONTAINER_TABLE_H */
