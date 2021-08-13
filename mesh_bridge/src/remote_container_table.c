@@ -22,6 +22,7 @@
 #include "local_container_table.h"  // local_container_table_*
 #include "luos_mesh_common.h"       // LUOS_MESH_NETWORK_MAX_NODES
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
+#include "mesh_bridge_utils.h"      // find_mesh_bridge_node_id
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -53,6 +54,11 @@ static struct
 */
 static remote_container_t*  remote_container_table_get_entry(const container_t* container_addr);
 
+/* Returns the number of non-remote containers in the node hosting the
+** Mesh Bridge container.
+*/
+static uint16_t             get_nb_local_containers_in_mesh_bridge_node(void);
+
 /*      CALLBACKS                                                   */
 
 // FIXME Logs message.
@@ -70,11 +76,13 @@ bool remote_container_table_add_entry(uint16_t node_address,
         return false;
     }
 
-    remote_container_t* insertion_entry = s_remote_container_table.remote_containers + s_remote_container_table.nb_remote_containers;
+    remote_container_t* insertion_entry     = s_remote_container_table.remote_containers + s_remote_container_table.nb_remote_containers;
     insertion_entry->node_addr  = node_address;
     memcpy(&(insertion_entry->remote_rtb_entry), entry,
            sizeof(routing_table_t));
 
+    uint16_t            nb_local_containers = get_nb_local_containers_in_mesh_bridge_node();
+    insertion_entry->local_id       = nb_local_containers + s_remote_container_table.nb_remote_containers;
     insertion_entry->local_instance = Luos_CreateContainer(
         RemoteContainer_MsgHandler, entry->type, entry->alias, revision
     );
@@ -124,13 +132,31 @@ void remote_container_table_clear_address(uint16_t node_address)
 
             replaced_entry  = s_remote_container_table.remote_containers + replacement_idx;
             replacing_entry = replaced_entry + 1;
+            replacing_entry->local_id--;
             memcpy(replaced_entry, replacing_entry, sizeof(remote_container_t));
         }
         s_remote_container_table.nb_remote_containers--;
     }
 }
 
-static remote_container_t*  remote_container_table_get_entry(const container_t* container_addr)
+remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t local_id)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t* entry   = s_remote_container_table.remote_containers + entry_idx;
+
+        if (entry->local_id == local_id)
+        {
+            return entry;
+        }
+    }
+
+    return NULL;
+}
+
+static remote_container_t* remote_container_table_get_entry(const container_t* container_addr)
 {
     for (uint16_t entry_idx = 0;
          entry_idx < s_remote_container_table.nb_remote_containers;
@@ -145,6 +171,56 @@ static remote_container_t*  remote_container_table_get_entry(const container_t* 
     }
 
     return NULL;
+}
+
+static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
+{
+    routing_table_t*    rtb         = RoutingTB_Get();
+    uint16_t            last_entry  = RoutingTB_GetLastEntry();
+
+    uint16_t            node_id     = find_mesh_bridge_node_id(rtb, last_entry);
+    if (node_id == 0)
+    {
+        NRF_LOG_INFO("Node ID of Mesh Bridge container not found!");
+        return 0;
+    }
+
+    routing_table_t*    node_entry  = NULL;
+
+    for (uint16_t entry_idx = 0; entry_idx < last_entry; entry_idx++)
+    {
+        routing_table_t*    curr_entry  = rtb + entry_idx;
+
+        if (curr_entry->mode == NODE && curr_entry->node_id == node_id)
+        {
+            node_entry = curr_entry;
+            break;
+        }
+    }
+
+    if (node_entry == NULL)
+    {
+        // Not found, for some reason...
+        return 0;
+    }
+
+    uint16_t nb_local_containers = 0;
+    node_entry++;   // To mach first container entry.
+    while (node_entry[nb_local_containers].mode == CONTAINER)
+    {
+        uint16_t            curr_cont_id    = node_entry[nb_local_containers].id;
+        remote_container_t* found_entry     = remote_container_table_get_entry_from_local_id(curr_cont_id);
+
+        if (found_entry != NULL)
+        {
+            // Entry was found, it means we reached remote containers.
+            break;
+        }
+
+        nb_local_containers++;
+    }
+
+    return nb_local_containers;
 }
 
 static void RemoteContainer_MsgHandler(container_t* container,
