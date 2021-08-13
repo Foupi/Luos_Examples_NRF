@@ -48,4 +48,10 @@ void remote_container_table_clear_address(uint16_t node_address);
 */
 remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t local_id);
 
+/* Returns the remote container entry corresponding to the given unicast
+** address and remote ID, or NULL if it does not exist.
+*/
+remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uint16_t unicast_addr,
+    uint16_t remote_id);
+
 #endif /* ! REMOTE_CONTAINER_TABLE_H */

@@ -85,14 +85,28 @@ static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
 
     header_t    recv_header = recv_msg->header;
     uint16_t    data_size   = recv_header.size;
+    uint16_t    msg_src     = recv_header.source;
+    uint16_t    msg_dst     = recv_header.target;
 
-    NRF_LOG_INFO("Received message target: %u (mode 0x%x), from container %u!",
-                 recv_header.target, recv_header.target_mode,
-                 recv_header.source);
+    NRF_LOG_INFO("Received message target: %u, from container %u!",
+                 msg_dst, msg_src);
     NRF_LOG_INFO("Message contains the command 0x%x, of size %u!",
                  recv_header.cmd, data_size);
     if (data_size > 0)
     {
         NRF_LOG_HEXDUMP_INFO(recv_msg->data, data_size);
     }
+
+    remote_container_t* entry   = remote_container_table_get_entry_from_addr_and_remote_id(src_addr, msg_src);
+    if (entry == NULL)
+    {
+        NRF_LOG_INFO("Remote container entry not found!");
+    }
+
+    uint16_t    local_src   = entry->local_id;
+
+    NRF_LOG_INFO("Local instance of remote source: %u!", local_src);
+    // FIXME Retrieve target ID from local containers table.
+
+    // FIXME Send message.
 }

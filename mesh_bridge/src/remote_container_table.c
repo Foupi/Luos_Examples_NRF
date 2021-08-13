@@ -162,6 +162,24 @@ remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t loca
     return NULL;
 }
 
+remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uint16_t unicast_addr,
+    uint16_t remote_id)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t* entry   = s_remote_container_table.remote_containers + entry_idx;
+
+        if (entry->node_addr == unicast_addr && entry->remote_rtb_entry.id == remote_id)
+        {
+            return entry;
+        }
+    }
+
+    return NULL;
+}
+
 static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
 {
     routing_table_t*    rtb         = RoutingTB_Get();
