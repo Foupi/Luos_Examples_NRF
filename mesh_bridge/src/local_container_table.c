@@ -7,6 +7,9 @@
 #include <stdint.h>                 // uint16_t
 #include <string.h>                 // memcpy
 
+// NRF
+#include "nrf_log.h"                // NRF_LOG_INFO
+
 // LUOS
 #include "config.h"                 // MAX_ALIAS_SIZE
 #include "routing_table.h"          // routing_table_t
@@ -147,6 +150,31 @@ local_container_t* local_container_table_get_entry_from_exposed_id(uint16_t id)
     }
 
     return NULL;
+}
+
+void local_container_table_print(void)
+{
+    if (s_local_container_table.nb_local_containers == 0)
+    {
+        NRF_LOG_INFO("Local container table is empty!");
+        return;
+    }
+
+    NRF_LOG_INFO("Local container table contains %u entries:",
+                 s_local_container_table.nb_local_containers);
+
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_local_container_table.nb_local_containers;
+         entry_idx++)
+    {
+        local_container_t entry = s_local_container_table.local_containers[entry_idx];
+
+        NRF_LOG_INFO("Entry %u: Type = %s, Alias = %s, Exposed ID = %u, Local ID = %u!",
+                     entry_idx,
+                     RoutingTB_StringFromType(entry.exposed_entry.type),
+                     entry.exposed_entry.alias, entry.exposed_entry.id,
+                     entry.local_id);
+    }
 }
 
 static bool is_entry_to_store(routing_table_t* entry)

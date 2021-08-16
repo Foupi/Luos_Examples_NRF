@@ -13,6 +13,7 @@
 // CUSTOM
 #include "app_luos_msg_model.h" // app_luos_msg_model_send_msg
 #include "app_luos_rtb_model.h" // app_luos_rtb_model_get
+#include "local_container_table.h"  // local_container_table_*
 #include "luos_mesh_common.h"   // mesh_start
 #include "mesh_init.h"          // mesh_init
 #include "provisioning.h"       /* provisioning_init,
@@ -62,7 +63,8 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         break;
 
     case MESH_BRIDGE_PRINT_INTERNAL_TABLES:
-        NRF_LOG_INFO("Received request to print internal tables!");
+        local_container_table_print();
+        // FIXME Print remote container table.
         break;
 
     case MESH_BRIDGE_RESET_INTERNAL_TABLES:
