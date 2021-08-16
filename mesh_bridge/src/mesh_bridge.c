@@ -90,7 +90,19 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         break;
 
     case MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE:
-        NRF_LOG_INFO("Received request to fill local container table!");
+    {
+        uint16_t nb_local_containers = local_container_table_fill();
+
+        msg_t filled;
+        memset(&filled, 0, sizeof(msg_t));
+        filled.header.target_mode   = ID;
+        filled.header.target        = msg->header.source;
+        filled.header.cmd           = MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED;
+        filled.header.size          = sizeof(uint16_t);
+        memcpy(filled.data, &nb_local_containers, sizeof(uint16_t));
+
+        Luos_SendMsg(s_mesh_bridge_instance, &filled);
+    }
         break;
 
     case MESH_BRIDGE_UPDATE_INTERNAL_TABLES:
