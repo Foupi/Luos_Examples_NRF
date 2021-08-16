@@ -228,14 +228,7 @@ static void ext_rtb_complete(void)
 
         s_luos_rtb_model_ctx.curr_ext_rtb_src_id = new_src_id;
     }
-    else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
-    {
-        routing_table_t*    rtb = RoutingTB_Get();
-        uint16_t nb_entries     = RoutingTB_GetLastEntry();
-
-        s_luos_rtb_model_ctx.curr_mesh_bridge_id = find_mesh_bridge_container_id(rtb, nb_entries);
-    }
-    else
+    else if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_RECEIVING)
     {
         // Wrong state: leave.
         return;
@@ -277,7 +270,14 @@ static void rtb_model_get_cb(uint16_t src_addr)
         return;
     }
 
+    routing_table_t*    rtb = RoutingTB_Get();
+    uint16_t nb_entries     = RoutingTB_GetLastEntry();
+
+    s_luos_rtb_model_ctx.curr_mesh_bridge_id    = find_mesh_bridge_container_id(rtb,
+        nb_entries);
+
     remote_container_table_clear_address(src_addr);
+    remote_container_table_update_local_ids(s_luos_rtb_model_ctx.curr_mesh_bridge_id);
 
     NRF_LOG_INFO("Luos RTB GET request received: switch to REPLYING mode!");
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_REPLYING;
