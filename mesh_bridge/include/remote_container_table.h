@@ -54,4 +54,7 @@ remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t loca
 remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uint16_t unicast_addr,
     uint16_t remote_id);
 
+// Displays the entries in the remote container table.
+void remote_container_table_print(void);
+
 #endif /* ! REMOTE_CONTAINER_TABLE_H */

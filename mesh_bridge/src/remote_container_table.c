@@ -90,9 +90,6 @@ bool remote_container_table_add_entry(uint16_t node_address,
         RemoteContainer_MsgHandler, entry->type, entry->alias, revision
     );
 
-    NRF_LOG_INFO("Remote container %s received ID %u!",
-                 entry->alias, insertion_entry->local_id);
-
     s_remote_container_table.nb_remote_containers++;
 
     return true;
@@ -178,6 +175,32 @@ remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uin
     }
 
     return NULL;
+}
+
+void remote_container_table_print(void)
+{
+    if (s_remote_container_table.nb_remote_containers == 0)
+    {
+        NRF_LOG_INFO("Remote containers table is empty!");
+        return;
+    }
+
+    NRF_LOG_INFO("Remote containers table contains %u entries:",
+                 s_remote_container_table.nb_remote_containers);
+
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t entry = s_remote_container_table.remote_containers[entry_idx];
+
+        NRF_LOG_INFO("Entry %u: Type = %s, Alias = %s, Remote ID = %u, Local ID = %u, Node address = 0x%x!",
+                     entry_idx,
+                     RoutingTB_StringFromType(entry.remote_rtb_entry.type),
+                     entry.remote_rtb_entry.alias,
+                     entry.remote_rtb_entry.id, entry.local_id,
+                     entry.node_addr);
+    }
 }
 
 static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)

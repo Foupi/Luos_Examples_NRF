@@ -20,6 +20,7 @@
                                 ** persistent_conf_init,
                                 ** prov_listening_start
                                 */
+#include "remote_container_table.h" // remote_container_table_print
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
@@ -64,7 +65,7 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 
     case MESH_BRIDGE_PRINT_INTERNAL_TABLES:
         local_container_table_print();
-        // FIXME Print remote container table.
+        remote_container_table_print();
         break;
 
     case MESH_BRIDGE_RESET_INTERNAL_TABLES:
