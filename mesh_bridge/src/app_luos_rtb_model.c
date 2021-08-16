@@ -133,6 +133,7 @@ void app_luos_rtb_model_init(void)
     APP_ERROR_CHECK(err_code);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+    local_container_table_clear();
     remote_container_table_clear();
 }
 
@@ -178,10 +179,9 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     uint16_t            nb_local_entries    = local_container_table_get_nb_entries();
     if (nb_local_entries == 0)
     {
-        // Local routing table has not been stored in static context.
-        nb_local_entries = local_container_table_fill();
+        NRF_LOG_INFO("Local container table not filled!");
 
-        // If nb local entries is still 0, loop will be skipped.
+        // Loop will be skipped.
     }
 
     for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
@@ -242,6 +242,7 @@ static void ext_rtb_complete(void)
     }
 
     local_container_table_update_local_ids(s_luos_rtb_model_ctx.curr_mesh_bridge_id);
+    // No need to update IDs of remote containers, as they were inserted with correct IDs.
 
     RoutingTB_DetectContainers(s_luos_rtb_model_ctx.mesh_bridge_container);
 

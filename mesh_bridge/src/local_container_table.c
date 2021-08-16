@@ -102,23 +102,6 @@ routing_table_t* local_container_table_get_entry_from_idx(uint16_t entry_idx)
     return &(local_container->exposed_entry);
 }
 
-void local_container_table_update_local_ids(uint16_t bridge_id)
-{
-    for (uint16_t entry_idx = 0;
-         entry_idx < s_local_container_table.nb_local_containers;
-         entry_idx++)
-    {
-        local_container_t*  entry;
-        uint16_t            new_id;
-
-        entry   = s_local_container_table.local_containers + entry_idx;
-        new_id  = RoutingTB_FindFutureContainerID(entry->local_id,
-                                                  bridge_id);
-
-        entry->local_id = new_id;
-    }
-}
-
 routing_table_t* local_container_table_get_entry_from_local_id(uint16_t id)
 {
     for (uint16_t entry_idx = 0;
@@ -150,6 +133,23 @@ local_container_t* local_container_table_get_entry_from_exposed_id(uint16_t id)
     }
 
     return NULL;
+}
+
+void local_container_table_update_local_ids(uint16_t dtx_container_id)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_local_container_table.nb_local_containers;
+         entry_idx++)
+    {
+        local_container_t*  entry;
+        uint16_t            new_id;
+
+        entry   = s_local_container_table.local_containers + entry_idx;
+        new_id  = RoutingTB_FindFutureContainerID(entry->local_id,
+                                                  dtx_container_id);
+
+        entry->local_id = new_id;
+    }
 }
 
 void local_container_table_clear(void)
