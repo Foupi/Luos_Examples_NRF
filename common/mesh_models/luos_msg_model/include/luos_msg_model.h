@@ -9,8 +9,8 @@
 // MESH SDK
 #include "access.h"         // access_model_handle_t
 
-// LUOS
-#include "robus_struct.h"   // msg_t
+// CUSTOM
+#include "luos_mesh_msg.h"  // luos_mesh_msg_t
 
 /*      DEFINES                                                     */
 
@@ -24,10 +24,10 @@ typedef struct luos_msg_model_s luos_msg_model_t;
 
 // Callback called on SET command.
 typedef void (*luos_msg_model_set_cb_t)(uint16_t src_addr,
-                                        const msg_t* recv_msg);
+    const luos_mesh_msg_t* recv_msg);
 
 // Callback called on STATUS message.
-typedef void (*luos_msg_model_status_cb_t)(const msg_t* recv_msg);
+typedef void (*luos_msg_model_status_cb_t)(const luos_mesh_msg_t* recv_msg);
 
 // Parameters to initialize a Luos MSG model instance.
 typedef struct
@@ -57,16 +57,16 @@ struct luos_msg_model_s
 };
 
 // Payload type for a Luos MSG model SET command.
-typedef struct 
+typedef struct __attribute__((__packed__))
 {
     // Current transaction index.
-    uint16_t    transaction_id;
+    uint16_t        transaction_id;
 
     // Unicast address of the destination element.
-    uint16_t    dst_addr;
+    uint16_t        dst_addr;
 
     // Luos message.
-    msg_t       msg;
+    luos_mesh_msg_t msg;
 
 } luos_msg_model_set_t;
 
@@ -82,6 +82,6 @@ void luos_msg_model_set_address(luos_msg_model_t* instance,
 
 // Sends a Luos MSG SET commabd through the given model instance.
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
-                        const msg_t* msg);
+                        const luos_mesh_msg_t* msg);
 
 #endif /* ! LUOS_MSG_MODEL_H */

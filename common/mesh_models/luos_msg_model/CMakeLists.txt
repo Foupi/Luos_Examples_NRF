@@ -55,7 +55,7 @@ add_compile_definitions(
 )
 
 target_link_libraries( luos_msg_model PUBLIC
-    #Luos
+    # Luos
     luos
 
     # NRF

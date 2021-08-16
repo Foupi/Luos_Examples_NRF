@@ -15,6 +15,7 @@
 
 // CUSTOM
 #include "local_container_table.h"  // local_container_table_*
+#include "luos_mesh_msg.h"          // luos_mesh_msg_t
 #include "luos_msg_model.h"         // luos_msg_model_*
 #include "remote_container_table.h" // remote_container_table_*
 
@@ -26,7 +27,8 @@ static luos_msg_model_t s_msg_model;
 /*      CALLBACKS                                                   */
 
 // FIXME Logs message.
-static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg);
+static void msg_model_set_cb(uint16_t src_addr,
+                             const luos_mesh_msg_t* recv_msg);
 
 void app_luos_msg_model_init(void)
 {
@@ -42,7 +44,7 @@ void app_luos_msg_model_address_set(uint16_t device_address)
     luos_msg_model_set_address(&s_msg_model, device_address);
 }
 
-void app_luos_msg_model_send_msg(msg_t* msg)
+void app_luos_msg_model_send_msg(const msg_t* msg)
 {
     uint16_t            src_id          = msg->header.source;
     uint16_t            target_id       = msg->header.target;
@@ -72,21 +74,30 @@ void app_luos_msg_model_send_msg(msg_t* msg)
     NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
                  remote_id, node_addr, new_src);
 
-    msg->header.source  = new_src;
-    msg->header.target  = remote_id;
+    uint16_t            data_size       = msg->header.size;
 
-    luos_msg_model_set(&s_msg_model, node_addr, msg);
+    luos_mesh_msg_t mesh_msg;
+    memset(&mesh_msg, 0, sizeof(luos_mesh_msg_t));
+    mesh_msg.header.target      = remote_id;
+    mesh_msg.header.target_mode = ID; // FIXME Only supported mode.
+    mesh_msg.header.source      = new_src;
+    mesh_msg.header.cmd         = msg->header.cmd;
+    mesh_msg.header.size        = data_size;
+    memcpy(mesh_msg.data, msg->data, LUOS_MESH_MSG_MAX_DATA_SIZE);
+
+    luos_msg_model_set(&s_msg_model, node_addr, &mesh_msg);
 }
 
-static void msg_model_set_cb(uint16_t src_addr, const msg_t* recv_msg)
+static void msg_model_set_cb(uint16_t src_addr,
+                             const luos_mesh_msg_t* recv_msg)
 {
     NRF_LOG_INFO("Luos MSG SET command received from node 0x%x!",
                  src_addr);
 
-    header_t    recv_header = recv_msg->header;
-    uint16_t    data_size   = recv_header.size;
-    uint16_t    msg_src     = recv_header.source;
-    uint16_t    msg_dst     = recv_header.target;
+    luos_mesh_header_t  recv_header = recv_msg->header;
+    uint16_t            data_size   = recv_header.size;
+    uint16_t            msg_src     = recv_header.source;
+    uint16_t            msg_dst     = recv_header.target;
 
     NRF_LOG_INFO("Received message target: %u, from container %u!",
                  msg_dst, msg_src);

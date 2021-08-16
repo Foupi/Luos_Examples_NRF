@@ -19,6 +19,7 @@
 #include "nrf_mesh.h"               // NRF_MESH_TRANSMIC_SIZE_DEFAULT
 
 // CUSTOM
+#include "luos_mesh_msg.h"          // LUOS_MESH_MSG_MAX_DATA_SIZE
 #include "luos_mesh_msg_queue.h"    // tx_queue_elm_t
 #include "luos_msg_model.h"         // luos_msg_model_*
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*_ACCESS_OPCODE
@@ -226,11 +227,12 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
 
 static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd)
 {
+
     // Basic struct size.
     uint16_t base_size                      = sizeof(luos_msg_model_set_t);
 
     // Struct size without msg_t data array space.
-    uint16_t size_without_msg_payload_space = base_size - MAX_DATA_MSG_SIZE;
+    uint16_t size_without_msg_payload_space = base_size - LUOS_MESH_MSG_MAX_DATA_SIZE;
 
     // Actual message payload size.
     uint16_t msg_payload_size               = set_cmd->msg.header.size;

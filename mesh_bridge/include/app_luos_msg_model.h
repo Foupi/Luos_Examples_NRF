@@ -18,6 +18,6 @@ void app_luos_msg_model_init(void);
 void app_luos_msg_model_address_set(uint16_t device_address);
 
 // Retrieve necessary information and sends message to adequate node.
-void app_luos_msg_model_send_msg(msg_t* msg);
+void app_luos_msg_model_send_msg(const msg_t* msg);
 
 #endif /* ! APP_LUOS_MSG_MODEL_H */

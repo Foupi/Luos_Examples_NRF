@@ -17,10 +17,8 @@
 #include "access.h"                 // access_*
 #include "access_config.h"          // access_model_subscription_list_alloc
 
-// LUOS
-#include "robus_struct.h"           // msg_t
-
 // CUSTOM
+#include "luos_mesh_msg.h"          // luos_mesh_msg_t
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
 #include "mesh_msg_queue_manager.h" // luos_mesh_msg_prepare
 
@@ -90,14 +88,14 @@ void luos_msg_model_set_address(luos_msg_model_t* instance,
 }
 
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
-                        const msg_t* msg)
+                        const luos_mesh_msg_t* msg)
 {
     s_curr_transaction_id++;
 
     luos_msg_model_set_t            set_cmd;
     set_cmd.transaction_id          = s_curr_transaction_id;
     set_cmd.dst_addr                = dst_addr;
-    memcpy(&(set_cmd.msg), msg, sizeof(msg_t));
+    memcpy(&(set_cmd.msg), msg, sizeof(luos_mesh_msg_t));
 
     tx_queue_luos_msg_model_elm_t   msg_model_msg;
     memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
@@ -145,7 +143,7 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
         return;
     }
 
-    const   msg_t*  luos_msg    = &(set_cmd->msg);
+    const   luos_mesh_msg_t*    luos_msg    = &(set_cmd->msg);
 
     if (instance->set_cb == NULL)
     {
