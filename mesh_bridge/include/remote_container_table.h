@@ -54,6 +54,9 @@ remote_container_t* remote_container_table_get_entry_from_local_id(uint16_t loca
 remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uint16_t unicast_addr,
     uint16_t remote_id);
 
+// Updates the local IDs of each entry in the remote container table.
+void remote_container_table_update_local_ids(uint16_t dtx_container_id);
+
 // Displays the entries in the remote container table.
 void remote_container_table_print(void);
 

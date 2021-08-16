@@ -177,6 +177,23 @@ remote_container_t* remote_container_table_get_entry_from_addr_and_remote_id(uin
     return NULL;
 }
 
+void remote_container_table_update_local_ids(uint16_t dtx_container_id)
+{
+    for (uint16_t entry_idx = 0;
+         entry_idx < s_remote_container_table.nb_remote_containers;
+         entry_idx++)
+    {
+        remote_container_t* entry;
+        uint16_t            new_id;
+
+        entry   = s_remote_container_table.remote_containers + entry_idx;
+        new_id  = RoutingTB_FindFutureContainerID(entry->local_id,
+                                                  dtx_container_id);
+
+        entry->local_id = new_id;
+    }
+}
+
 void remote_container_table_print(void)
 {
     if (s_remote_container_table.nb_remote_containers == 0)

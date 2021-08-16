@@ -111,6 +111,7 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         memcpy(&dtx_container_id, msg->data, sizeof(uint16_t));
 
         local_container_table_update_local_ids(dtx_container_id);
+        remote_container_table_update_local_ids(dtx_container_id);
 
         msg_t updated;
         memset(&updated, 0, sizeof(msg_t));
