@@ -37,7 +37,10 @@ typedef enum
     MESH_BRIDGE_PRINT_INTERNAL_TABLES,
 
     // Request to reset internal remote and local container tables.
-    MESH_BRIDGE_RESET_INTERNAL_TABLES,
+    MESH_BRIDGE_CLEAR_INTERNAL_TABLES,
+
+    // Request t fill the local container table.
+    MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE,
 
     /* Request to update the local IDs of each entry of the internal
     ** remote and local container tables.
@@ -47,6 +50,17 @@ typedef enum
     // Sent messages:
     // Extended RTB procedure complete.
     MESH_BRIDGE_EXT_RTB_COMPLETE,
+
+    // Local and remote container tables cleared.
+    MESH_BRIDGE_INTERNAL_TABLES_CLEARED,
+
+    // Local container table filled.
+    MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED,
+
+    /* Local IDs of entries of local and remote container tables
+    ** updated.
+    */
+    MESH_BRIDGE_INTERNAL_TABLES_UPDATED,
 
     // Start index for next messages.
     MESH_BRIDDGE_MSG_END,

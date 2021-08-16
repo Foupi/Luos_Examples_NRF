@@ -152,6 +152,12 @@ local_container_t* local_container_table_get_entry_from_exposed_id(uint16_t id)
     return NULL;
 }
 
+void local_container_table_clear(void)
+{
+    memset(&s_local_container_table, 0,
+           sizeof(s_local_container_table));
+}
+
 void local_container_table_print(void)
 {
     if (s_local_container_table.nb_local_containers == 0)

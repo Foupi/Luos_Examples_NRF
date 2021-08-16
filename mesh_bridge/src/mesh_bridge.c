@@ -28,6 +28,11 @@
 #define REV {0,0,1}
 #endif
 
+/*      STATIC VARIABLE & CONSTANTS                                 */
+
+// Static container instance.
+container_t* s_mesh_bridge_instance;
+
 /*      CALLBACKS                                                   */
 
 // Starts the Ext-RTB procedure on the right command.
@@ -48,6 +53,7 @@ void MeshBridge_Init(void)
                                      MESH_BRIDGE_TYPE,
                                      MESH_BRIDGE_ALIAS, revision);
 
+    s_mesh_bridge_instance  = container;
     app_luos_rtb_model_container_set(container);
 }
 
@@ -68,8 +74,23 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         remote_container_table_print();
         break;
 
-    case MESH_BRIDGE_RESET_INTERNAL_TABLES:
-        NRF_LOG_INFO("Received request to reset internal tables!");
+    case MESH_BRIDGE_CLEAR_INTERNAL_TABLES:
+    {
+        local_container_table_clear();
+        remote_container_table_clear();
+
+        msg_t cleared;
+        memset(&cleared, 0, sizeof(msg_t));
+        cleared.header.target_mode  = ID;
+        cleared.header.target       = msg->header.source;
+        cleared.header.cmd          = MESH_BRIDGE_INTERNAL_TABLES_CLEARED;
+
+        Luos_SendMsg(s_mesh_bridge_instance, &cleared);
+    }
+        break;
+
+    case MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE:
+        NRF_LOG_INFO("Received request to fill local container table!");
         break;
 
     case MESH_BRIDGE_UPDATE_INTERNAL_TABLES:
