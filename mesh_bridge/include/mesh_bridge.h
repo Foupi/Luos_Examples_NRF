@@ -33,6 +33,17 @@ typedef enum
     // Request for extended RTB procedure start.
     MESH_BRIDGE_EXT_RTB_CMD = MESH_BRIDGE_MSG_BEGIN,
 
+    // Request to print internal remote and local container tables.
+    MESH_BRIDGE_PRINT_INTERNAL_TABLES,
+
+    // Request to reset internal remote and local container tables.
+    MESH_BRIDGE_RESET_INTERNAL_TABLES,
+
+    /* Request to update the local IDs of each entry of the internal
+    ** remote and local container tables.
+    */
+    MESH_BRIDGE_UPDATE_INTERNAL_TABLES,
+
     // Sent messages:
     // Extended RTB procedure complete.
     MESH_BRIDGE_EXT_RTB_COMPLETE,

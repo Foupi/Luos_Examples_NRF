@@ -61,6 +61,18 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
                                           msg->header.target);
         break;
 
+    case MESH_BRIDGE_PRINT_INTERNAL_TABLES:
+        NRF_LOG_INFO("Received request to print internal tables!");
+        break;
+
+    case MESH_BRIDGE_RESET_INTERNAL_TABLES:
+        NRF_LOG_INFO("Received request to reset internal tables!");
+        break;
+
+    case MESH_BRIDGE_UPDATE_INTERNAL_TABLES:
+        NRF_LOG_INFO("Received request to update entries of internal tables!");
+        break;
+
     default:
         break;
     }
