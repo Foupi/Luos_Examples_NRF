@@ -5,6 +5,10 @@
 #include "convert.h"
 #include "gate.h"
 
+#ifdef LUOS_MESH_BRIDGE
+#include "mesh_bridge.h"    // MESH_BRIDGE_*
+#endif /* LUOS_MESH_BRIDGE */
+
 static unsigned int delayms = 1;
 
 //******************* sensor update ****************************
@@ -64,6 +68,27 @@ void format_data(container_t *container, char *json)
                 json_send(error_json);
                 continue;
             }
+
+            #ifdef LUOS_MESH_BRIDGE
+            switch (json_msg->header.cmd)
+            {
+            case MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED:
+                printf("Mesh Bridge local container table filled!\n");
+                return;
+
+            case MESH_BRIDGE_EXT_RTB_COMPLETE:
+                printf("RTB extension complete!\n");
+                return;
+
+            case MESH_BRIDGE_INTERNAL_TABLES_UPDATED:
+                printf("Mesh Bridge internal tables updated!\n");
+                return;
+
+            default:
+                break;
+            }
+            #endif /* LUOS_MESH_BRIDGE */
+
             // get the source of this message
             i = json_msg->header.source;
             // Create container description

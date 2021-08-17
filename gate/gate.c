@@ -19,6 +19,11 @@
 // CUSTOM
 #include "uart_helpers.h"       // uart_init
 
+#ifdef LUOS_MESH_BRIDGE
+#include "mesh_bridge.h"        // MESH_BRIDGE_*
+#include "mesh_bridge_utils.h"  // find_mesh_bridge_container_id
+#endif /* LUOS_MESH_BRIDGE */
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -137,6 +142,26 @@ void Gate_Loop(void)
         RoutingTB_DetectContainers(container);
         routing_table_to_json(json);
         json_send(json);
+
+        #ifdef LUOS_MESH_BRIDGE
+        if (!detection_done)    // Only fill local container table once.
+        {
+            routing_table_t* rtb    = RoutingTB_Get();
+            uint16_t nb_entries     = RoutingTB_GetLastEntry();
+
+            uint16_t mesh_bridge_id = find_mesh_bridge_container_id(rtb,
+                nb_entries);
+
+            msg_t   fill_local;
+            memset(&fill_local, 0, sizeof(msg_t));
+            fill_local.header.target_mode   = ID;
+            fill_local.header.target        = mesh_bridge_id;
+            fill_local.header.cmd           = MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE;
+
+            Luos_SendMsg(container, &fill_local);
+        }
+        #endif /* LUOS_MESH_BRIDGE */
+
         detection_done = 1;
         detection_ask = 0;
     }
