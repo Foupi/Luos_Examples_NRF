@@ -6,10 +6,19 @@
 #include "gate.h"
 
 #ifdef LUOS_MESH_BRIDGE
+#include "routing_table.h"  // routing_table_t
 #include "mesh_bridge.h"    // MESH_BRIDGE_*
 #endif /* LUOS_MESH_BRIDGE */
 
 static unsigned int delayms = 1;
+
+#ifdef LUOS_MESH_BRIDGE
+/*      STATIC FUNCTIONS                                             */
+
+// Finds the ID of the Gate container in the routing table.
+static uint16_t find_gate_container_id(const routing_table_t* rtb,
+                                       uint16_t nb_entries);
+#endif /* LUOS_MESH_BRIDGE */
 
 //******************* sensor update ****************************
 // This function will gather data from sensors and create a json string for you
@@ -77,11 +86,31 @@ void format_data(container_t *container, char *json)
                 return;
 
             case MESH_BRIDGE_EXT_RTB_COMPLETE:
+            {
                 printf("RTB extension complete!\n");
+
+                routing_table_t* rtb    = RoutingTB_Get();
+                uint16_t nb_entries     = RoutingTB_GetLastEntry();
+
+                uint16_t    gate_id = find_gate_container_id(rtb,
+                    nb_entries);
+
+                msg_t update_tables;
+                memset(&update_tables, 0, sizeof(msg_t));
+                update_tables.header.target_mode    = ID;
+                update_tables.header.target         = 1; // Detection at end of Ext-RTB.
+                update_tables.header.cmd            = MESH_BRIDGE_UPDATE_INTERNAL_TABLES;
+                update_tables.header.size           = sizeof(uint16_t);
+                memcpy(update_tables.data, &gate_id, sizeof(uint16_t));
+
+                Luos_SendMsg(container, &update_tables);
+            }
                 return;
 
             case MESH_BRIDGE_INTERNAL_TABLES_UPDATED:
                 printf("Mesh Bridge internal tables updated!\n");
+
+                // FIXME Run detection.
                 return;
 
             default:
@@ -144,3 +173,21 @@ void set_delay(unsigned int new_delayms)
 {
     delayms = new_delayms;
 }
+
+#ifdef LUOS_MESH_BRIDGE
+static uint16_t find_gate_container_id(const routing_table_t* rtb,
+                                       uint16_t nb_entries)
+{
+    for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
+    {
+        routing_table_t entry = rtb[entry_idx];
+
+        if ((entry.mode == CONTAINER) && (entry.type == GATE_MOD))
+        {
+            return entry.id;
+        }
+    }
+
+    return 0;
+}
+#endif /* LUOS_MESH_BRIDGE */
