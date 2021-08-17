@@ -41,22 +41,10 @@ target_link_libraries( gate PUBLIC
     luos
 
     # NRF
-    # Common
-    nrf5_mdk
-    nrf5_section
-    nrf5_strerror
-    nrf5_atomic
-    nrf5_atfifo
-    nrf5_atflags
-    nrf5_memobj
-    nrf5_balloc
-    nrf5_ringbuf
-    nrf5_pwr_mgmt
     # Drivers
     nrf5_nrfx_prs
     nrf5_nrfx_uarte
     nrf5_nrfx_uart
-    nrf5_nrfx_systick
     nrf5_drv_uart
     # External
     nrf5_ext_fprintf
@@ -69,14 +57,9 @@ target_link_libraries( gate PUBLIC
     # Application
     nrf5_app_error
     nrf5_app_util_platform
-    nrf5_app_timer
     nrf5_app_fifo
     nrf5_app_uart_fifo
-    # Flash storage
-    nrf5_fstorage
     # BSP
     nrf5_boards
     nrf5_bsp_defs
-    nrf5_sdh
-    nrf5_fstorage_sd
 )
