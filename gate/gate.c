@@ -65,6 +65,10 @@ void Gate_Init(void)
 {
     uart_init(Gate_UartEvtHandler);
 
+    #ifdef LUOS_MESH_BRIDGE
+    printf("Luos Mesh Bridge mode!\n");
+    #endif /* LUOS_MESH_BRIDGE */
+
     revision_t revision = {.unmap = REV};
     container = Luos_CreateContainer(0, GATE_MOD, "gate", revision);
 

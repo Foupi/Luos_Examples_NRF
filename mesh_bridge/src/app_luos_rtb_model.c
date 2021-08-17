@@ -25,6 +25,7 @@
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 #include "mesh_bridge.h"            // MESH_BRIDGE_*
 #include "mesh_bridge_utils.h"      // find_mesh_bridge_container_id
+#include "mesh_init.h"              // g_device_provisioned
 #include "remote_container_table.h" // remote_container_*
 
 /*      TYPEDEFS                                                    */
@@ -150,6 +151,12 @@ void app_luos_rtb_model_container_set(container_t* mesh_bridge_container)
 void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
                                        uint16_t mesh_bridge_id)
 {
+    if (!g_device_provisioned)
+    {
+        NRF_LOG_INFO("Device not provisioned yet!");
+        return;
+    }
+
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
     {
         NRF_LOG_INFO("Cannot send Luos RTB GET requests out of IDLE mode!");

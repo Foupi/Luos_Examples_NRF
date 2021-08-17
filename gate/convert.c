@@ -12,9 +12,8 @@
 // Create msg from a container json data
 void json_to_msg(container_t *container, uint16_t id, luos_type_t type, cJSON *jobj, msg_t *msg, char *bin_data)
 {
-    printf("Sending Luos message to container %u of type 0x%x!\r\n", id,
+    printf("Sending Luos message to container %u of type 0x%x!\n", id,
            type);
-    printf("Mesh bridge mode is 0x%x!\r\n", MESH_BRIDGE_MOD);
 
     time_luos_t time;
     float data = 0.0;
@@ -427,8 +426,10 @@ void json_to_msg(container_t *container, uint16_t id, luos_type_t type, cJSON *j
 
     #ifdef LUOS_MESH_BRIDGE
     case MESH_BRIDGE_MOD:
+        printf("Message received by Mesh Bridge container!\n");
         if (cJSON_GetObjectItem(jobj, "ext_rtb"))
         {
+            printf("Sending RTB extension request!\n");
             msg->header.cmd = MESH_BRIDGE_EXT_RTB_CMD;
 
             Luos_SendMsg(container, msg);
