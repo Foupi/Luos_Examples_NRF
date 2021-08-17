@@ -10,12 +10,6 @@
 
 #include <unistd.h>             // read
 
-// NRF
-
-#ifdef DEBUG
-#include "nrf_log.h"            // NRF_LOG_INFO
-#endif /* DEBUG */
-
 // NRF APPS
 #include "app_uart.h"           // app_uart_evt_t
 
@@ -109,7 +103,7 @@ void Gate_Loop(void)
         format_data(container, json);
         if (json[0] != '\0')
         {
-            json_send(json);
+//            json_send(json);
             keepAlive = 0;
         }
         else
@@ -117,7 +111,7 @@ void Gate_Loop(void)
             if (keepAlive > 200)
             {
                 sprintf(json, "{}\n");
-                json_send(json);
+//                json_send(json);
             }
             else
             {
@@ -138,11 +132,6 @@ void Gate_Loop(void)
         char json[JSON_BUFF_SIZE * 2] = {0};
         RoutingTB_DetectContainers(container);
         routing_table_to_json(json);
-
-        #ifdef DEBUG
-        NRF_LOG_INFO("Routing table: %s", json);
-        #endif /* DEBUG */
-
         json_send(json);
         detection_done = 1;
         detection_ask = 0;

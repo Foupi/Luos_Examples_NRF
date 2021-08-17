@@ -5,9 +5,17 @@
 #include <string.h>
 #include "gate.h"
 
+#ifdef LUOS_MESH_BRIDGE
+#include "mesh_bridge.h"
+#endif /* LUOS_MESH_BRIDGE */
+
 // Create msg from a container json data
 void json_to_msg(container_t *container, uint16_t id, luos_type_t type, cJSON *jobj, msg_t *msg, char *bin_data)
 {
+    printf("Sending Luos message to container %u of type 0x%x!\r\n", id,
+           type);
+    printf("Mesh bridge mode is 0x%x!\r\n", MESH_BRIDGE_MOD);
+
     time_luos_t time;
     float data = 0.0;
     cJSON *item;
@@ -416,6 +424,18 @@ void json_to_msg(container_t *container, uint16_t id, luos_type_t type, cJSON *j
             set_delay(cJSON_GetObjectItem(jobj, "delay")->valueint);
         }
         break;
+
+    #ifdef LUOS_MESH_BRIDGE
+    case MESH_BRIDGE_MOD:
+        if (cJSON_GetObjectItem(jobj, "ext_rtb"))
+        {
+            msg->header.cmd = MESH_BRIDGE_EXT_RTB_CMD;
+
+            Luos_SendMsg(container, msg);
+        }
+        break;
+    #endif /* LUOS_MESH_BRIDGE */
+
     default:
         break;
     }

@@ -264,7 +264,8 @@ static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
 static void RemoteContainer_MsgHandler(container_t* container,
                                        msg_t* msg)
 {
-    if (msg->header.target_mode != ID)
+    if ((msg->header.target_mode != ID)
+        && (msg->header.target_mode != IDACK))
     {
         // Let's let the complicated cases behind for now...
         return;

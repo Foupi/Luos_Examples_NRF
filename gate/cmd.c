@@ -5,10 +5,6 @@
 
 #include "boards.h"
 
-#ifdef DEBUG
-#include "nrf_log.h"
-#endif /* DEBUG */
-
 // There is no stack here we use the latest command
 volatile char buf[JSON_BUF_NUM][JSON_BUFF_SIZE] = {0};
 volatile int current_table = 0;
@@ -40,10 +36,6 @@ bool check_json(uint16_t carac_nbr)
     if (buf[current_table][carac_nbr] == '\r')
     {
         buf[current_table][carac_nbr] = '\0';
-
-        #ifdef DEBUG
-        NRF_LOG_INFO("JSON received: %s!", buf[current_table]);
-        #endif /* DEBUG */
 
         // We have a complete Json here
         cmd_ready++;
