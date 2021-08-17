@@ -60,10 +60,10 @@ struct luos_msg_model_s
 typedef struct __attribute__((__packed__))
 {
     // Current transaction index.
-    uint16_t        transaction_id;
+    uint16_t        transaction_id  : 12;
 
     // Unicast address of the destination element.
-    uint16_t        dst_addr;
+    uint16_t        dst_addr        : 4;
 
     // Luos message.
     luos_mesh_msg_t msg;

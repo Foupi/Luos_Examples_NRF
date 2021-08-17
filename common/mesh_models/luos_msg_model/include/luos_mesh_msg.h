@@ -35,7 +35,8 @@ typedef struct __attribute__((__packed__))
 } luos_mesh_header_t;
 
 // Maximum payload size in bytes.
-#define LUOS_MESH_MSG_MAX_DATA_SIZE (NRF_MESH_UNSEG_PAYLOAD_SIZE_MAX - sizeof(luos_mesh_header_t) - (2 * sizeof(uint16_t))) // FIXME Hardcoding is wrong... see luos_msg_model_set_t
+// FIXME Define struct for Luos MSG SET non-message part.
+#define LUOS_MESH_MSG_MAX_DATA_SIZE (NRF_MESH_UNSEG_PAYLOAD_SIZE_MAX - sizeof(luos_mesh_header_t) - (sizeof(uint16_t)))
 
 typedef struct __attribute__((__packed__))
 {
