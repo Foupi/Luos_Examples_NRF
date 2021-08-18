@@ -2,6 +2,10 @@
 
 /*      INCLUDES                                                    */
 
+// C STANDARD
+#include <stdint.h>                 // uint16_t
+#include <string.h>                 // memset
+
 // NRF
 #include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
@@ -10,9 +14,8 @@
 #include "app_error.h"              // APP_ERROR_CHECK
 #include "app_timer.h"              // app_timer_*
 
-// C STANDARD
-#include <stdint.h>                 // uint16_t
-#include <string.h>                 // memset
+// MESH SDK
+#include "access.h"                 // access_message_rx_t
 
 // LUOS
 #include "config.h"                 // BROADCAST_VAL
@@ -26,6 +29,7 @@
 #include "mesh_bridge.h"            // MESH_BRIDGE_*
 #include "mesh_bridge_utils.h"      // find_mesh_bridge_container_id
 #include "mesh_init.h"              // g_device_provisioned
+#include "mesh_msg_queue_manager.h" // tx_queue_*, luos_mesh_msg_prepare
 #include "remote_container_table.h" // remote_container_*
 
 /*      TYPEDEFS                                                    */
@@ -101,6 +105,19 @@ static void ext_rtb_complete(void);
 
 /*      CALLBACKS                                                   */
 
+// Prepares the queue element and enqueues it.
+static void rtb_model_get_send(luos_rtb_model_t* instance,
+                               const luos_rtb_model_get_t* get_req);
+
+// Prepares the queue element and enqueues it.
+static void rtb_model_status_send(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status_msg);
+
+// Prepares the queue element and enqueues it.
+static void rtb_model_status_reply(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status_reply,
+    const access_message_rx_t* msg);
+
 /* Clears the remote containers table for the given address and switches
 ** state to REPLYING.
 */
@@ -122,6 +139,9 @@ void app_luos_rtb_model_init(void)
 
     luos_rtb_model_init_params_t    init_params;
     memset(&init_params, 0, sizeof(luos_rtb_model_init_params_t));
+    init_params.get_send                    = rtb_model_get_send;
+    init_params.status_send                 = rtb_model_status_send;
+    init_params.status_reply                = rtb_model_status_reply;
     init_params.get_cb                      = rtb_model_get_cb;
     init_params.local_rtb_entries_get_cb    = get_rtb_entries;
     init_params.status_cb                   = rtb_model_status_cb;
@@ -267,6 +287,64 @@ static void ext_rtb_complete(void)
                  &ext_rtb_complete_msg);
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_IDLE;
+}
+
+static void rtb_model_get_send(luos_rtb_model_t* instance,
+                               const luos_rtb_model_get_t* get_req)
+{
+    tx_queue_luos_rtb_model_elm_t   rtb_model_msg;
+    memset(&rtb_model_msg, 0, sizeof(rtb_model_msg));
+    rtb_model_msg.cmd                   = TX_QUEUE_CMD_GET;
+    rtb_model_msg.content.get           = *get_req; // No array type: no memcpy needed.
+
+    tx_queue_elm_t          new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model                       = TX_QUEUE_MODEL_LUOS_RTB;
+    new_msg.model_handle                = instance->handle;
+    new_msg.content.luos_rtb_model_msg  = rtb_model_msg;
+
+    luos_mesh_msg_prepare(&new_msg);
+}
+
+static void rtb_model_status_send(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status_msg)
+{
+    tx_queue_luos_rtb_model_elm_t   rtb_model_msg;
+    memset(&rtb_model_msg, 0, sizeof(tx_queue_luos_rtb_model_elm_t));
+    rtb_model_msg.cmd       = TX_QUEUE_CMD_STATUS;
+    memcpy(&(rtb_model_msg.content.status), status_msg,
+           sizeof(luos_rtb_model_status_t));
+
+    tx_queue_elm_t                  new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model           = TX_QUEUE_MODEL_LUOS_RTB;
+    new_msg.model_handle    = instance->handle;
+    memcpy(&(new_msg.content.luos_rtb_model_msg), &rtb_model_msg,
+           sizeof(tx_queue_luos_rtb_model_elm_t));
+
+    luos_mesh_msg_prepare(&new_msg);
+}
+
+static void rtb_model_status_reply(luos_rtb_model_t* instance,
+    const luos_rtb_model_status_t* status_reply,
+    const access_message_rx_t* msg)
+{
+    tx_queue_luos_rtb_model_elm_t   rtb_model_msg;
+    memset(&rtb_model_msg, 0, sizeof(tx_queue_luos_rtb_model_elm_t));
+    rtb_model_msg.cmd       = TX_QUEUE_CMD_STATUS_REPLY;
+    memcpy(&(rtb_model_msg.content.status_reply.src_msg), msg,
+           sizeof(access_message_rx_t));
+    memcpy(&(rtb_model_msg.content.status_reply.status), status_reply,
+           sizeof(luos_rtb_model_status_t));
+
+    tx_queue_elm_t                  new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model           = TX_QUEUE_MODEL_LUOS_RTB;
+    new_msg.model_handle    = instance->handle;
+    memcpy(&(new_msg.content.luos_rtb_model_msg),
+           &rtb_model_msg, sizeof(tx_queue_luos_rtb_model_elm_t));
+
+    luos_mesh_msg_prepare(&new_msg);
 }
 
 static void rtb_model_get_cb(uint16_t src_addr)
