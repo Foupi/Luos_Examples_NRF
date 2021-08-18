@@ -16,6 +16,8 @@ add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/app_luos_msg_model.c"
     "${MESH_BRIDGE_PATH}/src/app_luos_rtb_model.c"
     "${MESH_BRIDGE_PATH}/src/local_container_table.c"
+    "${MESH_BRIDGE_PATH}/src/luos_mesh_msg_queue.c"
+    "${MESH_BRIDGE_PATH}/src/mesh_msg_queue_manager.c"
     "${MESH_BRIDGE_PATH}/src/mesh_bridge_utils.c"
     "${MESH_BRIDGE_PATH}/src/mesh_init.c"
     "${MESH_BRIDGE_PATH}/src/provisioning.c"

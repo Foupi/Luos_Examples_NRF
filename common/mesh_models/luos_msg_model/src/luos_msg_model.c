@@ -20,7 +20,6 @@
 // CUSTOM
 #include "luos_mesh_msg.h"          // luos_mesh_msg_t
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
-#include "mesh_msg_queue_manager.h" // luos_mesh_msg_prepare
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -114,7 +113,7 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
     luos_msg_model_t*           instance  = (luos_msg_model_t*)arg;
     uint16_t                    src_addr    = msg->meta_data.src.value;
 
-    if (instance->element_address == LUOS_RTB_MODEL_DEFAULT_ELM_ADDR
+    if (instance->element_address == LUOS_MSG_MODEL_DEFAULT_ELM_ADDR
         || src_addr == instance->element_address)
     {
         // Either model is not ready, or this is a localhost message.

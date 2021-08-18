@@ -22,7 +22,6 @@
 
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
-#include "mesh_msg_queue_manager.h" // luos_mesh_msg_prepare
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
