@@ -4,11 +4,23 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>        // bool
-#include <stdint.h>         // uint16_t
+#include <stdbool.h>                // bool
+#include <stdint.h>                 // uint16_t
 
 // LUOS
-#include "routing_table.h"  // routing_table_t
+#include "routing_table.h"          // routing_table_t
+
+// CUSTOM
+#include "luos_mesh_common.h"       // LUOS_MESH_NETWORK_MAX_NODES
+#include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
+
+/*      DEFINES                                                     */
+
+/* Maximum number of remote container entries in the remote containers
+** table.
+*/
+#define REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES   \
+    LUOS_MESH_NETWORK_MAX_NODES * LUOS_RTB_MODEL_MAX_RTB_ENTRY
 
 /*      TYPEDEFS                                                    */
 

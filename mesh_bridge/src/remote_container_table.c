@@ -20,17 +20,9 @@
 // CUSTOM
 #include "app_luos_msg_model.h"     // app_luos_msg_model_send_msg
 #include "local_container_table.h"  // local_container_table_*
-#include "luos_mesh_common.h"       // LUOS_MESH_NETWORK_MAX_NODES
-#include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 #include "mesh_bridge_utils.h"      // find_mesh_bridge_node_id
 
 /*      STATIC VARIABLES & CONSTANTS                                */
-
-/* Maximum number of remote container entries in the remote containers
-** table.
-*/
-#define REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES   \
-    LUOS_MESH_NETWORK_MAX_NODES * LUOS_RTB_MODEL_MAX_RTB_ENTRY
 
 // The internal table of remote containers.
 static struct

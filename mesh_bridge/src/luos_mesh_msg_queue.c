@@ -3,16 +3,17 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>        // bool
-#include <string.h>         // memcpy
+#include <stdbool.h>                // bool
+#include <string.h>                 // memcpy
 
 // CUSTOM
-#include "luos_rtb_model.h" // luos_rtb_model_*
+#include "luos_rtb_model.h"         // luos_rtb_model_*
+#include "remote_container_table.h" // REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
-// Max queue size.
-#define MSG_QUEUE_MAX_SIZE  8
+// Max queue size: at most one message for each remote container.
+#define MSG_QUEUE_MAX_SIZE  REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES
 
 // The message queue.
 static tx_queue_elm_t   s_msg_queue[MSG_QUEUE_MAX_SIZE] = { 0 };
