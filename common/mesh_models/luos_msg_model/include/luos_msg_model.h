@@ -22,6 +22,24 @@
 // Forward declaration.
 typedef struct luos_msg_model_s luos_msg_model_t;
 
+// Payload type for a Luos MSG model SET command.
+typedef struct __attribute__((__packed__))
+{
+    // Current transaction index.
+    uint16_t        transaction_id  : 12;
+
+    // Unicast address of the destination element.
+    uint16_t        dst_addr        : 4;
+
+    // Luos message.
+    luos_mesh_msg_t msg;
+
+} luos_msg_model_set_t;
+
+// Function called to send a Luos MSG SET command.
+typedef void (*luos_msg_model_set_send_t)(luos_msg_model_t* instance,
+    const luos_msg_model_set_t* set_cmd);
+
 // Callback called on SET command.
 typedef void (*luos_msg_model_set_cb_t)(uint16_t src_addr,
     const luos_mesh_msg_t* recv_msg);
@@ -32,6 +50,9 @@ typedef void (*luos_msg_model_status_cb_t)(const luos_mesh_msg_t* recv_msg);
 // Parameters to initialize a Luos MSG model instance.
 typedef struct
 {
+    // User function called to send a SET command.
+    luos_msg_model_set_send_t   set_send;
+
     // User callback called on SET command.
     luos_msg_model_set_cb_t     set_cb;
 
@@ -49,26 +70,15 @@ struct luos_msg_model_s
     // Unicast address of the element hosting the instance.
     uint16_t                    element_address;
 
+    // User function called to send a SET command.
+    luos_msg_model_set_send_t   set_send;
+
     // User callback called on SET command.
     luos_msg_model_set_cb_t     set_cb;
 
     // User callback called on STATUS command.
     luos_msg_model_status_cb_t  status_cb;
 };
-
-// Payload type for a Luos MSG model SET command.
-typedef struct __attribute__((__packed__))
-{
-    // Current transaction index.
-    uint16_t        transaction_id  : 12;
-
-    // Unicast address of the destination element.
-    uint16_t        dst_addr        : 4;
-
-    // Luos message.
-    luos_mesh_msg_t msg;
-
-} luos_msg_model_set_t;
 
 // Initialize the given instance with the given parameters.
 void luos_msg_model_init(luos_msg_model_t* instance,

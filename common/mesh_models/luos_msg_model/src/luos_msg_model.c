@@ -58,6 +58,7 @@ void luos_msg_model_init(luos_msg_model_t* instance,
                          const luos_msg_model_init_params_t* params)
 {
     memset(instance, 0, sizeof(luos_msg_model_t));
+    instance->set_send              = params->set_send;
     instance->set_cb                = params->set_cb;
     instance->status_cb             = params->status_cb;
 
@@ -90,6 +91,12 @@ void luos_msg_model_set_address(luos_msg_model_t* instance,
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
                         const luos_mesh_msg_t* msg)
 {
+    if (instance->set_send == NULL)
+    {
+        NRF_LOG_INFO("No user-defined function to sent SET requests!");
+        return;
+    }
+
     s_curr_transaction_id++;
 
     luos_msg_model_set_t            set_cmd;
@@ -97,20 +104,7 @@ void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
     set_cmd.dst_addr                = dst_addr;
     memcpy(&(set_cmd.msg), msg, sizeof(luos_mesh_msg_t));
 
-    tx_queue_luos_msg_model_elm_t   msg_model_msg;
-    memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
-    msg_model_msg.cmd                   = TX_QUEUE_CMD_SET;
-    memcpy(&(msg_model_msg.content.set), &set_cmd,
-           sizeof(luos_msg_model_set_t));
-
-    tx_queue_elm_t                  new_msg;
-    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
-    new_msg.model                       = TX_QUEUE_MODEL_LUOS_MSG;
-    new_msg.model_handle                = instance->handle;
-    memcpy(&(new_msg.content.luos_msg_model_msg), &msg_model_msg,
-           sizeof(tx_queue_luos_msg_model_elm_t));
-
-    luos_mesh_msg_prepare(&new_msg);
+    instance->set_send(instance, &set_cmd);
 }
 
 static void luos_msg_model_set_cb(access_model_handle_t handle,

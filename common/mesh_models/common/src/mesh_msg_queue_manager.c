@@ -206,8 +206,6 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
         access_opcode_t opcode      = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
         uint16_t        msg_size    = luos_msg_model_set_cmd_size(&(msg_model_msg.content.set));
 
-        NRF_LOG_INFO("Message size: %u!", msg_size);
-
         msg->opcode                 = opcode;
         msg->p_buffer               = (uint8_t*)(&(msg_model_msg.content.set));
         msg->length                 = msg_size;

@@ -17,6 +17,7 @@
 #include "local_container_table.h"  // local_container_table_*
 #include "luos_mesh_msg.h"          // luos_mesh_msg_t
 #include "luos_msg_model.h"         // luos_msg_model_*
+#include "mesh_msg_queue_manager.h" // tx_queue_*, luos_mesh_msg_prepare
 #include "remote_container_table.h" // remote_container_table_*
 
 /*      STATIC VARIABLES & CONSTANTS                                */
@@ -26,7 +27,11 @@ static luos_msg_model_t s_msg_model;
 
 /*      CALLBACKS                                                   */
 
-// FIXME Logs message.
+// Prepares the queue element and enqueues it.
+static void msg_model_set_send(luos_msg_model_t* instance,
+                               const luos_msg_model_set_t* set_cmd);
+
+// Translates received coordinates and sends the message.
 static void msg_model_set_cb(uint16_t src_addr,
                              const luos_mesh_msg_t* recv_msg);
 
@@ -34,6 +39,7 @@ void app_luos_msg_model_init(void)
 {
     luos_msg_model_init_params_t params;
     memset(&params, 0 , sizeof(luos_msg_model_init_params_t));
+    params.set_send = msg_model_set_send;
     params.set_cb   = msg_model_set_cb;
 
     luos_msg_model_init(&s_msg_model, &params);
@@ -86,6 +92,25 @@ void app_luos_msg_model_send_msg(const msg_t* msg)
     memcpy(mesh_msg.data, msg->data, LUOS_MESH_MSG_MAX_DATA_SIZE);
 
     luos_msg_model_set(&s_msg_model, node_addr, &mesh_msg);
+}
+
+static void msg_model_set_send(luos_msg_model_t* instance,
+                               const luos_msg_model_set_t* set_cmd)
+{
+    tx_queue_luos_msg_model_elm_t   msg_model_msg;
+    memset(&msg_model_msg, 0, sizeof(tx_queue_luos_msg_model_elm_t));
+    msg_model_msg.cmd                   = TX_QUEUE_CMD_SET;
+    memcpy(&(msg_model_msg.content.set), set_cmd,
+           sizeof(luos_msg_model_set_t));
+
+    tx_queue_elm_t                  new_msg;
+    memset(&new_msg, 0, sizeof(tx_queue_elm_t));
+    new_msg.model                       = TX_QUEUE_MODEL_LUOS_MSG;
+    new_msg.model_handle                = instance->handle;
+    memcpy(&(new_msg.content.luos_msg_model_msg), &msg_model_msg,
+           sizeof(tx_queue_luos_msg_model_elm_t));
+
+    luos_mesh_msg_prepare(&new_msg);
 }
 
 static void msg_model_set_cb(uint16_t src_addr,
