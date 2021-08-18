@@ -35,7 +35,7 @@
 static const uint32_t   READ_SIZE           = 64;
 
 // Time in ms between two Gate refreshes.
-static const uint32_t   GATE_REFRESH_RATE   = 600;
+static const uint32_t   GATE_REFRESH_RATE   = 2000;
 
 /*******************************************************************************
  * Variables
@@ -59,6 +59,9 @@ static void Gate_ManageReceivedData(void);
 
 // Manages received data on data ready event, stops on error.
 static void Gate_UartEvtHandler(app_uart_evt_t* event);
+
+// Prints the routing table on UART.
+static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries);
 
 /******************************************************************************
  * @brief init must be call in project init
@@ -144,11 +147,13 @@ void Gate_Loop(void)
         json_send(json);
 
         #ifdef LUOS_MESH_BRIDGE
+        routing_table_t* rtb    = RoutingTB_Get();
+        uint16_t nb_entries     = RoutingTB_GetLastEntry();
+
+        print_rtb(rtb, nb_entries);
+
         if (!detection_done)    // Only fill local container table once.
         {
-            routing_table_t* rtb    = RoutingTB_Get();
-            uint16_t nb_entries     = RoutingTB_GetLastEntry();
-
             uint16_t mesh_bridge_id = find_mesh_bridge_container_id(rtb,
                 nb_entries);
 
@@ -235,5 +240,38 @@ static void Gate_UartEvtHandler(app_uart_evt_t* event)
     case APP_UART_FIFO_ERROR:
     case APP_UART_COMMUNICATION_ERROR:
         while (true);
+    }
+}
+
+static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries)
+{
+    printf("Routing table contains %u entries!\n",
+                 nb_entries);
+
+    for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
+    {
+        const routing_table_t entry = rtb[entry_idx];
+        switch (entry.mode)
+        {
+        case NODE:
+            printf("Entry %u: Node!\n", entry_idx);
+            printf("ID: %u ; %s!\n", entry.node_id,
+                entry.certified ? "certified" : "not certified");
+            for (uint8_t port_idx = 0; port_idx < NBR_PORT; port_idx++)
+            {
+                printf("Port %u: %u!\n", port_idx,
+                             entry.port_table[port_idx]);
+            }
+            break;
+        case CONTAINER:
+            printf("Entry %u: Container!\n", entry_idx);
+            printf("ID: %u ; type: %u (%s) ; alias: %s!\n", entry.id,
+                entry.type, RoutingTB_StringFromType(entry.type),
+                (char*)entry.alias);
+            break;
+        default:
+            printf("Unknown entry mode: leaving!\n");
+            return;
+        }
     }
 }

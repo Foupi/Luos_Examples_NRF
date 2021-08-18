@@ -15,6 +15,12 @@ static unsigned int delayms = 1;
 #ifdef LUOS_MESH_BRIDGE
 /*      STATIC FUNCTIONS                                             */
 
+/* Applies and returns true if the given message is a Mesh Bridge
+** command, returns false otherwise.
+*/
+static bool is_mesh_bridge_cmd(container_t* container,
+                               const msg_t* msg);
+
 // Finds the ID of the Gate container in the routing table.
 static uint16_t find_gate_container_id(const routing_table_t* rtb,
                                        uint16_t nb_entries);
@@ -79,42 +85,12 @@ void format_data(container_t *container, char *json)
             }
 
             #ifdef LUOS_MESH_BRIDGE
-            switch (json_msg->header.cmd)
+            bool mesh_bridge_cmd = is_mesh_bridge_cmd(container,
+                                                      json_msg);
+            if (mesh_bridge_cmd)
             {
-            case MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED:
-                printf("Mesh Bridge local container table filled!\n");
-                return;
-
-            case MESH_BRIDGE_EXT_RTB_COMPLETE:
-            {
-                printf("RTB extension complete!\n");
-
-                routing_table_t* rtb    = RoutingTB_Get();
-                uint16_t nb_entries     = RoutingTB_GetLastEntry();
-
-                uint16_t    gate_id = find_gate_container_id(rtb,
-                    nb_entries);
-
-                msg_t update_tables;
-                memset(&update_tables, 0, sizeof(msg_t));
-                update_tables.header.target_mode    = ID;
-                update_tables.header.target         = 1; // Detection at end of Ext-RTB.
-                update_tables.header.cmd            = MESH_BRIDGE_UPDATE_INTERNAL_TABLES;
-                update_tables.header.size           = sizeof(uint16_t);
-                memcpy(update_tables.data, &gate_id, sizeof(uint16_t));
-
-                Luos_SendMsg(container, &update_tables);
-            }
-                return;
-
-            case MESH_BRIDGE_INTERNAL_TABLES_UPDATED:
-                printf("Mesh Bridge internal tables updated!\n");
-
-                // FIXME Run detection.
-                return;
-
-            default:
-                break;
+                json_ok = true;
+                continue;
             }
             #endif /* LUOS_MESH_BRIDGE */
 
@@ -175,6 +151,48 @@ void set_delay(unsigned int new_delayms)
 }
 
 #ifdef LUOS_MESH_BRIDGE
+static bool is_mesh_bridge_cmd(container_t* container, const msg_t* msg)
+{
+    switch (msg->header.cmd)
+    {
+    case MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED:
+        printf("Mesh Bridge local container table filled!\n");
+        break;
+
+    case MESH_BRIDGE_EXT_RTB_COMPLETE:
+    {
+        printf("RTB extension complete!\n");
+
+        routing_table_t* rtb    = RoutingTB_Get();
+        uint16_t nb_entries     = RoutingTB_GetLastEntry();
+
+        uint16_t    gate_id = find_gate_container_id(rtb,
+            nb_entries);
+
+        msg_t update_tables;
+        memset(&update_tables, 0, sizeof(msg_t));
+        update_tables.header.target_mode    = ID;
+        update_tables.header.target         = 1; // Detection at end of Ext-RTB.
+        update_tables.header.cmd            = MESH_BRIDGE_UPDATE_INTERNAL_TABLES;
+        update_tables.header.size           = sizeof(uint16_t);
+        memcpy(update_tables.data, &gate_id, sizeof(uint16_t));
+
+        Luos_SendMsg(container, &update_tables);
+    }
+        break;
+
+    case MESH_BRIDGE_INTERNAL_TABLES_UPDATED:
+        printf("Mesh Bridge internal tables updated!\n");
+        detection_ask = 1;
+        break;
+
+    default:
+        return false;
+    }
+
+    return true;
+}
+
 static uint16_t find_gate_container_id(const routing_table_t* rtb,
                                        uint16_t nb_entries)
 {
