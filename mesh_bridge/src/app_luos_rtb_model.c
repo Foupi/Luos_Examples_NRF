@@ -19,6 +19,7 @@
 // LUOS
 #include "config.h"                 // BROADCAST_VAL
 #include "luos.h"                   // container_t
+#include "luos_utils.h"             // LUOS_ASSERT
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
@@ -229,11 +230,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
          entry_idx++)
     {
         routing_table_t* entry = local_container_table_get_entry_from_idx(entry_idx);
-        if (entry == NULL)
-        {
-            // FIXME Manage error.
-            return false;
-        }
+        LUOS_ASSERT(entry != NULL);
 
         memcpy(rtb_entries + entry_idx, entry, sizeof(routing_table_t));
     }

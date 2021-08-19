@@ -17,6 +17,9 @@
 #include "nrf_mesh_events.h"        // nrf_mesh_evt_*
 #include "nrf_mesh.h"               // NRF_MESH_TRANSMIC_SIZE_DEFAULT
 
+// LUOS
+#include "luos_utils.h"             // LUOS_ASSERT
+
 // CUSTOM
 #include "luos_mesh_msg.h"          // LUOS_MESH_MSG_MAX_DATA_SIZE
 #include "luos_mesh_msg_queue.h"    // tx_queue_elm_t
@@ -90,11 +93,7 @@ void luos_mesh_msg_queue_manager_init(void)
 void luos_mesh_msg_prepare(const tx_queue_elm_t* message)
 {
     bool insert_success = luos_mesh_msg_queue_enqueue(message);
-    if (!insert_success)
-    {
-        // FIXME Manage error.
-        while (true);
-    }
+    LUOS_ASSERT(insert_success);
 
     if (s_is_possible_to_send)
     {

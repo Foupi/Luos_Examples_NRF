@@ -22,6 +22,9 @@
 #include "config_opcodes.h"         // CONFIG_OPCODE_*
 #include "health_common.h"          // HEALTH_SERVER_MODEL_ID
 
+// LUOS
+#include "luos_utils.h"             // LUOS_ASSERT
+
 // CUSTOM
 #include "example_network_config.h" // NETWORK_*, *KEY_IDX
 #include "network_ctx.h"            // PROV_*_IDX, g_network_ctx
@@ -289,50 +292,20 @@ void config_client_msg_handler(const config_client_event_t* event)
     {
     case CONFIG_OPCODE_APPKEY_STATUS:
         status = event->p_msg->appkey_status.status;
-
-        if ((status != ACCESS_STATUS_SUCCESS)
-            && (status != ACCESS_STATUS_KEY_INDEX_ALREADY_STORED))
-        {
-            #ifdef DEBUG
-            NRF_LOG_INFO("Wrong status received: operation failed!");
-            #endif /* DEBUG */
-
-            // FIXME Manage error.
-
-            return;
-        }
+        LUOS_ASSERT((status == ACCESS_STATUS_SUCCESS)
+            || (status == ACCESS_STATUS_KEY_INDEX_ALREADY_STORED));
 
         break;
 
     case CONFIG_OPCODE_MODEL_APP_STATUS:
         status = event->p_msg->app_status.status;
-
-        if (status != ACCESS_STATUS_SUCCESS)
-        {
-            #ifdef DEBUG
-            NRF_LOG_INFO("Wrong status received: operation failed!");
-            #endif /* DEBUG */
-
-            // FIXME Manage error.
-
-            return;
-        }
+        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS)
 
         break;
 
     case CONFIG_OPCODE_MODEL_PUBLICATION_STATUS:
         status = event->p_msg->publication_status.status;
-
-        if (status != ACCESS_STATUS_SUCCESS)
-        {
-            #ifdef DEBUG
-            NRF_LOG_INFO("Wrong status received: operation failed!");
-            #endif /* DEBUG */
-
-            // FIXME Manage error.
-
-            return;
-        }
+        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS)
 
         break;
 
