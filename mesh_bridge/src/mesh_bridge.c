@@ -2,25 +2,30 @@
 
 /*      INCLUDES                                                    */
 
-// NRF
-#include "nrf_log.h"            // NRF_LOG_INFO
+// C STANDARD
+#include <stdint.h>                 // uint16_t
 
 // LUOS
-#include "luos.h"               /* container_t, Luos_CreateContainer,
-                                ** msg_t
-                                */
+#include "luos.h"                   /* container_t,
+                                    ** Luos_CreateContainer, msg_t
+                                    */
 
 // CUSTOM
-#include "app_luos_msg_model.h" // app_luos_msg_model_send_msg
-#include "app_luos_rtb_model.h" // app_luos_rtb_model_get
+#include "app_luos_msg_model.h"     // app_luos_msg_model_send_msg
+#include "app_luos_rtb_model.h"     // app_luos_rtb_model_get
 #include "local_container_table.h"  // local_container_table_*
-#include "luos_mesh_common.h"   // mesh_start
-#include "mesh_init.h"          // mesh_init
-#include "provisioning.h"       /* provisioning_init,
-                                ** persistent_conf_init,
-                                ** prov_listening_start
-                                */
+#include "luos_mesh_common.h"       // mesh_start
+#include "mesh_init.h"              // mesh_init, g_device_provisioned
+#include "provisioning.h"           /* provisioning_init,
+                                    ** persistent_conf_init,
+                                    ** prov_listening_start
+                                    */
 #include "remote_container_table.h" // remote_container_table_print
+
+// NRF
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
@@ -42,9 +47,22 @@ void MeshBridge_Init(void)
 {
     mesh_init();
     provisioning_init();
-    persistent_conf_init();
     mesh_start();
-    prov_listening_start();
+
+    if (!g_device_provisioned)
+    {
+        prov_listening_start();
+    }
+    else
+    {
+        uint16_t device_address = mesh_device_get_address();
+
+        #ifdef DEBUG
+        NRF_LOG_INFO("Device address: 0x%x!", device_address);
+        #endif /* DEBUG */
+
+        mesh_models_set_addresses(device_address);
+    }
 
     revision_t      revision = { .unmap = REV };
 
@@ -62,46 +80,38 @@ void MeshBridge_Loop(void)
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 {
+    msg_t response;
+    memset(&response, 0, sizeof(msg_t));
+    response.header.target_mode = ID;
+    response.header.target      = msg->header.source;
+
     switch(msg->header.cmd)
     {
     case MESH_BRIDGE_EXT_RTB_CMD:
         app_luos_rtb_model_engage_ext_rtb(msg->header.source,
                                           msg->header.target);
-        break;
+        return;
 
     case MESH_BRIDGE_PRINT_INTERNAL_TABLES:
         local_container_table_print();
         remote_container_table_print();
-        break;
+        return;
 
     case MESH_BRIDGE_CLEAR_INTERNAL_TABLES:
-    {
         local_container_table_clear();
         remote_container_table_clear();
 
-        msg_t cleared;
-        memset(&cleared, 0, sizeof(msg_t));
-        cleared.header.target_mode  = ID;
-        cleared.header.target       = msg->header.source;
-        cleared.header.cmd          = MESH_BRIDGE_INTERNAL_TABLES_CLEARED;
+        response.header.cmd     = MESH_BRIDGE_INTERNAL_TABLES_CLEARED;
 
-        Luos_SendMsg(s_mesh_bridge_instance, &cleared);
-    }
         break;
 
     case MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE:
     {
         uint16_t nb_local_containers = local_container_table_fill();
 
-        msg_t filled;
-        memset(&filled, 0, sizeof(msg_t));
-        filled.header.target_mode   = ID;
-        filled.header.target        = msg->header.source;
-        filled.header.cmd           = MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED;
-        filled.header.size          = sizeof(uint16_t);
-        memcpy(filled.data, &nb_local_containers, sizeof(uint16_t));
-
-        Luos_SendMsg(s_mesh_bridge_instance, &filled);
+        response.header.cmd     = MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED;
+        response.header.size    = sizeof(uint16_t);
+        memcpy(response.data, &nb_local_containers, sizeof(uint16_t));
     }
         break;
 
@@ -113,17 +123,13 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         local_container_table_update_local_ids(dtx_container_id);
         remote_container_table_update_local_ids(dtx_container_id);
 
-        msg_t updated;
-        memset(&updated, 0, sizeof(msg_t));
-        updated.header.target_mode  = ID;
-        updated.header.target       = msg->header.source;
-        updated.header.cmd          = MESH_BRIDGE_INTERNAL_TABLES_UPDATED;
-
-        Luos_SendMsg(s_mesh_bridge_instance, &updated);
+        response.header.cmd     = MESH_BRIDGE_INTERNAL_TABLES_UPDATED;
     }
         break;
 
     default:
-        break;
+        return;
     }
+
+    Luos_SendMsg(s_mesh_bridge_instance, &response);
 }

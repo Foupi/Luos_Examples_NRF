@@ -4,11 +4,14 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdbool.h>    // bool
-#include <stdint.h>     // uint16_t
+#include <stdbool.h>                // bool
+#include <stdint.h>                 // uint16_t
 
 // Initializes the Mesh stack with predefined parameters.
 void mesh_init(void);
+
+// Fetches the local device address from DSM.
+uint16_t mesh_device_get_address(void);
 
 /* Sets the element addresses of the internal model instances according
 ** to the given device address.

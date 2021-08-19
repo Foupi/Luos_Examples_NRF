@@ -52,26 +52,6 @@ void provisioning_init(void)
     _provisioning_init(&s_prov_ctx, mesh_prov_event_cb);
 }
 
-void persistent_conf_init(void)
-{
-    if (g_device_provisioned)
-    {
-        #ifdef DEBUG
-        NRF_LOG_INFO("Fetching persistent configuration!");
-        #endif /* DEBUG */
-
-        // FIXME Fetch persistent configuration.
-    }
-    else
-    {
-        #ifdef DEBUG
-        NRF_LOG_INFO("Generating persistent configuration!");
-        #endif /* DEBUG */
-
-        // FIXME Generate persistent configuration.
-    }
-}
-
 void prov_listening_start(void)
 {
     encryption_keys_generate();

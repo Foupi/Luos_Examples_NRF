@@ -249,7 +249,7 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_RECEIVING;
 
         err_code = app_timer_start(s_entries_reception_timer,
-                                   WAIT_FIRST_ENTRY_DELAY_TICKS, NULL);
+                                   WAIT_NEXT_ENTRY_PUBLISH_DELAY_TICKS, NULL);
         APP_ERROR_CHECK(err_code);
     }
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)

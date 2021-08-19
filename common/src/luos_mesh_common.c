@@ -142,7 +142,6 @@ static void ble_stack_init(void)
     uint32_t    ram_start = 0;
     ret_code_t  err_code;
 
-    // FIXME Maybe default cfg is not the best.
     err_code = nrf_sdh_ble_default_cfg_set(CONN_CFG_TAG,
                                            &ram_start);
     APP_ERROR_CHECK(err_code);
