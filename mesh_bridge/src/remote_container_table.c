@@ -7,9 +7,6 @@
 #include <stdint.h>                 // uint16_t
 #include <string.h>                 // memcpy, memset
 
-// NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
-
 // LUOS
 #include "luos.h"                   /* container_t,
                                     ** Luos_CreateContainer, msg_t,
@@ -21,6 +18,11 @@
 #include "app_luos_msg_model.h"     // app_luos_msg_model_send_msg
 #include "local_container_table.h"  // local_container_table_*
 #include "mesh_bridge_utils.h"      // find_mesh_bridge_node_id
+
+// NRF
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -51,7 +53,7 @@ static uint16_t             get_nb_local_containers_in_mesh_bridge_node(void);
 
 /*      CALLBACKS                                                   */
 
-// FIXME Logs message.
+// Sends message through Luos MSG Mesh model.
 static void RemoteContainer_MsgHandler(container_t* container,
                                        msg_t* msg);
 
@@ -188,6 +190,7 @@ void remote_container_table_update_local_ids(uint16_t dtx_container_id)
 
 void remote_container_table_print(void)
 {
+    #ifdef DEBUG
     if (s_remote_container_table.nb_remote_containers == 0)
     {
         NRF_LOG_INFO("Remote containers table is empty!");
@@ -210,6 +213,7 @@ void remote_container_table_print(void)
                      entry.remote_rtb_entry.id, entry.local_id,
                      entry.node_addr);
     }
+    #endif /* DEBUG */
 }
 
 static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
@@ -220,7 +224,6 @@ static uint16_t get_nb_local_containers_in_mesh_bridge_node(void)
     uint16_t            node_id     = find_mesh_bridge_node_id(rtb, last_entry);
     if (node_id == 0)
     {
-        NRF_LOG_INFO("Node ID of Mesh Bridge container not found!");
         return 0;
     }
 

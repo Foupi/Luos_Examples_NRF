@@ -6,7 +6,6 @@
 #include <stdbool.h>                // bool
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS

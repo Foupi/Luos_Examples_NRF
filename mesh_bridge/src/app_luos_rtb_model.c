@@ -7,7 +7,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -31,6 +30,10 @@
 #include "mesh_init.h"              // g_device_provisioned
 #include "mesh_msg_queue_manager.h" // tx_queue_*, luos_mesh_msg_prepare
 #include "remote_container_table.h" // remote_container_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      TYPEDEFS                                                    */
 
@@ -173,13 +176,19 @@ void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
 {
     if (!g_device_provisioned)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Device not provisioned yet!");
+        #endif /* DEBUG */
+
         return;
     }
 
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Cannot send Luos RTB GET requests out of IDLE mode!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -193,7 +202,10 @@ void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
                                WAIT_FIRST_ENTRY_DELAY_TICKS, NULL);
     APP_ERROR_CHECK(err_code);
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Engaging ext-RTB procedure: switch to GETTING state!");
+    #endif /* DEBUG */
+
     s_luos_rtb_model_ctx.curr_state             = LUOS_RTB_MODEL_STATE_GETTING;
     s_luos_rtb_model_ctx.curr_mesh_bridge_id    = mesh_bridge_id;
     s_luos_rtb_model_ctx.curr_ext_rtb_src_id    = src_id;
@@ -206,7 +218,9 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     uint16_t            nb_local_entries    = local_container_table_get_nb_entries();
     if (nb_local_entries == 0)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Local container table not filled!");
+        #endif /* DEBUG */
 
         // Loop will be skipped.
     }
@@ -228,7 +242,10 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     // FIXME Create callback for end of RTB entries enqueuing?
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_REPLYING)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Replied with local RTB: switch to RECEIVING mode!");
+        #endif /* DEBUG */
+
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_RECEIVING;
 
         err_code = app_timer_start(s_entries_reception_timer,
@@ -237,7 +254,9 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     }
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
+        #endif /* DEBUG */
 
         ext_rtb_complete();
     }
@@ -351,7 +370,10 @@ static void rtb_model_get_cb(uint16_t src_addr)
 {
     if (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_IDLE)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Luos RTB GET request received while not in IDLE mode!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -364,7 +386,10 @@ static void rtb_model_get_cb(uint16_t src_addr)
     remote_container_table_clear_address(src_addr);
     remote_container_table_update_local_ids(s_luos_rtb_model_ctx.curr_mesh_bridge_id);
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Luos RTB GET request received: switch to REPLYING mode!");
+    #endif /* DEBUG */
+
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_REPLYING;
 }
 
@@ -375,7 +400,10 @@ static void rtb_model_status_cb(uint16_t src_addr,
     if ((s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_GETTING)
         && (s_luos_rtb_model_ctx.curr_state != LUOS_RTB_MODEL_STATE_RECEIVING))
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Luos RTB STATUS message received while not in a reception mode!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -384,15 +412,19 @@ static void rtb_model_status_cb(uint16_t src_addr,
     err_code = app_timer_stop(s_entries_reception_timer);
     APP_ERROR_CHECK(err_code);
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Luos RTB STATUS message received from node 0x%x: entry %u has ID 0x%x, type %s, alias %s!",
                  src_addr, entry_idx, entry->id,
                  RoutingTB_StringFromType(entry->type), entry->alias);
+    #endif /* DEBUG */
 
     bool        insertion_complete;
     insertion_complete = remote_container_table_add_entry(src_addr, entry);
     if (!insertion_complete)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Remote container table full: could not insert received entry!");
+        #endif /* DEBUG */
         // FIXME Change state to stop receiving unstorable entries?
     }
 
@@ -415,7 +447,10 @@ static void entries_reception_timeout_cb(void* context)
 {
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_GETTING)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Reception timeout for remote nodes entries: switch to PUBLISHING mode!");
+        #endif /* DEBUG */
+
         s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_PUBLISHING;
 
         routing_table_t local_rtb_entries[LUOS_RTB_MODEL_MAX_RTB_ENTRY];
@@ -428,7 +463,10 @@ static void entries_reception_timeout_cb(void* context)
                                              &nb_local_entries);
         if (!detection_complete)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Local RTB cannot be retrieved: detection not complete!");
+            #endif /* DEBUG */
+
             return;
         }
 
@@ -438,7 +476,10 @@ static void entries_reception_timeout_cb(void* context)
     }
     else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_RECEIVING)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Reception timeout for remote node entries, end of ext-RTB procedure: switch back to IDLE mode!");
+        #endif /* DEBUG */
+
         ext_rtb_complete();
     }
 }

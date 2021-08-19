@@ -8,7 +8,6 @@
 #include <string.h>                     // memset
 
 // NRF
-#include "nrf_log.h"                    // NRF_LOG_INFO
 #include "nrf_sdh_ble.h"                // nrf_sdh_ble_*
 #include "nrf_sdh_soc.h"                // NRF_SDH_SOC_OBSERVER
 #include "sdk_config.h"                 // NRF_SDH_CLOCK_LF_*
@@ -32,6 +31,10 @@
 
 // MESH MODELS
 #include "config_server_events.h"       // config_server_evt_cb_t
+
+#ifdef DEBUG
+#include "nrf_log.h"                    // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -127,7 +130,9 @@ void auth_data_provide(nrf_mesh_prov_ctx_t* prov_ctx)
 // Logs instruction pointer.
 void mesh_assertion_handler(uint32_t pc)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Assertion failed at address 0x%x!", pc);
+    #endif /* DEBUG */
 }
 
 static void ble_stack_init(void)

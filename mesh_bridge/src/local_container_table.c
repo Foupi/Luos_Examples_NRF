@@ -7,9 +7,6 @@
 #include <stdint.h>                 // uint16_t
 #include <string.h>                 // memcpy
 
-// NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
-
 // LUOS
 #include "config.h"                 // MAX_ALIAS_SIZE
 #include "routing_table.h"          // routing_table_t
@@ -17,6 +14,11 @@
 // CUSTOM
 #include "mesh_bridge.h"            // MESH_BRIDGE_MOD
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
+
+// NRF
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -160,9 +162,11 @@ void local_container_table_clear(void)
 
 void local_container_table_print(void)
 {
+    #ifdef DEBUG
     if (s_local_container_table.nb_local_containers == 0)
     {
         NRF_LOG_INFO("Local container table is empty!");
+
         return;
     }
 
@@ -181,6 +185,7 @@ void local_container_table_print(void)
                      entry.exposed_entry.alias, entry.exposed_entry.id,
                      entry.local_id);
     }
+    #endif /* DEBUG */
 }
 
 static bool is_entry_to_store(routing_table_t* entry)

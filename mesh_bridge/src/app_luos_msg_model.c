@@ -6,9 +6,6 @@
 #include <stdint.h>                 // uint16_t
 #include <string.h>                 // memset
 
-// NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
-
 // LUOS
 #include "robus_struct.h"           // msg_t
 #include "routing_table.h"          // routing_table_t
@@ -19,6 +16,11 @@
 #include "luos_msg_model.h"         // luos_msg_model_*
 #include "mesh_msg_queue_manager.h" // tx_queue_*, luos_mesh_msg_prepare
 #include "remote_container_table.h" // remote_container_table_*
+
+// NRF
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -55,13 +57,18 @@ void app_luos_msg_model_send_msg(const msg_t* msg)
     uint16_t            src_id          = msg->header.source;
     uint16_t            target_id       = msg->header.target;
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Message received by container %u, from container %u!",
                  target_id, src_id);
+    #endif /* DEBUG */
 
     routing_table_t*    exposed_entry   = local_container_table_get_entry_from_local_id(src_id);
     if (exposed_entry == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Local container entry not found!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -70,15 +77,21 @@ void app_luos_msg_model_send_msg(const msg_t* msg)
     remote_container_t* remote_entry    = remote_container_table_get_entry_from_local_id(target_id);
     if (remote_entry == NULL)
     {
+
+        #ifdef DEBUG
         NRF_LOG_INFO("Remote container entry not found!");
+        #endif /* DEBUG */
+
         return;
     }
 
     uint16_t            node_addr       = remote_entry->node_addr;
     uint16_t            remote_id       = remote_entry->remote_rtb_entry.id;
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Sending message to container %u on node 0x%x with source ID %u!",
                  remote_id, node_addr, new_src);
+    #endif /* DEBUG */
 
     uint16_t            data_size       = msg->header.size;
 
@@ -116,42 +129,48 @@ static void msg_model_set_send(luos_msg_model_t* instance,
 static void msg_model_set_cb(uint16_t src_addr,
                              const luos_mesh_msg_t* recv_msg)
 {
-    NRF_LOG_INFO("Luos MSG SET command received from node 0x%x!",
-                 src_addr);
-
     luos_mesh_header_t  recv_header = recv_msg->header;
     uint16_t            data_size   = recv_header.size;
     uint16_t            msg_src     = recv_header.source;
     uint16_t            msg_dst     = recv_header.target;
 
-    NRF_LOG_INFO("Received message target: %u, from container %u!",
-                 msg_dst, msg_src);
-    NRF_LOG_INFO("Message contains the command 0x%x, of size %u!",
-                 recv_header.cmd, data_size);
+    #ifdef DEBUG
+    NRF_LOG_INFO("Command 0x%x for container %u received from container %u on node 0x%x!",
+                 recv_header.cmd, msg_dst, msg_src, src_addr);
     if (data_size > 0)
     {
+        NRF_LOG_INFO("Message payload size is %u bytes:");
         NRF_LOG_HEXDUMP_INFO(recv_msg->data, data_size);
     }
+    #endif /* DEBUG */
 
     remote_container_t* remote_entry   = remote_container_table_get_entry_from_addr_and_remote_id(src_addr, msg_src);
     if (remote_entry == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Remote container entry not found!");
+        #endif /* DEBUG */
+
         return;
     }
 
     local_container_t*  local_entry     = local_container_table_get_entry_from_exposed_id(msg_dst);
     if (local_entry == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Local container entry not found!");
+        #endif /* DEBUG */
+
         return;
     }
 
     uint16_t    local_src   = remote_entry->local_id;
     uint16_t    local_dst   = local_entry->local_id;
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Local IDs retrieved! source: %u; target: %u!",
                  local_src, local_dst);
+    #endif /* DEBUG */
 
     msg_t local_msg;
     memset(&local_msg, 0, sizeof(local_msg));
