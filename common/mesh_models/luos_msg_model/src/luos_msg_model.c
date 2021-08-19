@@ -7,7 +7,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -20,6 +19,10 @@
 // CUSTOM
 #include "luos_mesh_msg.h"          // luos_mesh_msg_t
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -92,7 +95,10 @@ void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
 {
     if (instance->set_send == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined function to sent SET requests!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -140,7 +146,9 @@ static void luos_msg_model_set_cb(access_model_handle_t handle,
 
     if (instance->set_cb == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined callback for SET commands on Luos MSG model!");
+        #endif /* DEBUG */
     }
     else
     {
@@ -154,5 +162,7 @@ static void luos_msg_model_status_cb(access_model_handle_t handle,
                                      const access_message_rx_t* msg,
                                      void* arg)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Luos MSG STATUS received!");
+    #endif /* DEBUG */
 }

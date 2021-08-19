@@ -6,7 +6,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -22,6 +21,10 @@
 
 // CUSTOM
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -95,7 +98,10 @@ void luos_rtb_model_get(luos_rtb_model_t* instance)
 {
     if (instance->get_send == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined function to send GET requests!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -114,7 +120,10 @@ void luos_rtb_model_publish_entries(luos_rtb_model_t* instance,
 {
     if (instance->status_send == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined function to send STATUS messages!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -157,7 +166,9 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
 
     if (instance->get_cb == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined callback for GET requests on Luos RTB model!");
+        #endif /* DEBUG */
     }
     else
     {
@@ -166,7 +177,10 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
 
     if ((instance->local_rtb_entries_get_cb) == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No callback to retrieve local RTB entries: leaving!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -180,15 +194,24 @@ static void luos_rtb_model_get_cb(access_model_handle_t handle,
         &nb_local_entries);
     if (!detection_complete)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Local RTB cannot be retrieved: detection not complete!");
+        #endif /* DEBUG */
+
         return;
     }
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Local RTB contains %u entries!", nb_local_entries);
+    #endif /* DEBUG */
 
     if (instance->status_reply == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined function to send STATUS replies!");
+        #endif /* DEBUG */
+
+        return;
     }
 
     for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
@@ -229,7 +252,9 @@ static void luos_rtb_model_status_cb(access_model_handle_t handle,
 
     if (instance->status_cb == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("No user-defined callback for STATUS messages on Luos RTB model!");
+        #endif /* DEBUG */
     }
     else
     {
