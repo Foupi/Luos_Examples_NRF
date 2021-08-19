@@ -10,7 +10,12 @@
 
 #include <unistd.h>             // read
 
+// NRF
+#include "sdk_errors.h"         // ret_code_t
+
 // NRF APPS
+#include "app_error.h"          // APP_ERROR_CHECK
+#include "app_timer.h"          // app_timer_*
 #include "app_uart.h"           // app_uart_evt_t
 
 // LUOS
@@ -32,10 +37,14 @@
 #endif
 
 // Size in bytes of each read operation.
-static const uint32_t   READ_SIZE           = 64;
+static const uint32_t   READ_SIZE               = 64;
 
 // Time in ms between two Gate refreshes.
-static const uint32_t   GATE_REFRESH_RATE   = 2000;
+static const uint32_t   GATE_REFRESH_RATE_MS    = 2000;
+static const uint32_t   GATE_REFRESH_RATE_TICKS = APP_TIMER_TICKS(GATE_REFRESH_RATE_MS);
+
+// Gate refresh timer
+APP_TIMER_DEF(s_gate_refresh_timer);
 
 /*******************************************************************************
  * Variables
@@ -63,6 +72,9 @@ static void Gate_UartEvtHandler(app_uart_evt_t* event);
 // Prints the routing table on UART.
 static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries);
 
+// FIXME Logs message.
+static void gate_refresh_timer_cb(void* context);
+
 /******************************************************************************
  * @brief init must be call in project init
  * @param None
@@ -73,14 +85,15 @@ void Gate_Init(void)
 {
     uart_init(Gate_UartEvtHandler);
 
-    #ifdef LUOS_MESH_BRIDGE
-    printf("Luos Mesh Bridge mode!\n");
-    #endif /* LUOS_MESH_BRIDGE */
-
     revision_t revision = {.unmap = REV};
     container = Luos_CreateContainer(0, GATE_MOD, "gate", revision);
 
     s_reception_buffer = get_json_buf();
+
+    ret_code_t err_code = app_timer_create(&s_gate_refresh_timer,
+                                           APP_TIMER_MODE_REPEATED,
+                                           gate_refresh_timer_cb);
+    APP_ERROR_CHECK(err_code);
 }
 
 __attribute__((weak)) void json_send(char *json)
@@ -146,6 +159,13 @@ void Gate_Loop(void)
         routing_table_to_json(json);
         json_send(json);
 
+        if (!detection_done)
+        {
+            ret_code_t err_code = app_timer_start(s_gate_refresh_timer,
+                GATE_REFRESH_RATE_TICKS, NULL);
+            APP_ERROR_CHECK(err_code);
+        }
+
         #ifdef LUOS_MESH_BRIDGE
         routing_table_t* rtb    = RoutingTB_Get();
         uint16_t nb_entries     = RoutingTB_GetLastEntry();
@@ -174,7 +194,7 @@ void Gate_Loop(void)
     tickstart = Luos_GetSystick();
     uint32_t curr_tick = tickstart;
     uint32_t waited_ticks = 0;
-    while(waited_ticks < GATE_REFRESH_RATE)
+    while(waited_ticks < GATE_REFRESH_RATE_MS)
     {
         uint32_t old_val = curr_tick;
         curr_tick = Luos_GetSystick();
@@ -274,4 +294,9 @@ static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries)
             return;
         }
     }
+}
+
+static void gate_refresh_timer_cb(void* context)
+{
+    printf("Gate refresh!\n");
 }

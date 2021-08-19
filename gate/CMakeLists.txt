@@ -62,6 +62,7 @@ target_link_libraries( gate PUBLIC
     nrf5_app_util_platform
     nrf5_app_fifo
     nrf5_app_uart_fifo
+    nrf5_app_timer
     # BSP
     nrf5_boards
     nrf5_bsp_defs
