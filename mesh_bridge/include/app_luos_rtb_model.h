@@ -26,4 +26,7 @@ void app_luos_rtb_model_container_set(container_t* mesh_bridge_container);
 void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
                                        uint16_t mesh_bridge_id);
 
+// Signals end of RTB publication to the RTB model module.
+void app_luos_rtb_model_publication_end(void);
+
 #endif /* ! APP_LUOS_RTB_MODEL_H */

@@ -212,6 +212,15 @@ void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
     s_luos_rtb_model_ctx.curr_ext_rtb_src_id    = src_id;
 }
 
+void app_luos_rtb_model_publication_end(void)
+{
+    #ifdef DEBUG
+    NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
+    #endif /* DEBUG */
+
+    ext_rtb_complete();
+}
+
 static bool get_rtb_entries(routing_table_t* rtb_entries,
                             uint16_t* nb_entries)
 {
@@ -248,14 +257,6 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
         err_code = app_timer_start(s_entries_reception_timer,
                                    WAIT_NEXT_ENTRY_PUBLISH_DELAY_TICKS, NULL);
         APP_ERROR_CHECK(err_code);
-    }
-    else if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_PUBLISHING)
-    {
-        #ifdef DEBUG
-        NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
-        #endif /* DEBUG */
-
-        ext_rtb_complete();
     }
 
     return (nb_local_entries != 0);

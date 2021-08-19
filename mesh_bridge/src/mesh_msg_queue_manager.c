@@ -21,14 +21,14 @@
 #include "luos_utils.h"             // LUOS_ASSERT
 
 // CUSTOM
+#include "app_luos_rtb_model.h"     // app_luos_rtb_model_publication_end
+#include "local_container_table.h"  // local_container_table_get_nb_entries
 #include "luos_mesh_msg.h"          // LUOS_MESH_MSG_MAX_DATA_SIZE
 #include "luos_mesh_msg_queue.h"    // tx_queue_elm_t
 #include "luos_msg_model.h"         // luos_msg_model_*
 #include "luos_msg_model_common.h"  // LUOS_MSG_MODEL_*_ACCESS_OPCODE
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*_ACCESS_OPCODE
-
-#include "nrf_log.h"
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -245,9 +245,7 @@ static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm)
     if (elm->model == TX_QUEUE_MODEL_LUOS_RTB)
     {
         // RTB model message.
-        tx_queue_luos_rtb_model_elm_t*  rtb_elm;
-        rtb_elm = &(elm->content.luos_rtb_model_msg);
-
+        const tx_queue_luos_rtb_model_elm_t*    rtb_elm = &(elm->content.luos_rtb_model_msg);
         if (rtb_elm->cmd == TX_QUEUE_CMD_STATUS)
         {
             // Published STATUS message.
@@ -289,9 +287,7 @@ static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
             bool            is_last_entry   = is_last_published_rtb_entry(sent_elm);
             if (is_last_entry)
             {
-                #ifdef DEBUG
-                NRF_LOG_INFO("Last RTB entry published!");
-                #endif /* DEBUG */
+                app_luos_rtb_model_publication_end();
             }
 
             luos_mesh_msg_queue_pop();
