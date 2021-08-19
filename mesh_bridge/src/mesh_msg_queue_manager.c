@@ -28,6 +28,8 @@
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*_ACCESS_OPCODE
 
+#include "nrf_log.h"
+
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if a message can be sent.
@@ -58,6 +60,9 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
 
 // Returns the size of the given Luos MSG SET command.
 static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd);
+
+// Returns true if the given queue element is the last published entry.
+static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm);
 
 /*      CALLBACKS                                                   */
 
@@ -130,7 +135,6 @@ static void send_mesh_msg(void)
         return;
     }
 
-    luos_mesh_msg_queue_pop();
     s_curr_tx_token = message.access_token;
 
     s_is_possible_to_send = false;
@@ -236,6 +240,35 @@ static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd)
     return size_without_msg_payload_space + msg_payload_size;
 }
 
+static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm)
+{
+    if (elm->model == TX_QUEUE_MODEL_LUOS_RTB)
+    {
+        // RTB model message.
+        tx_queue_luos_rtb_model_elm_t*  rtb_elm;
+        rtb_elm = &(elm->content.luos_rtb_model_msg);
+
+        if (rtb_elm->cmd == TX_QUEUE_CMD_STATUS)
+        {
+            // Published STATUS message.
+            uint16_t    entry_idx;
+            uint16_t    nb_exposed_entries;
+            uint16_t    last_entry_idx;
+
+            entry_idx           = rtb_elm->content.status.entry_idx;
+            nb_exposed_entries  = local_container_table_get_nb_entries();
+            last_entry_idx      = nb_exposed_entries - 1; // Indexes start at 0.
+
+            if (entry_idx == last_entry_idx)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
 {
     ret_code_t          err_code;
@@ -250,6 +283,18 @@ static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
         {
             s_is_possible_to_send = true;
             s_curr_tx_token = DEFAULT_STATIC_TOKEN;
+
+            tx_queue_elm_t* sent_elm        = luos_mesh_msg_queue_peek();
+
+            bool            is_last_entry   = is_last_published_rtb_entry(sent_elm);
+            if (is_last_entry)
+            {
+                #ifdef DEBUG
+                NRF_LOG_INFO("Last RTB entry published!");
+                #endif /* DEBUG */
+            }
+
+            luos_mesh_msg_queue_pop();
 
             /* SAR session not being freed, next message has to be sent
             ** later.
