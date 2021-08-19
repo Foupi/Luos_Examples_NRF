@@ -3,7 +3,6 @@
 /*      INCLUDES                                                    */
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -15,6 +14,10 @@
 
 // MESH MODELS
 #include "health_client.h"          // health_client_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
@@ -50,6 +53,11 @@ void app_health_client_bind(dsm_handle_t appkey_handle)
 static void health_client_event_cb(const health_client_t* instance,
                                    const health_client_evt_t* event)
 {
+    /* FIXME Another way should be available to check all nodes are
+    ** provisioned...
+    */
+
+    #ifdef DEBUG
     switch (event->type)
     {
     case HEALTH_CLIENT_EVT_TYPE_CURRENT_STATUS_RECEIVED:
@@ -63,4 +71,5 @@ static void health_client_event_cb(const health_client_t* instance,
                      event->type);
         break;
     }
+    #endif /* DEBUG */
 }

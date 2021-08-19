@@ -6,7 +6,6 @@
 #include <stdbool.h>                // bool
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -24,6 +23,10 @@
 #include "luos_mesh_common.h"       // _mesh_init
 #include "network_ctx.h"            // g_network_ctx
 #include "node_config.h"            // config_client_msg_handler
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC/GLOBAL VARIABLES AND CONSTANTS                       */
 
@@ -73,7 +76,9 @@ static void config_client_event_cb(config_client_event_type_t type,
         break;
 
     default:
+        #ifdef DEBUG
         NRF_LOG_INFO("Config client event received: type %u!", type);
+        #endif /* DEBUG */
 
         break;
     }
@@ -85,7 +90,9 @@ static void models_init_cb(void)
     g_network_ctx.appkey_handle         = DSM_HANDLE_INVALID;
     g_network_ctx.self_devkey_handle    = DSM_HANDLE_INVALID;
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Initializing %u models!", ACCESS_MODEL_COUNT);
+    #endif /* DEBUG */
 
     ret_code_t err_code = config_client_init(config_client_event_cb);
     APP_ERROR_CHECK(err_code);

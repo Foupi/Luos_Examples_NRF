@@ -5,9 +5,6 @@
 // C STANDARD
 #include <stdbool.h>            // bool
 
-// NRF
-#include "nrf_log.h"            // NRF_LOG_INFO
-
 // LUOS
 #include "luos.h"               /* container_t, Luos_CreateContainer,
                                 ** msg_t
@@ -19,6 +16,11 @@
 #include "network_ctx.h"        // network_ctx_init, g_network_ctx
 #include "provisioning.h"       // mesh_*, prov*
 
+// NRF
+#ifdef DEBUG
+#include "nrf_log.h"            // NRF_LOG_INFO
+#endif /* DEBUG */
+
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
 #ifndef REV
@@ -27,7 +29,7 @@
 
 /*      CALLBACKS                                                   */
 
-// Does nothing as changes are triggered by a boolean toggle.
+// Switches scanning state depending on the given IO state.
 static void MeshProvisioner_MsgHandler(container_t* container,
                                        msg_t* msg);
 
@@ -36,10 +38,13 @@ void MeshProvisioner_Init(void)
     mesh_init();
     provisioning_init();
     network_ctx_init();
+
+    #ifdef DEBUG
     NRF_LOG_INFO("Netkey handle: 0x%x; Appkey handle: 0x%x; Self devkey handle: 0x%x!",
                  g_network_ctx.netkey_handle,
                  g_network_ctx.appkey_handle,
                  g_network_ctx.self_devkey_handle);
+    #endif /* DEBUG */
 
     prov_conf_init();
     mesh_start();

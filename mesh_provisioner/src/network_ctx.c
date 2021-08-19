@@ -7,7 +7,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -24,6 +23,10 @@
 #include "app_health_client.h"      // app_health_client_*
 #include "mesh_init.h"              // g_device_provisioned
 #include "provisioning.h"           // PROV_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      STATIC/GLOBAL VARIABLES & CONSTANTS                         */
 
@@ -53,12 +56,18 @@ void network_ctx_init(void)
 {
     if (g_device_provisioned)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Fetching network context from persistent storage!");
+        #endif /* DEBUG */
+
         network_ctx_fetch();
     }
     else
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Generating network context!");
+        #endif /* DEBUG */
+
         network_ctx_generate();
     }
 }
@@ -123,8 +132,11 @@ static void network_ctx_fetch(void)
     if (nb_indexes != NB_NETKEY_IDX)
     {
         // FIXME Manage error.
+
+        #ifdef DEBUG
         NRF_LOG_INFO("Number of indexes: %u! (Expected %u).",
                      nb_indexes, NB_NETKEY_IDX);
+        #endif /* DEBUG */
     }
 
     curr_handle = dsm_net_key_index_to_subnet_handle(key_index_buffer);

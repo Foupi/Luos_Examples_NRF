@@ -7,7 +7,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -35,6 +34,10 @@
 #include "network_ctx.h"            // network_ctx_*
 #include "node_config.h"            // node_config_start
 #include "provisioner_config.h"     // prov_conf_*
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      TYPEDEFS                                                    */
 
@@ -139,7 +142,9 @@ void prov_conf_init(void)
 {
     if (g_device_provisioned)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Retrieving persistent configuration!");
+        #endif /* DEBUG */
 
         mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID,
                               &(s_prov_curr_state.prov_conf_header));
@@ -148,27 +153,26 @@ void prov_conf_init(void)
         prov_conf_node_entry_live_t node_conf_buffer;
         uint16_t                    nb_prov_nodes       = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Number of provisioned nodes: %u!", nb_prov_nodes);
+        #endif /* DEBUG */
 
         for (uint16_t node_entry_idx = 0; node_entry_idx < nb_prov_nodes;
              node_entry_idx++)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Retrieving config for node %u!",
                          node_entry_idx);
+            #endif /* DEBUG */
 
             mesh_config_entry_get(PROV_CONF_NODE_ENTRY_ID(node_entry_idx),
                                   &node_conf_buffer);
 
             uint16_t    node_unicast_addr   = node_conf_buffer.first_addr;
 
-            NRF_LOG_INFO("Unicast address: %u!", node_unicast_addr);
-
             err_code = dsm_devkey_handle_get(node_conf_buffer.first_addr,
                 s_prov_curr_state.devkey_handles + node_entry_idx);
             APP_ERROR_CHECK(err_code);
-
-            NRF_LOG_INFO("Devkey handle: 0x%x!",
-                s_prov_curr_state.devkey_handles[node_entry_idx]);
 
             nrf_mesh_address_t device_address;
             memset(&device_address, 0, sizeof(nrf_mesh_address_t));
@@ -179,13 +183,19 @@ void prov_conf_init(void)
                 s_prov_curr_state.address_handles + node_entry_idx);
             APP_ERROR_CHECK(err_code);
 
-            NRF_LOG_INFO("Address handle: 0x%x!",
-                s_prov_curr_state.address_handles[node_entry_idx]);
+            #ifdef DEBUG
+            NRF_LOG_INFO("Unicast address: 0x%x, devkey handle: 0x%x, address handle: 0x%x!",
+                         node_unicast_addr,
+                         s_prov_curr_state.devkey_handles[node_entry_idx],
+                         s_prov_curr_state.address_handles[node_entry_idx]);
+            #endif /* DEBUG */
         }
 
         if (nb_prov_nodes > s_prov_curr_state.prov_conf_header.nb_conf_nodes)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Last provisioned node must still be configured!");
+            #endif /* DEBUG */
 
             /* One node has been provisioned but not configured: store
             ** it in current context so that it can be configured right
@@ -201,6 +211,10 @@ void prov_conf_init(void)
     }
     else
     {
+        #ifdef DEBUG
+        NRF_LOG_INFO("Generating persistent configuration!");
+        #endif /* DEBUG */
+
         s_prov_curr_state.prov_conf_header.nb_prov_nodes    = 0;
         s_prov_curr_state.prov_conf_header.nb_conf_nodes    = 0;
         s_prov_curr_state.prov_conf_header.next_address     = PROV_ELM_ADDRESS + ACCESS_ELEMENT_COUNT;
@@ -211,8 +225,6 @@ void prov_conf_init(void)
 
         mesh_config_entry_set(PROV_CONF_HEADER_ENTRY_ID,
                               &(s_prov_curr_state.prov_conf_header));
-
-        NRF_LOG_INFO("Generating persistent configuration!");
     }
 }
 
@@ -223,7 +235,9 @@ void prov_scan_start(void)
 
     s_prov_curr_state.prov_state = PROV_STATE_SCANNING;
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Start scanning for unprovisioned devices!");
+    #endif /* DEBUG */
 }
 
 void prov_scan_stop(void)
@@ -235,7 +249,9 @@ void prov_scan_stop(void)
         s_prov_curr_state.prov_state = PROV_STATE_IDLE;
     }
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
+    #endif /* DEBUG */
 }
 
 static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
@@ -249,22 +265,32 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     case NRF_MESH_PROV_EVT_LINK_ESTABLISHED:
         if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning link established while not provisioning!");
+            #endif /* DEBUG */
+
             return;
         }
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Provisioning link established with unprovisioned device!");
+        #endif /* DEBUG */
         break;
 
     case NRF_MESH_PROV_EVT_CAPS_RECEIVED:
+    {
         if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("OOB capacities received while not provisioning!");
+            #endif /* DEBUG */
+
             return;
         }
 
-    {
+        #ifdef DEBUG
         NRF_LOG_INFO("Capacities received from unprovisioned device!");
+        #endif /* DEBUG */
 
         nrf_mesh_prov_evt_caps_received_t   oob_caps_received   = event->params.oob_caps_received;
         device_prov_ctx                                         = oob_caps_received.p_context;
@@ -282,11 +308,16 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     case NRF_MESH_PROV_EVT_STATIC_REQUEST:
         if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Static authentication data request received while not provisioning!");
+            #endif /* DEBUG */
+
             return;
         }
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Static authentication data requested by unprovisioned device!");
+        #endif /* DEBUG */
 
         device_prov_ctx = event->params.static_request.p_context;
         auth_data_provide(device_prov_ctx);
@@ -296,23 +327,31 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     case NRF_MESH_PROV_EVT_FAILED:
         if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning failed event received while not provisioning!");
+            #endif /* DEBUG */
+
             return;
         }
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Provisioning procedure failed! Reason code: %u!",
                      event->params.failed.failure_code);
+        #endif /* DEBUG */
 
         break;
 
     case NRF_MESH_PROV_EVT_COMPLETE:
+    {
         if (s_prov_curr_state.prov_state != PROV_STATE_PROVISIONING)
         {
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning complete event received while not provisioning!");
+            #endif /* DEBUG */
+
             return;
         }
 
-    {
         s_prov_curr_state.prov_state                            = PROV_STATE_COMPLETE;
         node_idx                                                = s_prov_curr_state.prov_conf_header.nb_prov_nodes;
 
@@ -321,8 +360,10 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         const uint8_t*                  device_devkey           = prov_complete.p_devkey;
         uint16_t                        node_nb_elm             = s_prov_curr_state.curr_conf_node.nb_elm;
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Provisioning process complete for device 0x%x!",
                      device_first_address);
+        #endif /* DEBUG */
 
 
         err_code = dsm_address_publish_add(device_first_address,
@@ -350,7 +391,9 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         switch (s_prov_curr_state.prov_state)
         {
         case PROV_STATE_COMPLETE:
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning link closed after successful procedure!");
+            #endif /* DEBUG */
 
             s_prov_curr_state.prov_state    = PROV_STATE_IDLE;
             node_idx                        = s_prov_curr_state.prov_conf_header.nb_prov_nodes - 1;
@@ -362,22 +405,30 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
             break;
 
         case PROV_STATE_PROVISIONING:
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning procedure was aborted!");
+            #endif /* DEBUG */
 
             prov_scan_start();
 
             break;
 
         default:
+            #ifdef DEBUG
             NRF_LOG_INFO("Provisioning link closed event received in inadequate state!");
+            #endif /* DEBUG */
+
             break;
         }
 
         break;
 
     default:
+        #ifdef DEBUG
         NRF_LOG_INFO("Mesh provisioning event received: type %u!",
                      event->type);
+        #endif /* DEBUG */
+
         break;
     }
 }
@@ -392,12 +443,16 @@ static void mesh_unprov_event_cb(const nrf_mesh_prov_evt_t* event)
 
     if (s_prov_curr_state.prov_state != PROV_STATE_SCANNING)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Unprovisioned device detected while not scanning!");
+        #endif /* DEBUG */
 
         return;
     }
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Start provisioning detected device!");
+    #endif /* DEBUG */
 
     nrf_mesh_prov_provisioning_data_t   prov_data;
     memset(&prov_data, 0, sizeof(nrf_mesh_prov_provisioning_data_t));

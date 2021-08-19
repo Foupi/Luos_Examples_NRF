@@ -7,7 +7,6 @@
 #include <string.h>                 // memset
 
 // NRF
-#include "nrf_log.h"                // NRF_LOG_INFO
 #include "sdk_errors.h"             // ret_code_t
 
 // NRF APPS
@@ -30,6 +29,10 @@
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*
 #include "provisioner_config.h"     // prov_conf_*
 #include "provisioning.h"           // prov_scan_start
+
+#ifdef DEBUG
+#include "nrf_log.h"                // NRF_LOG_INFO
+#endif /* DEBUG */
 
 /*      TYPEDEFS                                                    */
 
@@ -229,13 +232,19 @@ void node_config_start(uint16_t device_first_addr,
 {
     if (s_node_config_curr_state.config_step != NODE_CONFIG_STEP_IDLE)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Configuration start requested for node 0x%x while still configuring element 0x%x!",
                      device_first_addr,
                      s_node_config_curr_state.elm_address);
+        #endif /* DEBUG */
+
+        return;
     }
 
+    #ifdef DEBUG
     NRF_LOG_INFO("Start configuration for node 0x%x! (devkey handle: 0x%x; address handle: 0x%x)",
                  device_first_addr, devkey_handle, address_handle);
+    #endif /* DEBUG */
 
     ret_code_t err_code;
 
@@ -244,8 +253,6 @@ void node_config_start(uint16_t device_first_addr,
 
     err_code = config_client_server_set(devkey_handle, address_handle);
     APP_ERROR_CHECK(err_code);
-
-    NRF_LOG_INFO("Config Client bound with and set on remote Config Server!");
 
     s_node_config_curr_state.elm_address    = device_first_addr;
 
@@ -256,7 +263,10 @@ void config_client_msg_handler(const config_client_event_t* event)
 {
     if (s_node_config_curr_state.config_step == NODE_CONFIG_STEP_IDLE)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Config client message received whild no configuration is occuring!");
+        #endif /* DEBUG */
+
         return;
     }
 
@@ -265,8 +275,10 @@ void config_client_msg_handler(const config_client_event_t* event)
 
     if (received_opcode != expected_opcode)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Wrong opcode received: expected 0x%x, got 0x%x!",
                      expected_opcode, received_opcode);
+        #endif /* DEBUG */
 
         return;
     }
@@ -281,8 +293,9 @@ void config_client_msg_handler(const config_client_event_t* event)
         if ((status != ACCESS_STATUS_SUCCESS)
             && (status != ACCESS_STATUS_KEY_INDEX_ALREADY_STORED))
         {
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
-                  "Wrong status received: operation failed!\n")
+            #ifdef DEBUG
+            NRF_LOG_INFO("Wrong status received: operation failed!");
+            #endif /* DEBUG */
 
             // FIXME Manage error.
 
@@ -296,8 +309,9 @@ void config_client_msg_handler(const config_client_event_t* event)
 
         if (status != ACCESS_STATUS_SUCCESS)
         {
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
-                  "Wrong status received: operation failed!\n")
+            #ifdef DEBUG
+            NRF_LOG_INFO("Wrong status received: operation failed!");
+            #endif /* DEBUG */
 
             // FIXME Manage error.
 
@@ -311,8 +325,9 @@ void config_client_msg_handler(const config_client_event_t* event)
 
         if (status != ACCESS_STATUS_SUCCESS)
         {
-            __LOG(LOG_SRC_APP, LOG_LEVEL_INFO,
-                  "Wrong status received: operation failed!\n")
+            #ifdef DEBUG
+            NRF_LOG_INFO("Wrong status received: operation failed!");
+            #endif /* DEBUG */
 
             // FIXME Manage error.
 
@@ -330,8 +345,10 @@ void config_client_msg_handler(const config_client_event_t* event)
 
     if (next_transition == NULL)
     {
+        #ifdef DEBUG
         NRF_LOG_INFO("Opcode 0x%x received but not managed yet!",
                      received_opcode);
+        #endif /* DEBUG */
 
         return;
     }
@@ -371,7 +388,9 @@ static void node_config_idle_to_composition_get(void)
 
 static void node_config_composition_get_to_network_transmit(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Composition data received!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_NETWORK_TRANSMIT;
 
@@ -384,7 +403,9 @@ static void node_config_composition_get_to_network_transmit(void)
 
 static void node_config_network_transmit_to_appkey_add(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Network transmit parameters set!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_ADD;
 
@@ -398,7 +419,9 @@ static void node_config_network_transmit_to_appkey_add(void)
 
 static void node_config_appkey_add_to_appkey_bind_health(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Appkey added to device!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_HEALTH;
 
@@ -411,7 +434,9 @@ static void node_config_appkey_add_to_appkey_bind_health(void)
 
 static void node_config_appkey_bind_health_to_publish_health(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Appkey bound to remote Health Server Instance!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_HEALTH;
 
@@ -431,7 +456,9 @@ static void node_config_appkey_bind_health_to_publish_health(void)
 
 static void node_config_publish_health_to_appkey_bind_luos_rtb(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Publish address set for remote Health Server!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_LUOS_RTB;
 
@@ -446,7 +473,9 @@ static void node_config_publish_health_to_appkey_bind_luos_rtb(void)
 
 static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Appkey bound to remote Luos RTB model instance!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_LUOS_RTB;
 
@@ -467,7 +496,9 @@ static void node_config_appkey_bind_luos_rtb_to_publish_luos_rtb(void)
 
 static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Publish address set for remote Luos RTB model instance!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_SUBSCRIBE_LUOS_RTB;
 
@@ -486,7 +517,9 @@ static void node_config_publish_luos_rtb_to_subscribe_luos_rtb(void)
 
 static void node_config_subscribe_luos_rtb_to_appkey_bind_luos_msg(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Remote Luos RTB model instance subsribed to Luos group address!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_APPKEY_BIND_LUOS_MSG;
 
@@ -501,7 +534,9 @@ static void node_config_subscribe_luos_rtb_to_appkey_bind_luos_msg(void)
 
 static void node_config_appkey_bind_luos_msg_to_publish_luos_msg(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Appkey bound to remote Luos MSG model instance!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_PUBLISH_LUOS_MSG;
 
@@ -522,7 +557,9 @@ static void node_config_appkey_bind_luos_msg_to_publish_luos_msg(void)
 
 static void node_config_publish_luos_msg_to_subscribe_luos_msg(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Publish address set for remote Luos MSG model instance!");
+    #endif /* DEBUG */
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_SUBSCRIBE_LUOS_MSG;
 
@@ -541,7 +578,9 @@ static void node_config_publish_luos_msg_to_subscribe_luos_msg(void)
 
 static void node_config_success(void)
 {
+    #ifdef DEBUG
     NRF_LOG_INFO("Configuration process successfully completed!");
+    #endif /* DEBUG */
 
     prov_conf_header_entry_live_t   tmp_conf_header;
     mesh_config_entry_get(PROV_CONF_HEADER_ENTRY_ID, &tmp_conf_header);
