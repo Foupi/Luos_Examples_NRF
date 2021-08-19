@@ -170,7 +170,6 @@ void send_cmds(container_t *container)
         // Get containers
         if (cJSON_IsObject(containers))
         {
-            printf("Containers command received!\n");
             // Loop into containers
             cJSON *container_jsn = containers->child;
             while (container_jsn != NULL)

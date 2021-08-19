@@ -43,6 +43,9 @@ static const uint32_t   READ_SIZE               = 64;
 static const uint32_t   GATE_REFRESH_RATE_MS    = 2000;
 static const uint32_t   GATE_REFRESH_RATE_TICKS = APP_TIMER_TICKS(GATE_REFRESH_RATE_MS);
 
+// Max keep-alive value.
+static const uint32_t   MAX_KEEP_ALIVE          = 30;
+
 // Gate refresh timer
 APP_TIMER_DEF(s_gate_refresh_timer);
 
@@ -55,6 +58,17 @@ uint8_t RxData;
 container_t *container_pointer;
 volatile msg_t pub_msg;
 volatile int pub = LUOS_PROTOCOL_NB;
+
+// Refresh context.
+static struct
+{
+    // JSON updated between each refresh callback.
+    char            json[JSON_BUFF_SIZE];
+
+    // Keep-alive value.
+    unsigned int    keep_alive;
+
+} s_gate_refresh_ctx    = { 0 };
 
 // Data reception management.
 static char* s_reception_buffer;
@@ -73,7 +87,7 @@ static void Gate_UartEvtHandler(app_uart_evt_t* event);
 static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries);
 
 // FIXME Logs message.
-static void gate_refresh_timer_cb(void* context);
+static void Gate_TimerEventHandler(void* context);
 
 /******************************************************************************
  * @brief init must be call in project init
@@ -92,7 +106,7 @@ void Gate_Init(void)
 
     ret_code_t err_code = app_timer_create(&s_gate_refresh_timer,
                                            APP_TIMER_MODE_REPEATED,
-                                           gate_refresh_timer_cb);
+                                           Gate_TimerEventHandler);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -108,7 +122,6 @@ __attribute__((weak)) void json_send(char *json)
  ******************************************************************************/
 void Gate_Loop(void)
 {
-    static unsigned int keepAlive = 0;
     static volatile uint8_t detection_done = 0;
     static char state = 0;
     uint32_t tickstart = 0;
@@ -128,22 +141,19 @@ void Gate_Loop(void)
         format_data(container, json);
         if (json[0] != '\0')
         {
-//            json_send(json);
-            keepAlive = 0;
-        }
-        else
-        {
-            if (keepAlive > 200)
+            // Received something.
+            if (s_gate_refresh_ctx.json[0] == '\0')
             {
-                sprintf(json, "{}\n");
-//                json_send(json);
+                // No container data received so far.
+                sprintf(s_gate_refresh_ctx.json, "{\"containers\":%s",
+                        json);
             }
             else
             {
-                keepAlive++;
+                sprintf(s_gate_refresh_ctx.json, "%s,%s",
+                        s_gate_refresh_ctx.json, json);
             }
         }
-        collect_data(container);
     }
     if (pub != LUOS_PROTOCOL_NB)
     {
@@ -162,7 +172,7 @@ void Gate_Loop(void)
         if (!detection_done)
         {
             ret_code_t err_code = app_timer_start(s_gate_refresh_timer,
-                GATE_REFRESH_RATE_TICKS, NULL);
+                GATE_REFRESH_RATE_TICKS, (void*)container);
             APP_ERROR_CHECK(err_code);
         }
 
@@ -192,32 +202,7 @@ void Gate_Loop(void)
     }
 
     tickstart = Luos_GetSystick();
-    uint32_t curr_tick = tickstart;
-    uint32_t waited_ticks = 0;
-    while(waited_ticks < GATE_REFRESH_RATE_MS)
-    {
-        uint32_t old_val = curr_tick;
-        curr_tick = Luos_GetSystick();
-        if (curr_tick < old_val)
-        {
-            // There was an overflow.
-            uint32_t remaining;
-            if (old_val >= MAX_SYSTICK_MS_VAL)
-            {
-                // Since MAX_SYSTICK_MS_VAL is not an exact value...
-                remaining = 0;
-            }
-            else
-            {
-                remaining = MAX_SYSTICK_MS_VAL - old_val;
-            }
-            waited_ticks += (remaining + curr_tick);
-        }
-        else
-        {
-            waited_ticks += (curr_tick - old_val);
-        }
-    }
+    while ((Luos_GetSystick() - tickstart) < 100);
 }
 
 static void Gate_ManageReceivedData(void)
@@ -296,7 +281,33 @@ static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries)
     }
 }
 
-static void gate_refresh_timer_cb(void* context)
+static void Gate_TimerEventHandler(void* context)
 {
-    printf("Gate refresh!\n");
+    container_t* gate_instance = (container_t*)context;
+
+    if (s_gate_refresh_ctx.json[0] != '\0')
+    {
+        sprintf(s_gate_refresh_ctx.json, "%s}\n",
+                s_gate_refresh_ctx.json);
+        json_send(s_gate_refresh_ctx.json);
+
+        s_gate_refresh_ctx.keep_alive = 0;
+    }
+    else
+    {
+        if (s_gate_refresh_ctx.keep_alive > MAX_KEEP_ALIVE)
+        {
+            sprintf(s_gate_refresh_ctx.json, "{}\n");
+            json_send(s_gate_refresh_ctx.json);
+        }
+        else
+        {
+            s_gate_refresh_ctx.keep_alive++;
+        }
+    }
+
+    // Resetting buffer.
+    memset(s_gate_refresh_ctx.json, 0, JSON_BUFF_SIZE * sizeof(char));
+
+    collect_data(gate_instance);
 }

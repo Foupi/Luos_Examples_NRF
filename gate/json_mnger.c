@@ -65,8 +65,6 @@ void format_data(container_t *container, char *json)
     uint8_t json_ok = false;
     if ((Luos_NbrAvailableMsg() > 0))
     {
-        // Init the json string
-        sprintf(json, "{\"containers\":{");
         // loop into containers.
         uint16_t i = 1;
         // get the oldest message
@@ -89,7 +87,6 @@ void format_data(container_t *container, char *json)
                                                       json_msg);
             if (mesh_bridge_cmd)
             {
-                json_ok = true;
                 continue;
             }
             #endif /* LUOS_MESH_BRIDGE */
@@ -99,10 +96,11 @@ void format_data(container_t *container, char *json)
             // Create container description
             char *alias;
             alias = RoutingTB_AliasFromId(i);
+
             if (alias != 0)
             {
                 json_ok = true;
-                sprintf(json, "%s\"%s\":{", json, alias);
+                sprintf(json, "%s{\"%s\":{", json, alias);
                 // now add json data from container
                 msg_to_json(json_msg, &json[strlen(json)]);
                 // Check if we receive other messages from this container
@@ -124,8 +122,9 @@ void format_data(container_t *container, char *json)
         {
             // remove the last "," char
             json[strlen(json) - 1] = '\0';
-            // End the Json message
-            sprintf(json, "%s}}\n", json);
+
+            // Close the container section
+            sprintf(json, "%s}", json);
         }
         else
         {
