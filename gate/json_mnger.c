@@ -155,12 +155,16 @@ static bool is_mesh_bridge_cmd(container_t* container, const msg_t* msg)
     switch (msg->header.cmd)
     {
     case MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED:
+        #ifdef DEBUG
         printf("Mesh Bridge local container table filled!\n");
+        #endif /* DEBUG */
         break;
 
     case MESH_BRIDGE_EXT_RTB_COMPLETE:
     {
+        #ifdef DEBUG
         printf("RTB extension complete!\n");
+        #endif /* DEBUG */
 
         routing_table_t* rtb    = RoutingTB_Get();
         uint16_t nb_entries     = RoutingTB_GetLastEntry();
@@ -181,7 +185,9 @@ static bool is_mesh_bridge_cmd(container_t* container, const msg_t* msg)
         break;
 
     case MESH_BRIDGE_INTERNAL_TABLES_UPDATED:
+        #ifdef DEBUG
         printf("Mesh Bridge internal tables updated!\n");
+        #endif /* DEBUG */
         detection_ask = 1;
         break;
 

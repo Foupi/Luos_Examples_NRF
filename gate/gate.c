@@ -83,11 +83,13 @@ static void Gate_ManageReceivedData(void);
 // Manages received data on data ready event, stops on error.
 static void Gate_UartEvtHandler(app_uart_evt_t* event);
 
+// Sends the ASK_PUB_CMD messages and prints the received information.
+static void Gate_TimerEventHandler(void* context);
+
+#ifdef DEBUG
 // Prints the routing table on UART.
 static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries);
-
-// FIXME Logs message.
-static void Gate_TimerEventHandler(void* context);
+#endif /* DEBUG */
 
 /******************************************************************************
  * @brief init must be call in project init
@@ -180,7 +182,9 @@ void Gate_Loop(void)
         routing_table_t* rtb    = RoutingTB_Get();
         uint16_t nb_entries     = RoutingTB_GetLastEntry();
 
+        #ifdef DEBUG
         print_rtb(rtb, nb_entries);
+        #endif /* DEBUG */
 
         if (!detection_done)    // Only fill local container table once.
         {
@@ -248,6 +252,7 @@ static void Gate_UartEvtHandler(app_uart_evt_t* event)
     }
 }
 
+#ifdef DEBUG
 static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries)
 {
     printf("Routing table contains %u entries!\n",
@@ -280,6 +285,7 @@ static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries)
         }
     }
 }
+#endif /* DEBUG */
 
 static void Gate_TimerEventHandler(void* context)
 {
@@ -289,7 +295,10 @@ static void Gate_TimerEventHandler(void* context)
     {
         sprintf(s_gate_refresh_ctx.json, "%s}\n",
                 s_gate_refresh_ctx.json);
+        #ifndef DEBUG
+        // This print is noise in a debugging setting.
         json_send(s_gate_refresh_ctx.json);
+        #endif /* ! DEBUG */
 
         s_gate_refresh_ctx.keep_alive = 0;
     }
@@ -298,7 +307,11 @@ static void Gate_TimerEventHandler(void* context)
         if (s_gate_refresh_ctx.keep_alive > MAX_KEEP_ALIVE)
         {
             sprintf(s_gate_refresh_ctx.json, "{}\n");
+
+            #ifndef DEBUG
+            // This print is noise in a debugging setting.
             json_send(s_gate_refresh_ctx.json);
+            #endif /* ! DEBUG */
         }
         else
         {
