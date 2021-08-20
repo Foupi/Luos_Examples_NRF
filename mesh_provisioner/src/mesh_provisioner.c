@@ -15,6 +15,7 @@
 #include "luos_mesh_common.h"   // mesh_start
 #include "mesh_init.h"          // mesh_init
 #include "network_ctx.h"        // network_ctx_init, g_network_ctx
+#include "node_config.h"        // node_config_container_set
 #include "provisioning.h"       // mesh_*, prov*
 
 // NRF
@@ -52,10 +53,12 @@ void MeshProvisioner_Init(void)
 
     revision_t revision = { .unmap = REV };
 
-    Luos_CreateContainer(MeshProvisioner_MsgHandler,
-                         MESH_PROVISIONER_TYPE,
-                         MESH_PROVISIONER_ALIAS,
-                         revision);
+    container_t* container;
+    container   = Luos_CreateContainer(MeshProvisioner_MsgHandler,
+                                       MESH_PROVISIONER_TYPE,
+                                       MESH_PROVISIONER_ALIAS,
+                                       revision);
+    node_config_container_set(container);
 }
 
 void MeshProvisioner_Loop(void)

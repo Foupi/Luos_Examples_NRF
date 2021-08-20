@@ -12,6 +12,12 @@
 // MESH MODELS
 #include "config_client.h"          // config_client_*
 
+// LUOS
+#include "luos.h"                   // container_t
+
+// Initializes the internal container to send messages.
+void node_config_container_set(container_t* container);
+
 /* Sets up configuration context and starts configuration process for
 ** the given values.
 */

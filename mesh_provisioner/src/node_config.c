@@ -23,6 +23,7 @@
 #include "health_common.h"          // HEALTH_SERVER_MODEL_ID
 
 // LUOS
+#include "luos.h"                   // container_t, msg_t, Luos_SendMsg
 #include "luos_utils.h"             // LUOS_ASSERT
 
 // CUSTOM
@@ -128,6 +129,9 @@ static struct
 // Remote device first composition page index.
 static const uint8_t            FIRST_COMP_PAGE_IDX         = 0x00;
 
+// Static provisioner instance for message sending.
+static container_t*             s_mesh_provisioner_instance = NULL;
+
 /*      STATIC FUNCTIONS                                            */
 
 /* Sets the publication parameters for the instance of the given model
@@ -228,6 +232,11 @@ static const access_model_id_t              HEALTH_SERVER_ACCESS_MODEL_ID   =
     .company_id = ACCESS_COMPANY_ID_NONE,
     .model_id   = HEALTH_SERVER_MODEL_ID,
 };
+
+void node_config_container_set(container_t* container)
+{
+    s_mesh_provisioner_instance = container;
+}
 
 void node_config_start(uint16_t device_first_addr,
                        dsm_handle_t devkey_handle,
@@ -564,5 +573,17 @@ static void node_config_success(void)
 
     s_node_config_curr_state.config_step    = NODE_CONFIG_STEP_IDLE;
 
-    prov_scan_start();
+    bool can_scan   = prov_scan_start();
+    if ((!can_scan) && (s_mesh_provisioner_instance != NULL))
+    {
+        msg_t   cannot_scan;
+        memset(&cannot_scan, 0, sizeof(msg_t));
+        cannot_scan.header.target_mode  = BROADCAST;
+        cannot_scan.header.target       = BROADCAST_VAL;
+        cannot_scan.header.cmd          = IO_STATE;
+        cannot_scan.header.size         = sizeof(uint8_t);
+        cannot_scan.data[0]             = 0x00;
+
+        Luos_SendMsg(s_mesh_provisioner_instance, &cannot_scan);
+    }
 }
