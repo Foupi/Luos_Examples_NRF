@@ -26,9 +26,6 @@
     MESH_CONFIG_ENTRY_ID(PROV_CONF_FILE_ID,                             \
                          PROV_CONF_FIRST_NODE_RECORD_ID + (__node_idx))
 
-// Maximum number of node configuration records.
-#define MAX_PROV_CONF_NODE_RECORDS          8
-
 /*      TYPEDEFS                                                    */
 
 // Live representation of a header config entry.

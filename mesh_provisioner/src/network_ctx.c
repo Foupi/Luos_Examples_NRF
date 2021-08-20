@@ -132,10 +132,10 @@ static void network_ctx_fetch(void)
 
     err_code = dsm_subnet_get_all(&key_index_buffer, &nb_indexes);
     APP_ERROR_CHECK(err_code);
-    LUOS_ASSERT(nb_indexes == NB_NETKEY_IDX)
+    LUOS_ASSERT(nb_indexes == NB_NETKEY_IDX);
 
     curr_handle = dsm_net_key_index_to_subnet_handle(key_index_buffer);
-    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID)
+    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID);
 
     err_code = dsm_subnet_key_get(curr_handle, g_network_ctx.netkey);
     APP_ERROR_CHECK(err_code);
@@ -145,17 +145,17 @@ static void network_ctx_fetch(void)
     err_code = dsm_appkey_get_all(g_network_ctx.netkey_handle,
                                   &key_index_buffer, &nb_indexes);
     APP_ERROR_CHECK(err_code);
-    LUOS_ASSERT(nb_indexes == NB_APPKEY_IDX)
+    LUOS_ASSERT(nb_indexes == NB_APPKEY_IDX);
 
     curr_handle = dsm_appkey_index_to_appkey_handle(key_index_buffer);
-    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID)
+    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID);
 
     g_network_ctx.appkey_handle = curr_handle;
 
     err_code = dsm_devkey_handle_get(local_addr_range.address_start,
                                      &curr_handle);
     APP_ERROR_CHECK(err_code);
-    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID)
+    LUOS_ASSERT(curr_handle != DSM_HANDLE_INVALID);
 
     g_network_ctx.self_devkey_handle = curr_handle;
 }

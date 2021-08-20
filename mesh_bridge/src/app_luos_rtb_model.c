@@ -245,7 +245,6 @@ static bool get_rtb_entries(routing_table_t* rtb_entries,
     }
     *nb_entries = nb_local_entries;
 
-    // FIXME Create callback for end of RTB entries enqueuing?
     if (s_luos_rtb_model_ctx.curr_state == LUOS_RTB_MODEL_STATE_REPLYING)
     {
         #ifdef DEBUG

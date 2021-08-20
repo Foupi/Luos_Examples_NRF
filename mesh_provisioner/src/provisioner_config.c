@@ -3,14 +3,17 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
-#include <stdint.h>         // uint*_t
-#include <string.h>         // memset, memcpy
+#include <stdint.h>             // uint*_t
+#include <string.h>             // memset, memcpy
 
 // NRF
-#include "sdk_errors.h"     // NRF_ERROR_*
+#include "sdk_errors.h"         // NRF_ERROR_*
 
 // NRF MESH
-#include "mesh_config.h"    // mesh_config_*, MESH_CONFIG_*
+#include "mesh_config.h"        // mesh_config_*, MESH_CONFIG_*
+
+// CUSTOM
+#include "luos_mesh_common.h"   // LUOS_MESH_NETWORK_MAX_NODES
 
 #ifdef DEBUG
 #include "nrf_log.h"        // NRF_LOG_INFO
@@ -25,7 +28,7 @@ static struct
     prov_conf_header_entry_live_t   header;
 
     // Provisioner node data.
-    prov_conf_node_entry_live_t     nodes[MAX_PROV_CONF_NODE_RECORDS];
+    prov_conf_node_entry_live_t     nodes[LUOS_MESH_NETWORK_MAX_NODES];
 
 } s_prov_conf_live;
 
@@ -67,7 +70,7 @@ uint32_t prov_conf_node_set_cb(mesh_config_entry_id_t id,
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 
-    if (node_idx >= MAX_PROV_CONF_NODE_RECORDS)
+    if (node_idx >= LUOS_MESH_NETWORK_MAX_NODES)
     {
         #ifdef DEBUG
         NRF_LOG_INFO("Setter called on invalid provisioner configuration node index!");
@@ -91,7 +94,7 @@ void prov_conf_node_get_cb(mesh_config_entry_id_t id, void* buf)
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 
-    if (node_idx >= MAX_PROV_CONF_NODE_RECORDS)
+    if (node_idx >= LUOS_MESH_NETWORK_MAX_NODES)
     {
         #ifdef DEBUG
         NRF_LOG_INFO("Getter called on invalid provisioner configuration node index!");
@@ -113,7 +116,7 @@ void prov_conf_node_delete_cb(mesh_config_entry_id_t id)
 {
     uint16_t node_idx = id.record - PROV_CONF_FIRST_NODE_RECORD_ID;
 
-    if (node_idx >= MAX_PROV_CONF_NODE_RECORDS)
+    if (node_idx >= LUOS_MESH_NETWORK_MAX_NODES)
     {
         #ifdef DEBUG
         NRF_LOG_INFO("Deleter called on invalid provisioner configuration node index!");

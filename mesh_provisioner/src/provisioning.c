@@ -28,7 +28,8 @@
 // CUSTOM
 #include "luos_mesh_common.h"       /* _provisioning_init,
                                     ** encryption_keys_generate,
-                                    ** auth_data_provide
+                                    ** auth_data_provide,
+                                    ** LUOS_MESH_NETWORK_MAX_NODES
                                     */
 #include "mesh_init.h"              // g_device_provisioned
 #include "network_ctx.h"            // network_ctx_*
@@ -79,8 +80,8 @@ static struct
     prov_conf_node_entry_live_t     curr_conf_node;
 
     // Device key and address handles for each approvisioned node.
-    dsm_handle_t                    devkey_handles[MAX_PROV_CONF_NODE_RECORDS];
-    dsm_handle_t                    address_handles[MAX_PROV_CONF_NODE_RECORDS];
+    dsm_handle_t                    devkey_handles[LUOS_MESH_NETWORK_MAX_NODES];
+    dsm_handle_t                    address_handles[LUOS_MESH_NETWORK_MAX_NODES];
 
 }                           s_prov_curr_state;
 
@@ -109,7 +110,7 @@ MESH_CONFIG_ENTRY(
 MESH_CONFIG_ENTRY(
     s_prov_conf_first_node_entry,
     PROV_CONF_NODE_ENTRY_ID(0),
-    MAX_PROV_CONF_NODE_RECORDS,
+    LUOS_MESH_NETWORK_MAX_NODES,
     sizeof(prov_conf_node_entry_live_t),
     prov_conf_node_set_cb,
     prov_conf_node_get_cb,
@@ -228,8 +229,17 @@ void prov_conf_init(void)
     }
 }
 
-void prov_scan_start(void)
+bool prov_scan_start(void)
 {
+    if (s_prov_curr_state.prov_conf_header.nb_prov_nodes >= LUOS_MESH_NETWORK_MAX_NODES)
+    {
+        #ifdef DEBUG
+        NRF_LOG_INFO("Cannot start scanning: max number of devices in Mesh network reached!");
+        #endif /* DEBUG */
+
+        return false;
+    }
+
     ret_code_t err_code = nrf_mesh_prov_scan_start(mesh_unprov_event_cb);
     APP_ERROR_CHECK(err_code);
 
@@ -238,6 +248,8 @@ void prov_scan_start(void)
     #ifdef DEBUG
     NRF_LOG_INFO("Start scanning for unprovisioned devices!");
     #endif /* DEBUG */
+
+    return true;
 }
 
 void prov_scan_stop(void)

@@ -299,13 +299,13 @@ void config_client_msg_handler(const config_client_event_t* event)
 
     case CONFIG_OPCODE_MODEL_APP_STATUS:
         status = event->p_msg->app_status.status;
-        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS)
+        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS);
 
         break;
 
     case CONFIG_OPCODE_MODEL_PUBLICATION_STATUS:
         status = event->p_msg->publication_status.status;
-        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS)
+        LUOS_ASSERT(status == ACCESS_STATUS_SUCCESS);
 
         break;
 
