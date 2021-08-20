@@ -4,6 +4,7 @@
 
 // C STANDARD
 #include <stdbool.h>            // bool
+#include <string.h>             // memset
 
 // LUOS
 #include "luos.h"               /* container_t, Luos_CreateContainer,
@@ -69,13 +70,26 @@ static void MeshProvisioner_MsgHandler(container_t* container,
     {
         bool req = msg->data[0];
 
-        if (req)
-        {
-            prov_scan_start();
-        }
-        else
+        if (!req)
         {
             prov_scan_stop();
+            break;
+        }
+
+        bool    can_scan    = prov_scan_start();
+        if (!can_scan)
+        {
+            // Max nb nodes reached: signal it to source.
+            msg_t   cannot_scan;
+            memset(&cannot_scan, 0, sizeof(msg_t));
+            cannot_scan.header.target_mode  = ID;
+            cannot_scan.header.target       = msg->header.source;
+            cannot_scan.header.cmd          = IO_STATE;
+            cannot_scan.header.size         = sizeof(uint8_t);
+            cannot_scan.data[0]             = 0x00; // False.
+
+            // Send msg with instance which received the message.
+            Luos_SendMsg(container, &cannot_scan);
         }
     }
         break;

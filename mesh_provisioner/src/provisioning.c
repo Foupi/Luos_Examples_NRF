@@ -3,6 +3,7 @@
 /*      INCLUDES                                                    */
 
 // C STANDARD
+#include <stdbool.h>                // bool
 #include <stdint.h>                 // uint*_t
 #include <string.h>                 // memset
 
