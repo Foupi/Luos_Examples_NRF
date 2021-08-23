@@ -23,8 +23,18 @@ Provisioner container attempts to start scanning again.
 
 ## Device provisioning
 
-FIXME Describe device provisioning
+The Mesh Provisioner container will provision into a Bluetooth Mesh node
+any device exposing the authentication data defined in the
+`common/include/luos_mesh_common.h` file.
+
+It uses a static authentication process, which does not need any user
+interaction.
 
 ## Node configuration
 
-FIXME Describe node configuration
+The Mesh Provisioner container configures the "Luos RTB" and "Luos MSG"
+models defined in the `common/mesh_models` folder.
+
+It defines their publication and suscribe address as the Luos Bluetooth
+Mesh group address, defined in the `common/include/luos_mesh_common.h`
+file.
