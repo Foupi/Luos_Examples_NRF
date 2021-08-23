@@ -121,9 +121,9 @@ There are two ways this procedure can be engaged:
 * By receiving a `MESH_BRIDGE_EXT_RTB_CMD` message:
   * The source container ID is stored by the Mesh Bridge container.
   * The remote container table is cleared.
-  * A Luos RTB GET request is sent through the internal Luos RTB model
+  * A Luos RTB `GET` request is sent through the internal Luos RTB model
 instance, and a timer is started.
-  * For each Luos RTB STATUS reply received:
+  * For each Luos RTB `STATUS` reply received:
     * A remote container table entry is created corresponding to the
 received entry:
       * The received routing table entry and source node unicast address
@@ -134,13 +134,42 @@ Mesh Bridge container.
     * The timer is reset.
   * At timeout, it is considered that every remote network has sent all
 of its exposed entries.
-  * Local container entries are published in Luos RTB STATUS messages.
-  * The post-detection ID of the source container is computed.
+  * Local container entries are published in Luos RTB `STATUS` messages.
   * Once publication of the last local container entry is complete, the
-Mesh Bridge container runs a detection to add remote containers to the
-network routing table.
+ID of the source container after a detection by the Mesh Bridge
+container is computed, as well as those of the local container table
+entries.
+  * The Mesh Bridge container runs a detection to add remote containers
+to the network routing table.
   * A `MESH_BRIDGE_EXT_RTB_COMPLETE` message is sent to the source
 container.
+
+* By receiving a Luos RTB `GET` request:
+  * The entries of the remote container table bearing the unicast
+address of the Bluetooth Mesh node emitting the request _(source node)_
+are removed.
+  * Local container entries are sent to the source node in Luos RTB
+`STATUS` replies.
+  * Once reply of the last local container entry is complete, the Mesh
+Bridge container expects to receive the entries exposed by the source
+node, and starts a timer.
+  * For each Luos RTB `STATUS` message received:
+    * A remote container table entry is created corresponding to the
+received entry:
+      * The received routing table entry and source node unicast address
+are stored.
+      * The local ID is deduced from a detection simulation from the
+Mesh Bridge container.
+      * The local container instance is created.
+    * The timer is reset.
+  * At timeout, it is considered that the source node has sent all of
+its exposed entries.
+  * The local IDs of the local container table entries after a detection
+by the Mesh Bridge container are computed.
+  * The Mesh Bridge container runs a detection to add remote containers
+to the network routing table.
+  * A `MESH_BRIDGE_EXT_RTB_COMPLETE` is sent in broadcast to the whole
+Luos network.
 
 ## Messages exchange
 
