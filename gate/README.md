@@ -1,4 +1,4 @@
-# Luos Gate container - Luos GATT / Luos Mesh Bridge
+# Gate - Luos GATT / Luos Mesh Bridge
 
 This container is based on the Gate container available on the Luos
 examples repository:
