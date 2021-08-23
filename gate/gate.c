@@ -40,7 +40,7 @@
 static const uint32_t   READ_SIZE               = 64;
 
 // Time in ms between two Gate refreshes.
-static const uint32_t   GATE_REFRESH_RATE_MS    = 2000;
+#define                 GATE_REFRESH_RATE_MS    2000
 static const uint32_t   GATE_REFRESH_RATE_TICKS = APP_TIMER_TICKS(GATE_REFRESH_RATE_MS);
 
 // Max keep-alive value.
