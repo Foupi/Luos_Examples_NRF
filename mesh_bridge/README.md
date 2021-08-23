@@ -30,7 +30,7 @@ detection run by the container with the given ID _(necessary if another
 container runs a detection; payload is a container ID as an_
 `uint16_t`_)_.
 
-The Mesh Bridge container will send the following messages:
+The Mesh Bridge container can send the following messages:
 
 * `MESH_BRIDGE_EXT_RTB_COMPLETE`: Sent after the routing table extension
 procedure is complete. If this procedure had been requested by another
