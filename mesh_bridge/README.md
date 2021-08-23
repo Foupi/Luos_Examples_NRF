@@ -173,4 +173,37 @@ Luos network.
 
 ## Messages exchange
 
-FIXME MSG exchange description
+Each insertion in the remote container table creates a new container
+_(and in the same way, each removal destroys the corresponding
+container)_. All the containers created this way share the same Luos
+message handler, which sends the received message to the correct
+Bluetooth Mesh node using the local and remote container tables and the
+"Luos MSG" Bluetooth Mesh model defined in the
+`common/mesh_models/luos_msg_model`.
+
+The message exchange is implemented as follows _(only for ID and IDACK
+messages)_:
+
+* _Node sending the message_:
+  * The remote containers message handler receives a Luos message.
+  * The exposed ID of the source container is retrieved from the local
+container table.
+  * The exposed ID and Bluetooth Mesh node unicast address of the
+destination container are retrieved from the remote container table.
+  * This information, as well as the message command, payload size and
+payload data, is stored in a lightweight Luos message format, optimized
+for quick transmission over Bluetooth Mesh.
+  * The lightweight Luos message is sent on the Bluetooth Mesh network
+through a Luos MSG `SET` command.
+
+* _Node receiving the message_:
+  * The node checks if the unicast address exposed in the received Luos
+MSG `SET` command matches its own: if not, it does not manage it.
+  * The local source container instance is retrieved from the remote
+container table.
+  * The local ID of the destination container is retrieved from the
+local container table.
+  * This information, as well as the message command, payload size and
+payload data, is stored in a Luos message.
+  * The Luos message is sent on the network through the local source
+container instance.
