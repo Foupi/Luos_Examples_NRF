@@ -39,7 +39,7 @@ typedef enum
     // Request to reset internal remote and local container tables.
     MESH_BRIDGE_CLEAR_INTERNAL_TABLES,
 
-    // Request t fill the local container table.
+    // Request to fill the local container table.
     MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE,
 
     /* Request to update the local IDs of each entry of the internal
