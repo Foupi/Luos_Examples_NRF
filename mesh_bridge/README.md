@@ -56,8 +56,54 @@ The first Mesh Bridge message is indexed at a value named
 
 ## Container tables
 
-FIXME Local container table
-FIXME Remote container table
+In order to keep track of whether each container entry of the routing
+table represents a container hosted by the local or a remote Luos
+network, the Mesh Bridge container implements two data structures
+containing data about local and remote containers.
+
+The **local container table** stores information about local containers
+exposed to other Luos networks:
+* The _routing table entry_ exposed to other networks, as a
+`routing_table_t`.
+* The _id of the container_ on the local network, as an `uint16_t`.
+
+Some kinds of containers can be excluded from this table when it is
+filled: for instance, exposing the Mesh Bridge container would be
+redundant.
+
+The **remote container table** stores information about remote
+containers exposed by other Luos networks:
+* The _routing table entry_ exposed by the remote network, as a
+`routing_table_t`.
+* The _Bluetooth Mesh unicast address_ of the Bluetooth Mesh node
+hosting the Mesh Bridge container instance in the remote network, as an
+`uint16_t`.
+* The _id of the container_ on the local network, as an `uint16_t`.
+* The _local container instance_, as a `container_t*`.
+
+Good management of these tables through Luos messages is crucial to the
+behaviour of an application:
+* Before engaging the routing table extension procedure, the local
+container table **must** have been filled using the
+`MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE` message; else, local containers
+could not be exposed and message exchanges would not be possible.
+* When a container is to run a detection, the container tables **must**
+be updated beforehand using a `MESH_BRIDGE_UPDATE_INTERNAL_TABLES`
+message containing the ID of the container running the detection; else,
+the local IDs stored in the internal tables may become wrong, which
+will trigger malfunctions when trying to send messages to remote
+containers.
+* When new containers or nodes are added to the Luos network:
+  * The container tables **must** be cleared using the
+`MESH_BRIDGE_CLEAR_INTERNAL_TABLES` message _before_ a detection is run;
+else, the behaviour of the remote container table could be severaly
+affected.
+  * The local container table **must** be filled using the
+`MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE` message _after_ the internal
+tables are cleared and the detection is run; else, as the routing table
+does not differentiate local and remote containers, remote containers
+might be exposed as local ones, which would result in undefined
+behaviour.
 
 ## Routing table extension
 
