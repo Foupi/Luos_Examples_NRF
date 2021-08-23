@@ -143,12 +143,12 @@ void app_luos_rtb_model_init(void)
 
     luos_rtb_model_init_params_t    init_params;
     memset(&init_params, 0, sizeof(luos_rtb_model_init_params_t));
-    init_params.get_send                    = rtb_model_get_send;
-    init_params.status_send                 = rtb_model_status_send;
-    init_params.status_reply                = rtb_model_status_reply;
-    init_params.get_cb                      = rtb_model_get_cb;
-    init_params.local_rtb_entries_get_cb    = get_rtb_entries;
-    init_params.status_cb                   = rtb_model_status_cb;
+    init_params.get_send            = rtb_model_get_send;
+    init_params.status_send         = rtb_model_status_send;
+    init_params.status_reply        = rtb_model_status_reply;
+    init_params.get_cb              = rtb_model_get_cb;
+    init_params.rtb_entries_get_cb  = get_rtb_entries;
+    init_params.status_cb           = rtb_model_status_cb;
 
     luos_rtb_model_init(&s_luos_rtb_model, &init_params);
 

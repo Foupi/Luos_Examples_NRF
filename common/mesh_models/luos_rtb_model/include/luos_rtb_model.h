@@ -3,6 +3,9 @@
 
 /*      INCLUDES                                                    */
 
+// C STANDARD
+#include <stdint.h>         // uint16_t
+
 // MESH SDK
 #include "access.h"         // access_*
 
@@ -19,6 +22,7 @@
 // Forward declaration
 typedef struct luos_rtb_model_s luos_rtb_model_t;
 
+// Payload type for a Luos RTB model GET request.
 typedef struct
 {
     // Current transaction index.
@@ -49,19 +53,23 @@ typedef void (*luos_rtb_model_status_send_t)(luos_rtb_model_t* instance,
     const luos_rtb_model_status_t* status_msg);
 
 // Function called to send a Luos RTB STATUS reply.
-typedef void (*luos_rtb_model_status_reply_t)(luos_rtb_model_t* instance,
+typedef void (*luos_rtb_model_status_reply_t)(
+    luos_rtb_model_t* instance,
     const luos_rtb_model_status_t* status_reply,
-    const access_message_rx_t* msg);
+    const access_message_rx_t* msg
+);
 
 // Callback called on GET request.
 typedef void (*luos_rtb_model_get_cb_t)(uint16_t src_addr);
 
-/* Callback called on GET request to get local RTB entries.
-** Returns true and updates parameters with local RTB information if the
-** detection process is complete, returns false otherwise.
+/* Callback called on GET request to get RTB entries. Returns true and
+** updates parameters with RTB information if they can be retrieved,
+** returns false otherwise.
 */
-typedef bool (*luos_rtb_model_get_rtb_entries_cb_t)(routing_table_t* rtb_entries,
-                uint16_t* nb_entries);
+typedef bool (*luos_rtb_model_get_rtb_entries_cb_t)(
+    routing_table_t* rtb_entries,
+    uint16_t* nb_entries
+);
 
 // Callback called on STATUS message.
 typedef void (*luos_rtb_model_status_cb_t)(uint16_t src_addr,
@@ -83,7 +91,7 @@ typedef struct
     luos_rtb_model_get_cb_t             get_cb;
 
     // Callback to retrieve local RTB entries on GET request.
-    luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
+    luos_rtb_model_get_rtb_entries_cb_t rtb_entries_get_cb;
 
     // User callback called on STATUS message.
     luos_rtb_model_status_cb_t          status_cb;
@@ -112,14 +120,13 @@ struct luos_rtb_model_s
     luos_rtb_model_get_cb_t             get_cb;
 
     // Callback to retrieve local RTB entries on GET request.
-    luos_rtb_model_get_rtb_entries_cb_t local_rtb_entries_get_cb;
+    luos_rtb_model_get_rtb_entries_cb_t rtb_entries_get_cb;
 
     // User callback called on STATUS message.
     luos_rtb_model_status_cb_t          status_cb;
 };
 
-// Payload type for a Luos RTB model GET message.
-// Initialize the given instance with the given parameters.
+// Initializes the given instance with the given parameters.
 void luos_rtb_model_init(luos_rtb_model_t* instance,
                          const luos_rtb_model_init_params_t* params);
 
