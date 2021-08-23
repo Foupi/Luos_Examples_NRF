@@ -110,7 +110,37 @@ behaviour.
 
 ## Routing table extension
 
-FIXME RTB extension description
+The Mesh Bridge container can "extend" the routing table of its network
+by adding entries corresponding to containers hosted by remote networks
+connected to the same Bluetooth Mesh network. This procedure is
+performed using the "Luos RTB" Bluetooth Mesh model defined in the
+`common/mesh_models/luos_rtb_model` folder.
+
+There are two ways this procedure can be engaged:
+
+* By receiving a `MESH_BRIDGE_EXT_RTB_CMD` message:
+  * The source container ID is stored by the Mesh Bridge container.
+  * The remote container table is cleared.
+  * A Luos RTB GET request is sent through the internal Luos RTB model
+instance, and a timer is started.
+  * For each Luos RTB STATUS reply received:
+    * A remote container table entry is created corresponding to the
+received entry:
+      * The received routing table entry and source node unicast address
+are stored.
+      * The local ID is deduced from a detection simulation from the
+Mesh Bridge container.
+      * The local container instance is created.
+    * The timer is reset.
+  * At timeout, it is considered that every remote network has sent all
+of its exposed entries.
+  * Local container entries are published in Luos RTB STATUS messages.
+  * The post-detection ID of the source container is computed.
+  * Once publication of the last local container entry is complete, the
+Mesh Bridge container runs a detection to add remote containers to the
+network routing table.
+  * A `MESH_BRIDGE_EXT_RTB_COMPLETE` message is sent to the source
+container.
 
 ## Messages exchange
 
