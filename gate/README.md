@@ -58,4 +58,11 @@ Bluetooth stacks with `ASK_PUB_CMD` messages.
 
 ## Luos Mesh Bridge
 
-FIXME New messages implemented.
+As the Luos Mesh Bridge project introduced a new container type, new
+messages had to be implemented:
+
+* `ext_rtb`: This message sends a routing table extension request to the
+Mesh Bridge container. It does not need a payload.
+
+In order to allow the Gate to manage these messages, the
+`LUOS_MESH_BRIDGE` macro shall be defined in the configuration.
