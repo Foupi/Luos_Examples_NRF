@@ -63,7 +63,7 @@ typedef enum
     MESH_BRIDGE_INTERNAL_TABLES_UPDATED,
 
     // Start index for next messages.
-    MESH_BRIDDGE_MSG_END,
+    MESH_BRIDGE_MSG_END,
 
 } mesh_bridge_msg_t;
 

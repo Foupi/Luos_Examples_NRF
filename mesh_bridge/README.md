@@ -52,7 +52,7 @@ entries from the local and remote container tables have been updated.
 The first Mesh Bridge message is indexed at a value named
 `MESH_BRIDGE_MSG_BEGIN` which, if not defined, is equal to
 `LUOS_PROTOCOL_NB`; a last entry in the command enum, named
-`MESH_BRIDDGE_MSG_END`, signals the end of Mesh Bridge command values.
+`MESH_BRIDGE_MSG_END`, signals the end of Mesh Bridge command values.
 
 ## Container tables
 
@@ -83,16 +83,19 @@ hosting the Mesh Bridge container instance in the remote network, as an
 
 Good management of these tables through Luos messages is crucial to the
 behaviour of an application:
+
 * Before engaging the routing table extension procedure, the local
 container table **must** have been filled using the
 `MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE` message; else, local containers
 could not be exposed and message exchanges would not be possible.
+
 * When a container is to run a detection, the container tables **must**
 be updated beforehand using a `MESH_BRIDGE_UPDATE_INTERNAL_TABLES`
 message containing the ID of the container running the detection; else,
 the local IDs stored in the internal tables may become wrong, which
 will trigger malfunctions when trying to send messages to remote
 containers.
+
 * When new containers or nodes are added to the Luos network:
   * The container tables **must** be cleared using the
 `MESH_BRIDGE_CLEAR_INTERNAL_TABLES` message _before_ a detection is run;
