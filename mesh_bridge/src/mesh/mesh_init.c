@@ -24,25 +24,31 @@ bool    g_device_provisioned   = false;
 // On node reset event, erases persistent data and resets the board.
 static void config_server_event_cb(const config_server_evt_t* event);
 
-// Initialize the Luos RTB model present on the node.
+// Initialize the Luos RTB and Luos MSG models present on the node.
 static void models_init_cb(void);
 
 void mesh_init(void)
 {
+    // Initialize Mesh stack with given callbacks and global boolean.
     _mesh_init(config_server_event_cb, models_init_cb,
                &g_device_provisioned);
 }
 
-dsm_handle_t mesh_device_get_address(void)
+uint16_t mesh_device_get_address(void)
 {
+    /* Fetch the range of unicast addresses on this device from Device
+    ** State Manager (persistent memory).
+    */
     dsm_local_unicast_address_t local_addr_range;
     dsm_local_unicast_addresses_get(&local_addr_range);
 
+    // Device unicast address is the first of this range.
     return local_addr_range.address_start;
 }
 
 void mesh_models_set_addresses(uint16_t device_address)
 {
+    // Set internal addresses of Luos RTB and Luos MSG models.
     app_luos_msg_model_address_set(device_address);
     app_luos_rtb_model_address_set(device_address);
 }
@@ -56,14 +62,18 @@ static void config_server_event_cb(const config_server_evt_t* event)
         break;
 
     default:
+        // Nothing to do.
         break;
     }
 }
 
 static void models_init_cb(void)
 {
+    // Initialize the message queue manager.
+    // FIXME Maybe this should be done somewhere else?
     luos_mesh_msg_queue_manager_init();
 
+    // Initialize Luos RTB and Luos MSG models.
     app_luos_rtb_model_init();
     app_luos_msg_model_init();
 }

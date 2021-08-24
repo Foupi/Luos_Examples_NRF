@@ -38,9 +38,9 @@ static const char           LUOS_DEVICE_URI[]       = "Luos Bridge";
 
 /*      CALLBACKS                                                   */
 
-/* Invite received:     Turn on LEDs for the received amount of
-**                      seconds.
-** Start received:      Turn off LEDs.
+/* Link established:    Logs message.
+** Invite received:     FIXME Logs message.
+** Start received:      FIXME Logs message.
 ** Static request:      Send authentication data.
 ** Complete:            Store received data and toggles provisioned
 **                      bool.
@@ -49,14 +49,19 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event);
 
 void provisioning_init(void)
 {
+    // Initialize static context with given callback.
     _provisioning_init(&s_prov_ctx, mesh_prov_event_cb);
 }
 
 void prov_listening_start(void)
 {
+    // Initialize internal encryption keys.
     encryption_keys_generate();
 
-    ret_code_t err_code = nrf_mesh_prov_listen(&s_prov_ctx,
+    /* Listen to an incoming provisioning link on the given bearer type
+    ** while exposing the given URI.
+    */
+    ret_code_t  err_code    = nrf_mesh_prov_listen(&s_prov_ctx,
         LUOS_DEVICE_URI, 0, NRF_MESH_PROV_BEARER_ADV);
     APP_ERROR_CHECK(err_code);
 
@@ -79,24 +84,24 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         break;
 
     case NRF_MESH_PROV_EVT_INVITE_RECEIVED:
-    #ifdef DEBUG
     {
         uint32_t attention_duration = event->params.invite_received.attention_duration_s;
 
+        #ifdef DEBUG
         NRF_LOG_INFO("Invitation received: attention interval is %us!",
                      attention_duration);
-
-        // FIXME Turn on LEDs for the given duration.
+        #else /* ! DEBUG */
+        // FIXME Turn on LEDs for given duration.
+        #endif /* DEBUG */
     }
-    #endif /* DEBUG */
         break;
 
     case NRF_MESH_PROV_EVT_START_RECEIVED:
         #ifdef DEBUG
         NRF_LOG_INFO("Provisioning procedure started!");
-        #endif /* DEBUG */
-
+        #else /* ! DEBUG */
         // FIXME Turn off LEDs.
+        #endif /* DEBUG */
 
         break;
 
@@ -105,6 +110,7 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         NRF_LOG_INFO("Static authentication data requested!");
         #endif /* DEBUG */
 
+        // Provide internal authentication data through given context.
         auth_data_provide(&s_prov_ctx);
 
         break;
@@ -116,13 +122,25 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         #endif /* DEBUG */
 
         nrf_mesh_prov_evt_complete_t                complete_evt    = event->params.complete;
+
+        // Provisioning data provided by the Provisioner node.
         const nrf_mesh_prov_provisioning_data_t*    prov_data       = complete_evt.p_prov_data;
+
+        /* Device key provided by the Provisioner node (used for
+        ** later communication with the Provisioner).
+        */
         const uint8_t*                              device_key      = complete_evt.p_devkey;
 
+        /* Store provisioning data and device key in context and
+        ** persistent memory.
+        */
         err_code = mesh_stack_provisioning_data_store(prov_data,
                                                       device_key);
         APP_ERROR_CHECK(err_code);
 
+        /* Set internal model addresses using the unicast device address
+        ** provided by the Provisioner node.
+        */
         mesh_models_set_addresses(prov_data->address);
 
         // Device is now provisioned.
@@ -143,6 +161,10 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 
             prov_listening_start();
         }
+
+        /* Else there is nothing left to do, everything was managed at
+        ** Provisioning Complete event.
+        */
 
         break;
 
