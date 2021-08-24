@@ -16,17 +16,20 @@
 
 /*      DEFINES                                                     */
 
-// Static authentication data (FIXME copied from Mesh examples).
+// Static authentication data for provisioning process.
+// FIXME copied from Mesh examples.
 #define LUOS_STATIC_AUTH_DATA                       \
 {                                                   \
     0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F, 0x65, \
     0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31, \
 }
 
-// Luos Company ID. FIXME Find how to generate an unique one.
+// Luos Company ID for complete access layer model IDs and opcodes.
+// FIXME Find how to generate an unique one.
 #define ACCESS_COMPANY_ID_LUOS                      0xCAFE
 
 // Group address for Luos models communication.
+// FIXME Find how to generate one.
 #define LUOS_GROUP_ADDRESS                          0xF00D
 
 // Maximum number of nodes in the Luos Mesh network.
@@ -52,7 +55,9 @@ void mesh_start(void);
 // Generates the public and private encryption keys.
 void encryption_keys_generate(void);
 
-// Provides the Luos static authentication data to the given context.
+/* Provides the Luos static authentication data to the given
+** provisioning context.
+*/
 void auth_data_provide(nrf_mesh_prov_ctx_t* prov_ctx);
 
 #endif /* LUOS_MESH_COMMON_H */
