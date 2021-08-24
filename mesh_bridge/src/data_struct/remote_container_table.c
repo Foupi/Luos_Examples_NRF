@@ -134,11 +134,6 @@ void remote_container_table_clear(void)
     // Empty table.
     memset(&s_remote_container_table, 0,
            sizeof(s_remote_container_table));
-
-    /* Reset number of local containers: table clear might mean new
-    ** local containers will be added.
-    */
-    s_nb_local_containers = 0;
 }
 
 void remote_container_table_clear_address(uint16_t node_address)

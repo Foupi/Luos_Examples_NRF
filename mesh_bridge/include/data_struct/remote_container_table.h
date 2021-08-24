@@ -55,6 +55,8 @@ void remote_container_table_clear(void);
 */
 void remote_container_table_clear_address(uint16_t node_address);
 
+// FIXME A function could be added to reset number of local nodes.
+
 /* FIXME All search functions could be refactored in one iterator and a
 ** bool function...
 */
