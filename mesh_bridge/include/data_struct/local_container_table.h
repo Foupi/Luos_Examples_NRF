@@ -34,6 +34,10 @@ uint16_t local_container_table_get_nb_entries(void);
 // Returns the entry located at the given index, or NULL if it is empty.
 routing_table_t* local_container_table_get_entry_from_idx(uint16_t entry_idx);
 
+/* FIXME All search functions could be refactored in one iterator and a
+** bool function...
+*/
+
 /* Returns the entry corresponding to the given local ID, or NULL if it
 ** is not found.
 */

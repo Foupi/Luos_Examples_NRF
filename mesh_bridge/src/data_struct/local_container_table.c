@@ -9,6 +9,7 @@
 
 // LUOS
 #include "config.h"                 // MAX_ALIAS_SIZE
+#include "luos_utils.h"             // LUOS_ASSERT
 #include "routing_table.h"          // routing_table_t
 
 // CUSTOM
@@ -31,7 +32,11 @@ static struct
     // Array of local containers;
     local_container_t   local_containers[LUOS_RTB_MODEL_MAX_RTB_ENTRY];
 
-} s_local_container_table   = { 0 };
+} s_local_container_table   =
+{
+    // Table starts as empty.
+    0
+};
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -52,7 +57,7 @@ uint16_t local_container_table_fill(void)
     for (uint16_t entry_idx = 0; entry_idx < nb_local_entries;
          entry_idx++)
     {
-        routing_table_t*    entry       = local_rtb + entry_idx;
+        routing_table_t*    entry   = local_rtb + entry_idx;
 
         if (entry->mode != CONTAINER)
         {
@@ -60,22 +65,27 @@ uint16_t local_container_table_fill(void)
             continue;
         }
 
+        // Check if current routing table entry should be exposed.
         bool must_store = is_entry_to_store(entry);
         if (!must_store)
         {
             continue;
         }
 
+        // The current local container table entry.
         local_container_t*  local_entry;
         local_entry = s_local_container_table.local_containers + s_local_container_table.nb_local_containers;
 
-        local_entry->local_id           = entry->id;
-        local_entry->exposed_entry.mode = CONTAINER;
-        local_entry->exposed_entry.id   = s_local_container_table.nb_local_containers;
-        local_entry->exposed_entry.type = entry->type;
+        // Initialize current local container table entry.
+        local_entry->local_id           = entry->id;                                    // ID of the entry in the local routing table.
+        local_entry->exposed_entry.mode = CONTAINER;                                    // Only expose container entries.
+        local_entry->exposed_entry.id   = s_local_container_table.nb_local_containers;  // Exposed ID is the index in the local container table.
+        local_entry->exposed_entry.type = entry->type;                                  // Exposed type.
+        // Exposed alias.
         memcpy(local_entry->exposed_entry.alias, entry->alias,
                MAX_ALIAS_SIZE * sizeof(char));
 
+        // Increase number of local entries.
         s_local_container_table.nb_local_containers++;
         if (s_local_container_table.nb_local_containers >= LUOS_RTB_MODEL_MAX_RTB_ENTRY)
         {
@@ -146,16 +156,22 @@ void local_container_table_update_local_ids(uint16_t dtx_container_id)
         local_container_t*  entry;
         uint16_t            new_id;
 
-        entry   = s_local_container_table.local_containers + entry_idx;
-        new_id  = RoutingTB_FindFutureContainerID(entry->local_id,
-                                                  dtx_container_id);
+        entry           = s_local_container_table.local_containers + entry_idx;
 
+        // Compute next local ID after detection by given ID.
+        new_id          = RoutingTB_FindFutureContainerID(
+                            entry->local_id,
+                            dtx_container_id
+                          );
+
+        // Update local ID.
         entry->local_id = new_id;
     }
 }
 
 void local_container_table_clear(void)
 {
+    // Empty table.
     memset(&s_local_container_table, 0,
            sizeof(s_local_container_table));
 }
@@ -190,6 +206,9 @@ void local_container_table_print(void)
 
 static bool is_entry_to_store(routing_table_t* entry)
 {
+    // Check parameter.
+    LUOS_ASSERT(entry != NULL);
+
     /* This format might not be the shortest but adding conditions is
     ** easier this way...
     */
