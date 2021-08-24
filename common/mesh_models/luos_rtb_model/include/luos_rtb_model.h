@@ -63,7 +63,7 @@ typedef void (*luos_rtb_model_status_reply_t)(
 typedef void (*luos_rtb_model_get_cb_t)(uint16_t src_addr);
 
 /* Callback called on GET request to get RTB entries. Returns true and
-** updates parameters with RTB information if they can be retrieved,
+** updates parameters with RTB information if it can be retrieved,
 ** returns false otherwise.
 */
 typedef bool (*luos_rtb_model_get_rtb_entries_cb_t)(

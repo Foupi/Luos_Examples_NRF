@@ -111,12 +111,12 @@ void luos_rtb_model_init(luos_rtb_model_t* instance,
                                                                         ** context (model handle, element address...).
                                                                         */
 
-    // Add model and update instance handle.
+    // Add model in access layer and update instance handle.
     err_code = access_model_add(&add_params, &(instance->handle));
     APP_ERROR_CHECK(err_code);
 
-    /* Allocates a subscription address to the model corresponding to
-    ** the given handle.
+    /* Allocates space for a subscription address to the model
+    ** corresponding to the given handle.
     */
     err_code = access_model_subscription_list_alloc(instance->handle);
     APP_ERROR_CHECK(err_code);

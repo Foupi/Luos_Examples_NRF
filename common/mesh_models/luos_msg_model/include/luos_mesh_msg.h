@@ -23,7 +23,9 @@ typedef struct __attribute__((__packed__))
     // Target mode.
     uint8_t target_mode : 4;
 
-    // Source (restricted since a limited amount of nodes is allowed).
+    /* Source (restricted since a limited amount of exposed containers
+    ** is allowed).
+    */
     uint8_t source      : 4;
 
     // Sent command.
@@ -35,8 +37,12 @@ typedef struct __attribute__((__packed__))
 } luos_mesh_header_t;
 
 // Maximum payload size in bytes.
-// FIXME Define struct for Luos MSG SET non-message part.
-#define LUOS_MESH_MSG_MAX_DATA_SIZE (NRF_MESH_UNSEG_PAYLOAD_SIZE_MAX - sizeof(luos_mesh_header_t) - (sizeof(uint16_t)))
+#define LUOS_MESH_MSG_MAX_DATA_SIZE                                 \
+    (NRF_MESH_UNSEG_PAYLOAD_SIZE_MAX - sizeof(luos_mesh_header_t)   \
+    /* FIXME    Define struct for Luos MSG SET non-message part instead
+    **          of hardcoding an uint16_t.
+    */                                                              \
+    - (sizeof(uint16_t)))
 
 typedef struct __attribute__((__packed__))
 {

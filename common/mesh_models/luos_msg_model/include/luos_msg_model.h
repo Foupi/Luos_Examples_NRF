@@ -31,7 +31,7 @@ typedef struct __attribute__((__packed__))
     // Unicast address of the destination element.
     uint16_t        dst_addr        : 4;
 
-    // Luos message.
+    // Lightweight Luos message.
     luos_mesh_msg_t msg;
 
 } luos_msg_model_set_t;
@@ -44,9 +44,6 @@ typedef void (*luos_msg_model_set_send_t)(luos_msg_model_t* instance,
 typedef void (*luos_msg_model_set_cb_t)(uint16_t src_addr,
     const luos_mesh_msg_t* recv_msg);
 
-// Callback called on STATUS message.
-typedef void (*luos_msg_model_status_cb_t)(const luos_mesh_msg_t* recv_msg);
-
 // Parameters to initialize a Luos MSG model instance.
 typedef struct
 {
@@ -55,9 +52,6 @@ typedef struct
 
     // User callback called on SET command.
     luos_msg_model_set_cb_t     set_cb;
-
-    // User callback called on STATUS command.
-    luos_msg_model_status_cb_t  status_cb;
 
 } luos_msg_model_init_params_t;
 
@@ -75,12 +69,9 @@ struct luos_msg_model_s
 
     // User callback called on SET command.
     luos_msg_model_set_cb_t     set_cb;
-
-    // User callback called on STATUS command.
-    luos_msg_model_status_cb_t  status_cb;
 };
 
-// Initialize the given instance with the given parameters.
+// Initializes the given instance with the given parameters.
 void luos_msg_model_init(luos_msg_model_t* instance,
                          const luos_msg_model_init_params_t* params);
 
@@ -90,7 +81,9 @@ void luos_msg_model_init(luos_msg_model_t* instance,
 void luos_msg_model_set_address(luos_msg_model_t* instance,
                                 uint16_t device_address);
 
-// Sends a Luos MSG SET commabd through the given model instance.
+/* Sends a Luos MSG SET command containing the given Luos message to the
+** given unicast address through the given model instance.
+*/
 void luos_msg_model_set(luos_msg_model_t* instance, uint16_t dst_addr,
                         const luos_mesh_msg_t* msg);
 
