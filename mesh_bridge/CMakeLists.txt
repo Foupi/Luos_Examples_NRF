@@ -13,15 +13,18 @@ set( MESH_BRIDGE_PATH    "${CONTAINERS_PATH}/mesh_bridge" )
 add_library( mesh_bridge
     "${MESH_BRIDGE_PATH}/src/mesh_bridge.c"
 
-    "${MESH_BRIDGE_PATH}/src/app_luos_msg_model.c"
-    "${MESH_BRIDGE_PATH}/src/app_luos_rtb_model.c"
-    "${MESH_BRIDGE_PATH}/src/local_container_table.c"
-    "${MESH_BRIDGE_PATH}/src/luos_mesh_msg_queue.c"
-    "${MESH_BRIDGE_PATH}/src/mesh_msg_queue_manager.c"
     "${MESH_BRIDGE_PATH}/src/mesh_bridge_utils.c"
-    "${MESH_BRIDGE_PATH}/src/mesh_init.c"
-    "${MESH_BRIDGE_PATH}/src/provisioning.c"
-    "${MESH_BRIDGE_PATH}/src/remote_container_table.c"
+
+    "${MESH_BRIDGE_PATH}/src/data_struct/local_container_table.c"
+    "${MESH_BRIDGE_PATH}/src/data_struct/luos_mesh_msg_queue.c"
+    "${MESH_BRIDGE_PATH}/src/data_struct/remote_container_table.c"
+
+    "${MESH_BRIDGE_PATH}/src/management/app_luos_msg_model.c"
+    "${MESH_BRIDGE_PATH}/src/management/app_luos_rtb_model.c"
+    "${MESH_BRIDGE_PATH}/src/management/mesh_msg_queue_manager.c"
+
+    "${MESH_BRIDGE_PATH}/src/mesh/mesh_init.c"
+    "${MESH_BRIDGE_PATH}/src/mesh/provisioning.c"
 
     "${CONTAINERS_COMMON_PATH}/src/luos_mesh_common.c"
 
@@ -44,9 +47,13 @@ add_library( mesh_bridge
 target_include_directories( mesh_bridge PUBLIC
     "${MESH_BRIDGE_PATH}/include"
 
+    "${MESH_BRIDGE_PATH}/include/data_struct"
+    "${MESH_BRIDGE_PATH}/include/management"
+    "${MESH_BRIDGE_PATH}/include/mesh"
+
     "${CONTAINERS_COMMON_PATH}/include"
 
-    "${CONTAINERS_PATH}/rtb_builder"
+    "${CONTAINERS_PATH}/rtb_builder"    # FIXME
 
     ${MESH_INCLUDE_DIRS}
     ${CONFIG_SERVER_INCLUDE_DIRS}
