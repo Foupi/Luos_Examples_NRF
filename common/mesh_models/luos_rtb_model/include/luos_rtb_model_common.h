@@ -11,18 +11,20 @@
 
 /*      DEFINES                                                     */
 
-// Luos RTB model ID.
+// Luos RTB model ID (among Luos models).
 #define LUOS_RTB_MODEL_ID                               0x0000
 
-// Luos RTB model complete access ID.
+// Luos RTB model complete access ID (combined with Luos company ID).
 #define LUOS_RTB_MODEL_ACCESS_ID                        \
     ACCESS_MODEL_VENDOR(LUOS_RTB_MODEL_ID, ACCESS_COMPANY_ID_LUOS)
 
-// Luos RTB model opcodes.
+// Luos RTB model opcodes (IDs among Luos opcodes).
 #define LUOS_RTB_MODEL_GET_OPCODE                       0xc0
 #define LUOS_RTB_MODEL_STATUS_OPCODE                    0xc1
 
-// Luos RTB model complete access opcodes.
+/* Luos RTB model complete access opcodes (combined with Luos company
+** ID).
+*/
 #define LUOS_RTB_MODEL_GET_ACCESS_OPCODE                \
     ACCESS_OPCODE_VENDOR(LUOS_RTB_MODEL_GET_OPCODE,     \
                          ACCESS_COMPANY_ID_LUOS)
