@@ -15,19 +15,21 @@
 
 /*      TYPEDEFS                                                    */
 
+// Type of queue element.
 typedef enum
 {
     // Empty element.
-    TX_QUEUE_MODEL_EMPTY             = 0,
+    TX_QUEUE_MODEL_EMPTY        = 0,
 
-    // Luos RTB model.
+    // Luos RTB model message element.
     TX_QUEUE_MODEL_LUOS_RTB,
 
-    // Luos MSG model.
+    // Luos MSG model message element.
     TX_QUEUE_MODEL_LUOS_MSG,
 
 } tx_queue_elm_model_t;
 
+// Opcode typeof the queue element message.
 typedef enum
 {
     // GET message.
@@ -77,6 +79,11 @@ typedef struct
 // Element of the TX queue corresponding to a Luos RTB model message.
 typedef struct
 {
+    /* FIXME    Despite only containing one option, this structure is
+    **          left as such in case other opcodes were to be
+    **          implemented for the Luos MSG model.
+    */
+
     // Corresponding command.
     tx_queue_cmd_t  cmd;
 
@@ -96,6 +103,7 @@ typedef struct
     // Corresponding model.
     tx_queue_elm_model_t    model;
 
+    // Model handle with which the message shall be sent.
     access_model_handle_t   model_handle;
 
     // Union of model messages.

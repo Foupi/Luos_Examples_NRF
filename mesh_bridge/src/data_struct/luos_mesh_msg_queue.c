@@ -6,7 +6,11 @@
 #include <stdbool.h>                // bool
 #include <string.h>                 // memcpy
 
+// LUOS
+#include "luos_utils.h"             // LUOS_ASSERT
+
 // CUSTOM
+#include "luos_msg_model.h"         // luos_msg_model_*
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "remote_container_table.h" // REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES
 
@@ -16,34 +20,51 @@
 #define MSG_QUEUE_MAX_SIZE  REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES
 
 // The message queue.
-static tx_queue_elm_t   s_msg_queue[MSG_QUEUE_MAX_SIZE] = { 0 };
+static struct
+{
+    // Insertion index in the queue.
+    uint16_t        insertion_index;
 
-// Insertion index in the queue.
-static uint16_t         s_msg_queue_insertion_index     = 0;
+    // Peek/pop index in the queue.
+    uint16_t        peek_index;
 
-// Peek/pop index in the queue.
-static uint16_t         s_msg_queue_peek_index          = 0;
+    tx_queue_elm_t  elements[MSG_QUEUE_MAX_SIZE];
+
+} s_msg_queue   =
+{
+    // Queue starts as empty.
+    0
+};
 
 bool luos_mesh_msg_queue_enqueue(const tx_queue_elm_t* elm)
 {
-    tx_queue_elm_t* insert_spot = s_msg_queue + s_msg_queue_insertion_index;
+    // Check parameter.
+    LUOS_ASSERT(elm != NULL);
+
+    // Insertion spot in the queue.
+    tx_queue_elm_t* insert_spot = s_msg_queue.elements + s_msg_queue.insertion_index;
+
     if (insert_spot->model != TX_QUEUE_MODEL_EMPTY)
     {
-        // Insertion spot is occupied: queue is full!
+        // Insertion spot is occupied: queue is full.
         return false;
     }
 
+    // Copy element in insertion spot.
     memcpy(insert_spot, elm, sizeof(tx_queue_elm_t));
 
-    s_msg_queue_insertion_index++;
-    s_msg_queue_insertion_index %= MSG_QUEUE_MAX_SIZE;
+    // Increase insertion index and loop if necessary.
+    s_msg_queue.insertion_index++;
+    s_msg_queue.insertion_index %= MSG_QUEUE_MAX_SIZE;
 
     return true;
 }
 
 tx_queue_elm_t* luos_mesh_msg_queue_peek(void)
 {
-    tx_queue_elm_t* peek_spot   = s_msg_queue + s_msg_queue_peek_index;
+    // Peek spot in the queue.
+    tx_queue_elm_t* peek_spot;
+    peek_spot   = s_msg_queue.elements + s_msg_queue.peek_index;
 
     if (peek_spot->model == TX_QUEUE_MODEL_EMPTY)
     {
@@ -56,9 +77,20 @@ tx_queue_elm_t* luos_mesh_msg_queue_peek(void)
 
 void luos_mesh_msg_queue_pop(void)
 {
-    // Just mark the last index as empty.
-    s_msg_queue[s_msg_queue_peek_index].model   = TX_QUEUE_MODEL_EMPTY;
+    // Pop spot in the queue.
+    tx_queue_elm_t* pop_spot;
+    pop_spot                = s_msg_queue.elements + s_msg_queue.peek_index;
 
-    s_msg_queue_peek_index++;
-    s_msg_queue_peek_index %= MSG_QUEUE_MAX_SIZE;
+    if (pop_spot->model == TX_QUEUE_MODEL_EMPTY)
+    {
+        // Pop spot is empty: no need to continue.
+        return;
+    }
+
+    // Just mark the last index as empty.
+    pop_spot->model = TX_QUEUE_MODEL_EMPTY;
+
+    // Increase peek index and loop if necessary.
+    s_msg_queue.peek_index++;
+    s_msg_queue.peek_index  %= MSG_QUEUE_MAX_SIZE;
 }
