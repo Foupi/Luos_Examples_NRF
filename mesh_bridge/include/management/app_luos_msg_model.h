@@ -9,7 +9,9 @@
 // LUOS
 #include "robus_struct.h"   // msg_t
 
-// Initializes the internal Luos MSG model instance.
+/* Initializes the internal Luos MSG model instance with predefined
+** parameters.
+*/
 void app_luos_msg_model_init(void);
 
 /* Sets the element address of the internal model instance according
@@ -17,7 +19,9 @@ void app_luos_msg_model_init(void);
 */
 void app_luos_msg_model_address_set(uint16_t device_address);
 
-// Retrieve necessary information and sends message to adequate node.
+/* Retrieves necessary information from internal tables and sends
+** message to adequate node.
+*/
 void app_luos_msg_model_send_msg(const msg_t* msg);
 
 #endif /* ! APP_LUOS_MSG_MODEL_H */
