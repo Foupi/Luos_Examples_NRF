@@ -130,8 +130,8 @@ static void msg_to_luos_mesh_msg(const msg_t* msg,
 
     LUOS_ASSERT((target_mode == ID) || (target_mode == IDACK));
     LUOS_ASSERT(data_size <= LUOS_MESH_MSG_MAX_DATA_SIZE);
-    LUOS_ASSERT(source <= ((1 << 4) - 1));
-    LUOS_ASSERT(target <= ((1 << 4) - 1));
+    LUOS_ASSERT(source <= LUOS_MESH_MSG_HEADER_SOURCE_MAX_VAL);
+    LUOS_ASSERT(target <= LUOS_MESH_MSG_HEADER_TARGET_MAX_VAL);
 
     memset(mesh_msg, 0, sizeof(luos_mesh_msg_t));
     // Fill target and source with parameters.

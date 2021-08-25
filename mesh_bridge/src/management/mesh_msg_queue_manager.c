@@ -30,6 +30,8 @@
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*_ACCESS_OPCODE
 
+#include "nrf_log.h"
+
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if a message can be sent.
@@ -58,10 +60,12 @@ static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
 static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
                                     access_message_tx_t* msg);
 
-// Returns the size of the given Luos MSG SET command.
-static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd);
-
-// Returns true if the given queue element is the last published entry.
+/* Returns true if the given queue element is the last published RTB entry,
+** false otherwise.
+*/
+/* FIXME    This responsibility should not be put on the message queue
+**          manager...
+*/
 static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm);
 
 /*      CALLBACKS                                                   */
@@ -76,6 +80,7 @@ static void timer_to_send_event_cb(void* context);
 
 /*      INITIALIZATIONS                                             */
 
+// TX complete event handler struct, to add to the Mesh stack.
 static nrf_mesh_evt_handler_t   mesh_tx_complete_event_handler  =
 {
     .evt_cb = mesh_tx_complete_event_cb,
@@ -88,177 +93,237 @@ void luos_mesh_msg_queue_manager_init(void)
 {
     ret_code_t  err_code;
 
+    // Add TX complete event handler to the Mesh stack.
     nrf_mesh_evt_handler_add(&mesh_tx_complete_event_handler);
-    err_code = app_timer_create(&s_timer_to_send,
-                                APP_TIMER_MODE_SINGLE_SHOT,
-                                timer_to_send_event_cb);
+
+    // Create sending wait timer.
+    err_code    = app_timer_create(&s_timer_to_send,
+                                   APP_TIMER_MODE_SINGLE_SHOT,
+                                   timer_to_send_event_cb);
     APP_ERROR_CHECK(err_code);
 }
 
 void luos_mesh_msg_prepare(const tx_queue_elm_t* message)
 {
-    bool insert_success = luos_mesh_msg_queue_enqueue(message);
+    // Check parameter.
+    LUOS_ASSERT(message != NULL);
+
+    // Enqueue given TX queue element.
+    bool    insert_success  = luos_mesh_msg_queue_enqueue(message);
+
+    // Check insertion result.
     LUOS_ASSERT(insert_success);
 
     if (s_is_possible_to_send)
     {
+        // Send last message in queue if sending is possible.
         send_mesh_msg();
     }
 }
 
 static void send_mesh_msg(void)
 {
-    tx_queue_elm_t* last_queue_elm  = luos_mesh_msg_queue_peek();
+    // Fetch last queue element.
+    tx_queue_elm_t*     last_queue_elm  = luos_mesh_msg_queue_peek();
     if (last_queue_elm == NULL)
     {
         // Queue is empty: nothing to send.
         return;
     }
 
+    // Message to send on Access layer.
     access_message_tx_t message;
     memset(&message, 0, sizeof(access_message_tx_t));
-    message.transmic_size   = NRF_MESH_TRANSMIC_SIZE_DEFAULT;
-    message.access_token    = nrf_mesh_unique_token_get();
-
+    message.transmic_size   = NRF_MESH_TRANSMIC_SIZE_DEFAULT;   // Size of transmission check data.
+    message.access_token    = nrf_mesh_unique_token_get();      // Token identifying Mesh stack transaction.
     switch (last_queue_elm->model)
     {
     case TX_QUEUE_MODEL_LUOS_RTB:
+        // Complete message with Luos RTB message data and send it.
         send_luos_rtb_model_msg(last_queue_elm, &message);
         break;
 
     case TX_QUEUE_MODEL_LUOS_MSG:
+        // Complete message with Luos MSG message data and send it.
         send_luos_msg_model_msg(last_queue_elm, &message);
         break;
 
     default:
-        // Unknown type.
+        // Unknown type: break down.
+        LUOS_ASSERT(false);
         return;
     }
 
-    s_curr_tx_token = message.access_token;
+    /* Set current Mesh stack transaction identifier for TX complete
+    ** ID check.
+    */
+    s_curr_tx_token         = message.access_token;
 
-    s_is_possible_to_send = false;
+    // Send operation is occuring: impossible to send a new message.
+    s_is_possible_to_send   = false;
 }
 
 static void send_luos_rtb_model_msg(const tx_queue_elm_t* elm,
                                     access_message_tx_t* msg)
 {
-    ret_code_t                      err_code;
-    tx_queue_luos_rtb_model_elm_t   rtb_model_msg = elm->content.luos_rtb_model_msg;
+    // Check parameters.
+    LUOS_ASSERT(elm != NULL);
+    LUOS_ASSERT(msg != NULL);
 
-    switch (rtb_model_msg.cmd)
+    ret_code_t                              err_code;
+
+    // Luos RTB message encapsulated in TX queue element.
+    const tx_queue_luos_rtb_model_elm_t*    rtb_model_msg;
+    rtb_model_msg   = &(elm->content.luos_rtb_model_msg);
+
+    switch (rtb_model_msg->cmd)
     {
     case TX_QUEUE_CMD_GET:
     {
+        // Luos RTB GET request.
+
+        // Luos RTB model GET complete access opcode.
         access_opcode_t opcode  = LUOS_RTB_MODEL_GET_ACCESS_OPCODE;
 
-        msg->opcode             = opcode;
-        msg->p_buffer           = (uint8_t*)(&(rtb_model_msg.content.get));
-        msg->length             = sizeof(luos_rtb_model_get_t);
+        // Fill message data with Luos RTB GET request.
+        msg->opcode     = opcode;
+        msg->p_buffer   = (uint8_t*)(&(rtb_model_msg->content.get));
+        msg->length     = sizeof(luos_rtb_model_get_t);
 
-        err_code                = access_model_publish(elm->model_handle,
-                                                       msg);
+        // Publish Luos RTB GET request.
+        err_code        = access_model_publish(elm->model_handle, msg);
     }
         break;
 
     case TX_QUEUE_CMD_STATUS:
     {
+        // Luos RTB STATUS message.
+
+        // Luos RTB model STATUS complete access opcode.
         access_opcode_t opcode  = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
 
-        msg->opcode             = opcode;
-        msg->p_buffer           = (uint8_t*)(&(rtb_model_msg.content.status));
-        msg->length             = sizeof(luos_rtb_model_status_t);
+        // Fill message data with Luos RTB STATUS message.
+        msg->opcode     = opcode;
+        msg->p_buffer   = (uint8_t*)(&(rtb_model_msg->content.status));
+        msg->length     = sizeof(luos_rtb_model_status_t);
 
-        err_code                = access_model_publish(elm->model_handle,
-                                                       msg);
+        // Publish Luos RTB STATUS message.
+        err_code        = access_model_publish(elm->model_handle, msg);
     }
         break;
 
     case TX_QUEUE_CMD_STATUS_REPLY:
     {
-        access_opcode_t opcode  = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
+        // Luos RTB STATUS reply.
 
-        msg->opcode             = opcode;
-        msg->p_buffer           = (uint8_t*)(&(rtb_model_msg.content.status_reply.status));
-        msg->length             = sizeof(luos_rtb_model_status_t);
+        // Luos RTB model STATUS complete access opcode.
+        access_opcode_t             opcode  = LUOS_RTB_MODEL_STATUS_ACCESS_OPCODE;
 
-        err_code                = access_model_reply(elm->model_handle,
-            &(rtb_model_msg.content.status_reply.src_msg), msg);
+        // Fill message data with Luos RTB STATUS reply.
+        msg->opcode     = opcode;
+        msg->p_buffer   = (uint8_t*)(&(rtb_model_msg->content.status_reply.status));
+        msg->length     = sizeof(luos_rtb_model_status_t);
+
+        const access_message_rx_t*  src_msg;
+        src_msg         = &(rtb_model_msg->content.status_reply.src_msg);
+
+        // Reply to source message with Luos RTB STATUS reply.
+        err_code        = access_model_reply(elm->model_handle, src_msg,
+                                             msg);
     }
         break;
 
     default:
-        // Unknown command.
+        // Unknown command: break down.
+        LUOS_ASSERT(false);
         return;
     }
 
+    // Check sending status.
     APP_ERROR_CHECK(err_code);
 }
 
 static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
                                     access_message_tx_t* msg)
 {
-    ret_code_t                      err_code;
-    tx_queue_luos_msg_model_elm_t   msg_model_msg   = elm->content.luos_msg_model_msg;
+    // Check parameters.
+    LUOS_ASSERT(elm != NULL);
+    LUOS_ASSERT(msg != NULL);
 
-    switch (msg_model_msg.cmd)
+    ret_code_t                              err_code;
+
+    // Luos MSG message encapsulated in TX queue element.
+    const tx_queue_luos_msg_model_elm_t*    msg_model_msg;
+    msg_model_msg   = &(elm->content.luos_msg_model_msg);
+
+    switch (msg_model_msg->cmd)
     {
     case TX_QUEUE_CMD_SET:
     {
+        // Luos MSG SET command.
+
+        // Luos MSG model SET complete access opcode.
         access_opcode_t opcode      = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
-        uint16_t        msg_size    = luos_msg_model_set_cmd_size(&(msg_model_msg.content.set));
 
-        msg->opcode                 = opcode;
-        msg->p_buffer               = (uint8_t*)(&(msg_model_msg.content.set));
-        msg->length                 = msg_size;
+        NRF_LOG_INFO("Max message payload size: %u", LUOS_MESH_MSG_MAX_DATA_SIZE);
 
-        err_code                    = access_model_publish(elm->model_handle,
-                                                       msg);
+        // Fill message data with Luos MSG SET command.
+        msg->opcode     = opcode;
+        msg->p_buffer   = (uint8_t*)(&(msg_model_msg->content.set));
+        msg->length     = sizeof(luos_msg_model_set_t);
+
+        // Publish Luos MSG SET command.
+        err_code        = access_model_publish(elm->model_handle, msg);
     }
         break;
 
     default:
-        // Unknown command.
+        // Unknown command: break down.
+        LUOS_ASSERT(false);
         return;
     }
 
+    // Check sending status.
     APP_ERROR_CHECK(err_code);
-}
-
-static uint16_t luos_msg_model_set_cmd_size(const luos_msg_model_set_t* set_cmd)
-{
-
-    // Basic struct size.
-    uint16_t base_size                      = sizeof(luos_msg_model_set_t);
-
-    // Struct size without msg_t data array space.
-    uint16_t size_without_msg_payload_space = base_size - LUOS_MESH_MSG_MAX_DATA_SIZE;
-
-    // Actual message payload size.
-    uint16_t msg_payload_size               = set_cmd->msg.header.size;
-
-    return size_without_msg_payload_space + msg_payload_size;
 }
 
 static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm)
 {
+    // Check parameter.
+    LUOS_ASSERT(elm != NULL);
+
     if (elm->model == TX_QUEUE_MODEL_LUOS_RTB)
     {
-        // RTB model message.
-        const tx_queue_luos_rtb_model_elm_t*    rtb_elm = &(elm->content.luos_rtb_model_msg);
-        if (rtb_elm->cmd == TX_QUEUE_CMD_STATUS)
+        // Luos RTB message encapsulated in TX queue element.
+        const tx_queue_luos_rtb_model_elm_t*    rtb_model_msg;
+        rtb_model_msg   = &(elm->content.luos_rtb_model_msg);
+
+        if (rtb_model_msg->cmd == TX_QUEUE_CMD_STATUS)
         {
             // Published STATUS message.
-            uint16_t    entry_idx;
-            uint16_t    nb_exposed_entries;
-            uint16_t    last_entry_idx;
 
-            entry_idx           = rtb_elm->content.status.entry_idx;
+            /* Index of the published entry in the local container
+            ** table.
+            */
+            uint16_t    entry_idx;
+            entry_idx           = rtb_model_msg->content.status.entry_idx;
+
+            // Number of entries in the local container table.
+            uint16_t    nb_exposed_entries;
             nb_exposed_entries  = local_container_table_get_nb_entries();
-            last_entry_idx      = nb_exposed_entries - 1; // Indexes start at 0.
+
+            // Check to avoid underflow...
+            LUOS_ASSERT(nb_exposed_entries > 0);
+
+            /* Index of the last entry in the local container table:
+            ** number of entries - 1, since indexes start at 0.
+            */
+            uint16_t    last_entry_idx;
+            last_entry_idx      = nb_exposed_entries - 1;
 
             if (entry_idx == last_entry_idx)
             {
+                // Currently exposed entry is the last exposed entry.
                 return true;
             }
         }
@@ -269,45 +334,63 @@ static bool is_last_published_rtb_entry(const tx_queue_elm_t* elm)
 
 static void mesh_tx_complete_event_cb(const nrf_mesh_evt_t* event)
 {
-    ret_code_t          err_code;
-    nrf_mesh_tx_token_t token;
-
     switch (event->type)
     {
     case NRF_MESH_EVT_TX_COMPLETE:
-        token = event->params.tx_complete.token;
+    {
+        // Token identifying the completed transaction.
+        nrf_mesh_tx_token_t token   = event->params.tx_complete.token;
 
         if (token == s_curr_tx_token)
         {
-            s_is_possible_to_send = true;
+            // Completed transaction is the last sent message.
+
+            // Reset current transaction token.
             s_curr_tx_token = DEFAULT_STATIC_TOKEN;
 
+            // Last sent message.
             tx_queue_elm_t* sent_elm        = luos_mesh_msg_queue_peek();
 
+            // Check result.
+            LUOS_ASSERT(sent_elm != NULL);
+
+            // Check if sent message was the last exposed entry.
             bool            is_last_entry   = is_last_published_rtb_entry(sent_elm);
             if (is_last_entry)
             {
+                /* Signal RTB publication end to Luos RTB model
+                ** management module.
+                */
                 app_luos_rtb_model_publication_end();
             }
 
+            // Destroy last message, as it is not needed anymore.
             luos_mesh_msg_queue_pop();
 
+            ret_code_t      err_code;
+
             /* SAR session not being freed, next message has to be sent
-            ** later.
+            ** later: start timer to that effect.
             */
-            err_code = app_timer_start(s_timer_to_send, WAIT_TIME_TICKS,
-                                       NULL);
+            err_code        = app_timer_start(s_timer_to_send,
+                                              WAIT_TIME_TICKS,
+                                              NULL);
             APP_ERROR_CHECK(err_code);
         }
-
+    }
         break;
 
     default:
+        // Nothing to do.
         return;
     }
 }
 
 static void timer_to_send_event_cb(void* context)
 {
+    // It is now possible to send a new message.
+    s_is_possible_to_send = true;
+
+    // Try sending a new message.
     send_mesh_msg();
 }

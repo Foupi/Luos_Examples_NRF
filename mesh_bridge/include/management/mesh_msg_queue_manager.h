@@ -9,7 +9,9 @@
 // Adds the TX complete Mesh event callback to the Mesh stack.
 void luos_mesh_msg_queue_manager_init(void);
 
-// If a message can be sent, sends the given message; else enqueue it.
+/* Enqueues the given message, then sends the last message in the queue
+** if possible.
+*/
 void luos_mesh_msg_prepare(const tx_queue_elm_t* message);
 
 #endif /* ! MESH_MSG_QUEUE_MANAGER_H */

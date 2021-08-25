@@ -17,10 +17,11 @@
 /*      DEFINES                                                     */
 
 /* Maximum number of remote container entries in the remote containers
-** table.
+** table: defined on max exposed entry by node multiplied by max number
+** of other nodes.
 */
 #define REMOTE_CONTAINER_TABLE_MAX_NB_ENTRIES   \
-    LUOS_MESH_NETWORK_MAX_NODES * LUOS_RTB_MODEL_MAX_RTB_ENTRY
+    ((LUOS_MESH_NETWORK_MAX_NODES - 1) * LUOS_RTB_MODEL_MAX_RTB_ENTRY)
 
 /*      TYPEDEFS                                                    */
 
