@@ -21,7 +21,9 @@ bool    g_device_provisioned   = false;
 
 /*      CALLBACKS                                                   */
 
-// On node reset event, erases persistent data and resets the board.
+/* FIXME    On node reset event, erases persistent data and resets the
+**          board.
+*/
 static void config_server_event_cb(const config_server_evt_t* event);
 
 // Initialize the Luos RTB and Luos MSG models present on the node.
@@ -58,6 +60,8 @@ static void config_server_event_cb(const config_server_evt_t* event)
     switch (event->type)
     {
     case CONFIG_SERVER_EVT_NODE_RESET:
+        // FIXME Erase persistent data.
+
         // FIXME Reset board.
         break;
 

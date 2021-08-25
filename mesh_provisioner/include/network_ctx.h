@@ -28,7 +28,7 @@ typedef struct
     dsm_handle_t    appkey_handle;
     dsm_handle_t    self_devkey_handle;
 
-    // Keys values.
+    // Key values.
     uint8_t         netkey[NRF_MESH_KEY_SIZE];
     uint8_t         appkey[NRF_MESH_KEY_SIZE];
     uint8_t         self_devkey[NRF_MESH_KEY_SIZE];

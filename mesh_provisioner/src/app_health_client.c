@@ -32,31 +32,34 @@ static void health_client_event_cb(const health_client_t* instance,
 
 void app_health_client_init(void)
 {
-    ret_code_t err_code = health_client_init(&s_health_client, 0,
-                                             health_client_event_cb);
+    ret_code_t  err_code;
+
+    // Initialize health client instance with the given callback.
+    err_code    = health_client_init(&s_health_client, 0,
+                                     health_client_event_cb);
     APP_ERROR_CHECK(err_code);
 }
 
 void app_health_client_bind(dsm_handle_t appkey_handle)
 {
-    ret_code_t err_code;
+    ret_code_t  err_code;
 
-    err_code = access_model_application_bind(s_health_client.model_handle,
-                                             appkey_handle);
+    // Bind the internal instance with the given appkey.
+    err_code    = access_model_application_bind(
+                    s_health_client.model_handle, appkey_handle
+                  );
     APP_ERROR_CHECK(err_code);
 
-    err_code = access_model_publish_application_set(s_health_client.model_handle,
-                                                    appkey_handle);
+    // Set the internal instance publication on the given appkey.
+    err_code    = access_model_publish_application_set(
+                    s_health_client.model_handle, appkey_handle
+                  );
     APP_ERROR_CHECK(err_code);
 }
 
 static void health_client_event_cb(const health_client_t* instance,
                                    const health_client_evt_t* event)
 {
-    /* FIXME Another way should be available to check all nodes are
-    ** provisioned...
-    */
-
     #ifdef DEBUG
     switch (event->type)
     {
