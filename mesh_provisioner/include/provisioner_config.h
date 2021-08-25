@@ -15,13 +15,18 @@
 // Provisioner configuration file ID.
 #define PROV_CONF_FILE_ID                   MESH_OPT_FIRST_FREE_ID
 
-// Provisioner configuration header record and entry IDs.
+// Provisioner configuration header record ID inside configuration file.
 #define PROV_CONF_HEADER_RECORD_ID          0x0001
+
+// Provisioner configuration header absolute entry ID.
 #define PROV_CONF_HEADER_ENTRY_ID                                       \
     MESH_CONFIG_ENTRY_ID(PROV_CONF_FILE_ID, PROV_CONF_HEADER_RECORD_ID)
 
-// Provisioner configuration node record and entry IDs.
-#define PROV_CONF_FIRST_NODE_RECORD_ID      PROV_CONF_HEADER_RECORD_ID + 1
+// Record ID of the first node configuration inside configuration file.
+#define PROV_CONF_FIRST_NODE_RECORD_ID      \
+    (PROV_CONF_HEADER_RECORD_ID + 1)
+
+// Absolute entry ID of the given node configuration index.
 #define PROV_CONF_NODE_ENTRY_ID(__node_idx)                             \
     MESH_CONFIG_ENTRY_ID(PROV_CONF_FILE_ID,                             \
                          PROV_CONF_FIRST_NODE_RECORD_ID + (__node_idx))
