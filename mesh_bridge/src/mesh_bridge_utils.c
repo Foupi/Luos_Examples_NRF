@@ -6,6 +6,7 @@
 #include <stdint.h>         // uint16_t
 
 // LUOS
+#include "luos_utils.h"     // LUOS_ASSERT
 #include "routing_table.h"  // routing_table_t, entry_mode_t
 
 // CUSTOM
@@ -13,12 +14,15 @@
 
 /*      STATIC FUNCTIONS                                            */
 
-// Finds the number of containers in the given node RTB entry.
+// Returns the number of containers in the given node RTB entry.
 static uint16_t find_nb_containers(routing_table_t* node_entry);
 
 uint16_t find_mesh_bridge_container_id(routing_table_t* routing_table,
                                        uint16_t nb_entries)
 {
+    // Check parameter.
+    LUOS_ASSERT(routing_table != NULL);
+
     for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
     {
         routing_table_t entry   = routing_table[entry_idx];
@@ -36,20 +40,26 @@ uint16_t find_mesh_bridge_container_id(routing_table_t* routing_table,
 uint16_t find_mesh_bridge_node_id(routing_table_t* routing_table,
                                   uint16_t nb_entries)
 {
+    // Check parameter.
+    LUOS_ASSERT(routing_table != NULL);
+
     for (uint16_t entry_idx = 0; entry_idx < nb_entries; entry_idx++)
     {
         routing_table_t*    entry           = routing_table + entry_idx;
 
         if (entry->mode != NODE)
         {
+            // Only look in node entries.
             continue;
         }
 
+        // Number of containers in the node entry.
         uint16_t            nb_containers   = find_nb_containers(entry);
 
         // Find Mesh Bridge ID in node.
-        uint16_t            mesh_bridge_id  = find_mesh_bridge_container_id(entry,
-                                                nb_containers);
+        uint16_t            mesh_bridge_id;
+        mesh_bridge_id  = find_mesh_bridge_container_id(entry,
+                                                        nb_containers);
         if (mesh_bridge_id != 0)
         {
             // Mesh Bridge container was found in the node.
@@ -63,6 +73,9 @@ uint16_t find_mesh_bridge_node_id(routing_table_t* routing_table,
 
 static uint16_t find_nb_containers(routing_table_t* node_entry)
 {
+    // Check parameter.
+    LUOS_ASSERT(node_entry != NULL);
+
     uint16_t            nb_containers           = 0;
     routing_table_t*    first_container_entry   = node_entry + 1;
 

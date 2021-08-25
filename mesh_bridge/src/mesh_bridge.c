@@ -36,42 +36,64 @@
 /*      STATIC VARIABLE & CONSTANTS                                 */
 
 // Static container instance.
-container_t* s_mesh_bridge_instance;
+container_t*    s_mesh_bridge_instance;
 
 /*      CALLBACKS                                                   */
 
-// Starts the Ext-RTB procedure on the right command.
+/* EXT-RTB:             Engages EXT-RTB procedure.
+** Print tables:        Prints the internal tables.
+** Clear tables:        Clears the internal tables.
+** Fill local table:    Fills the local container table with RTB
+**                      entries.
+** Update tables:       Update the local IDs of entries from internal
+**                      tables.
+*/
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 
 void MeshBridge_Init(void)
 {
+    // Initialize Mesh stack.
     mesh_init();
+
+    // Initialize provisioning module.
     provisioning_init();
+
+    // Start Mesh stack.
     mesh_start();
 
     if (!g_device_provisioned)
     {
+        // Listen for provisioning link.
         prov_listening_start();
     }
     else
     {
+        /* Device already provisioned: fetch device address from
+        ** persistent storage.
+        */
+
         uint16_t device_address = mesh_device_get_address();
 
         #ifdef DEBUG
         NRF_LOG_INFO("Device address: 0x%x!", device_address);
         #endif /* DEBUG */
 
+        // Set internal addresses of model instances.
         mesh_models_set_addresses(device_address);
     }
 
     revision_t      revision = { .unmap = REV };
 
+    // Create Mesh Bridge container instance.
     container_t*    container;
     container = Luos_CreateContainer(MeshBridge_MsgHandler,
                                      MESH_BRIDGE_TYPE,
                                      MESH_BRIDGE_ALIAS, revision);
 
+    // Set internal container instance for message sending.
     s_mesh_bridge_instance  = container;
+
+    // Set internal container instance for Ext-RTB complete message.
     app_luos_rtb_model_container_set(container);
 }
 
@@ -80,24 +102,31 @@ void MeshBridge_Loop(void)
 
 static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 {
+    // Start response message creation.
     msg_t response;
     memset(&response, 0, sizeof(msg_t));
     response.header.target_mode = ID;
     response.header.target      = msg->header.source;
-
     switch(msg->header.cmd)
     {
     case MESH_BRIDGE_EXT_RTB_CMD:
+        // Engage Ext-RTB procedure.
         app_luos_rtb_model_engage_ext_rtb(msg->header.source,
                                           msg->header.target);
+
+        // No answer to send: return.
         return;
 
     case MESH_BRIDGE_PRINT_INTERNAL_TABLES:
+        // Print internal tables.
         local_container_table_print();
         remote_container_table_print();
+
+        // No answer to send: return.
         return;
 
     case MESH_BRIDGE_CLEAR_INTERNAL_TABLES:
+        // Clear internal tables.
         local_container_table_clear();
         remote_container_table_clear();
 
@@ -107,8 +136,10 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 
     case MESH_BRIDGE_FILL_LOCAL_CONTAINER_TABLE:
     {
+        // Fill local container table.
         uint16_t nb_local_containers = local_container_table_fill();
 
+        // Answer with number of local entries.
         response.header.cmd     = MESH_BRIDGE_LOCAL_CONTAINER_TABLE_FILLED;
         response.header.size    = sizeof(uint16_t);
         memcpy(response.data, &nb_local_containers, sizeof(uint16_t));
@@ -117,9 +148,11 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
 
     case MESH_BRIDGE_UPDATE_INTERNAL_TABLES:
     {
+        // Fetch message payload.
         uint16_t dtx_container_id;
         memcpy(&dtx_container_id, msg->data, sizeof(uint16_t));
 
+        // Update internal tables.
         local_container_table_update_local_ids(dtx_container_id);
         remote_container_table_update_local_ids(dtx_container_id);
 
@@ -128,8 +161,10 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg)
         break;
 
     default:
+        // Nothing to do: return.
         return;
     }
 
+    // Send answer.
     Luos_SendMsg(s_mesh_bridge_instance, &response);
 }
