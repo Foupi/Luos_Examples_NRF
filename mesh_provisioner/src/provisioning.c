@@ -125,10 +125,10 @@ MESH_CONFIG_ENTRY(
 
 #ifndef DEBUG
 // LED toggled to match scanning state.
-static const uint32_t   DEFAULT_SCAN_LED_IDX    = 0;
+static const uint32_t       DEFAULT_SCAN_LED_IDX    = 0;
 
 // LED toggled to match provisioning state.
-static const uint32_t   DEFAULT_PROV_LED_IDX    = 1;
+static const uint32_t       DEFAULT_PROV_LED_IDX    = 1;
 #endif /* ! DEBUG */
 
 /*      STATIC FUNCTIONS                                            */

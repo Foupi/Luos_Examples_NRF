@@ -37,6 +37,10 @@
 
 #ifdef DEBUG
 #include "nrf_log.h"                // NRF_LOG_INFO
+#else /* ! DEBUG */
+#include "boards.h"                 /* bsp_board_led_off,
+                                    ** bsp_board_led_on
+                                    */
 #endif /* DEBUG */
 
 /*      TYPEDEFS                                                    */
@@ -173,7 +177,18 @@ static const nrf_mesh_address_t LUOS_GROUP_NRF_ADDRESS      =
 // Static provisioner instance for message sending.
 static container_t*             s_mesh_provisioner_instance = NULL;
 
+#ifndef DEBUG
+// LED toggled to match configuration state.
+static const uint32_t           DEFAULT_NODE_CONF_LED       = 2;
+#endif /* ! DEBUG */
+
 /*      STATIC FUNCTIONS                                            */
+
+#ifndef DEBUG
+// Visually show node configuration start and completion.
+void indicate_configuration_begin(void);
+void indicate_configuration_end(void);
+#endif /* ! DEBUG */
 
 /* Sets the publication parameters for the instance of the given model
 ** ID located on the current configured element with the given address
@@ -281,6 +296,8 @@ void node_config_start(uint16_t device_first_addr,
     #ifdef DEBUG
     NRF_LOG_INFO("Start configuration for node 0x%x! (devkey handle: 0x%x; address handle: 0x%x)",
                  device_first_addr, devkey_handle, address_handle);
+    #else /* ! DEBUG */
+    indicate_configuration_begin();
     #endif /* DEBUG */
 
     ret_code_t  err_code;
@@ -412,6 +429,18 @@ void config_client_msg_handler(const config_client_event_t* event)
     // Call step transition function.
     next_transition();
 }
+
+#ifndef DEBUG
+__attribute__((weak)) void indicate_configuration_begin(void)
+{
+    bsp_board_led_on(DEFAULT_NODE_CONF_LED);
+}
+
+__attribute__((weak)) void indicate_configuration_end(void)
+{
+    bsp_board_led_off(DEFAULT_NODE_CONF_LED);
+}
+#endif /* ! DEBUG */
 
 static void publish_set(const access_model_id_t* target_model_id,
     const nrf_mesh_address_t* publish_address,
@@ -594,6 +623,8 @@ static void node_config_success(void)
 {
     #ifdef DEBUG
     NRF_LOG_INFO("Configuration process successfully completed!");
+    #else /* ! DEBUG */
+    indicate_configuration_end();
     #endif /* DEBUG */
 
     // Retrieve persistent provisioning configuration header.
