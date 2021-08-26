@@ -137,6 +137,10 @@ static const uint32_t   DEFAULT_PROV_LED_IDX    = 1;
 // Visually show scanning state.
 void indicate_scanning_start(void);
 void indicate_scanning_stop(void);
+
+// Visually show provisioning start and completion.
+void indicate_provisioning_begin(void);
+void indicate_provisioning_end(void);
 #endif /* ! DEBUG */
 
 // Fetches persistent configuration.
@@ -264,6 +268,16 @@ __attribute__((weak)) void indicate_scanning_start(void)
 __attribute__((weak)) void indicate_scanning_stop(void)
 {
     bsp_board_led_off(DEFAULT_SCAN_LED_IDX);
+}
+
+__attribute__((weak)) void indicate_provisioning_begin(void)
+{
+    bsp_board_led_on(DEFAULT_PROV_LED_IDX);
+}
+
+__attribute__((weak)) void indicate_provisioning_end(void)
+{
+    bsp_board_led_off(DEFAULT_PROV_LED_IDX);
 }
 #endif /* ! DEBUG */
 
@@ -492,6 +506,8 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 
         #ifdef DEBUG
         NRF_LOG_INFO("Provisioning link established with unprovisioned device!");
+        #else /* ! DEBUG */
+        indicate_provisioning_begin();
         #endif /* DEBUG */
 
         break;
@@ -588,6 +604,10 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
         break;
 
     case NRF_MESH_PROV_EVT_LINK_CLOSED:
+        #ifndef DEBUG
+        indicate_provisioning_end();
+        #endif /* ! DEBUG */
+
         prov_on_link_closed_event();
 
         break;
