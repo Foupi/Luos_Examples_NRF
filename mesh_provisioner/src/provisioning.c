@@ -39,6 +39,10 @@
 
 #ifdef DEBUG
 #include "nrf_log.h"                // NRF_LOG_INFO
+#else /* ! DEBUG */
+#include "boards.h"                 /* bsp_board_led_off,
+                                    ** bsp_board_led_on
+                                    */
 #endif /* DEBUG */
 
 /*      TYPEDEFS                                                    */
@@ -119,19 +123,33 @@ MESH_CONFIG_ENTRY(
     false                                   // Default value does not exist.
 );
 
+#ifndef DEBUG
+// LED toggled to match scanning state.
+static const uint32_t   DEFAULT_SCAN_LED_IDX    = 0;
+
+// LED toggled to match provisioning state.
+static const uint32_t   DEFAULT_PROV_LED_IDX    = 1;
+#endif /* ! DEBUG */
+
 /*      STATIC FUNCTIONS                                            */
 
+#ifndef DEBUG
+// Visually show scanning state.
+void indicate_scanning_start(void);
+void indicate_scanning_stop(void);
+#endif /* ! DEBUG */
+
 // Fetches persistent configuration.
-void prov_conf_fetch(void);
+static void prov_conf_fetch(void);
 
 // Fetches persistent configuration regarding one node.
-void prov_node_conf_fetch(uint16_t node_entry_idx);
+static void prov_node_conf_fetch(uint16_t node_entry_idx);
 
 // Updates static context and persistent configuration.
-void prov_on_complete_event(const nrf_mesh_prov_evt_complete_t* event);
+static void prov_on_complete_event(const nrf_mesh_prov_evt_complete_t* event);
 
 // Updates static context depending on current state.
-void prov_on_link_closed_event(void);
+static void prov_on_link_closed_event(void);
 
 /*      CALLBACKS                                                   */
 
@@ -212,6 +230,8 @@ bool prov_scan_start(void)
 
     #ifdef DEBUG
     NRF_LOG_INFO("Start scanning for unprovisioned devices!");
+    #else /* ! DEBUG */
+    indicate_scanning_start();
     #endif /* DEBUG */
 
     return true;
@@ -230,8 +250,22 @@ void prov_scan_stop(void)
 
     #ifdef DEBUG
     NRF_LOG_INFO("Stop scanning for unprovisioned devices!");
+    #else /* ! DEBUG */
+    indicate_scanning_stop();
     #endif /* DEBUG */
 }
+
+#ifndef DEBUG
+__attribute__((weak)) void indicate_scanning_start(void)
+{
+    bsp_board_led_on(DEFAULT_SCAN_LED_IDX);
+}
+
+__attribute__((weak)) void indicate_scanning_stop(void)
+{
+    bsp_board_led_off(DEFAULT_SCAN_LED_IDX);
+}
+#endif /* ! DEBUG */
 
 void prov_conf_fetch(void)
 {
