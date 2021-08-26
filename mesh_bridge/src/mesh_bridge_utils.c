@@ -17,8 +17,11 @@
 
 /*      STATIC VARIABLES & CONSTANTS                                */
 
+// LED toggled to match provisioning/configuration state.
+static const uint32_t   DEFAULT_INIT_LED    = 0;
+
 // LED toggled to match Ext-RTB procedure state.
-static const uint32_t   DEFAULT_EXT_RTB_LED = 0;
+static const uint32_t   DEFAULT_EXT_RTB_LED = 1;
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -79,6 +82,26 @@ uint16_t find_mesh_bridge_node_id(routing_table_t* routing_table,
     return 0;
 }
 
+__attribute__((weak)) void indicate_provisioning_begin(void)
+{
+    bsp_board_led_on(DEFAULT_INIT_LED);
+}
+
+__attribute__((weak)) void indicate_configuration_end(void)
+{
+    bsp_board_led_off(DEFAULT_INIT_LED);
+}
+
+__attribute__((weak)) void indicate_ext_rtb_engaged(void)
+{
+    bsp_board_led_on(DEFAULT_EXT_RTB_LED);
+}
+
+__attribute__((weak)) void indicate_ext_rtb_complete(void)
+{
+    bsp_board_led_off(DEFAULT_EXT_RTB_LED);
+}
+
 static uint16_t find_nb_containers(routing_table_t* node_entry)
 {
     // Check parameter.
@@ -93,14 +116,4 @@ static uint16_t find_nb_containers(routing_table_t* node_entry)
     }
 
     return nb_containers;
-}
-
-__attribute__((weak)) void indicate_ext_rtb_engaged(void)
-{
-    bsp_board_led_on(DEFAULT_EXT_RTB_LED);
-}
-
-__attribute__((weak)) void indicate_ext_rtb_complete(void)
-{
-    bsp_board_led_off(DEFAULT_EXT_RTB_LED);
 }

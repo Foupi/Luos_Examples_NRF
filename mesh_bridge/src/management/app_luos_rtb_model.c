@@ -81,7 +81,6 @@ static const uint32_t   WAIT_FIRST_ENTRY_DELAY_TICKS        = APP_TIMER_TICKS(WA
 static const uint32_t   WAIT_NEXT_ENTRY_REPLY_DELAY_TICKS   = APP_TIMER_TICKS(WAIT_NEXT_ENTRY_REPLY_DELAY_MS);
 
 // Delay to wait for next published RTB entry.
-// FIXME Publication takes a very long time...
 #define                 WAIT_NEXT_ENTRY_PUBLISH_DELAY_MS    4000
 static const uint32_t   WAIT_NEXT_ENTRY_PUBLISH_DELAY_TICKS = APP_TIMER_TICKS(WAIT_NEXT_ENTRY_PUBLISH_DELAY_MS);
 

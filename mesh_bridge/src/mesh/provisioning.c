@@ -26,6 +26,8 @@
 
 #ifdef DEBUG
 #include "nrf_log.h"                // NRF_LOG_INFO
+#else /* ! DEBUG */
+#include "mesh_bridge_utils.h"      // indicate_provisioning_begin
 #endif /* DEBUG */
 
 /*      STATIC VARIABLES & CONSTANTS                                */
@@ -79,6 +81,8 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
     case NRF_MESH_PROV_EVT_LINK_ESTABLISHED:
         #ifdef DEBUG
         NRF_LOG_INFO("Provisioning link established!");
+        #else /* ! DEBUG */
+        indicate_provisioning_begin();
         #endif /* DEBUG */
 
         break;
@@ -161,6 +165,16 @@ static void mesh_prov_event_cb(const nrf_mesh_prov_evt_t* event)
 
             prov_listening_start();
         }
+        #ifndef DEBUG
+        else
+        {
+            /* FIXME    This should be done at end of configuration: the
+            **          corresponding Config Server event should be
+            **          computed and used.
+            */
+            indicate_configuration_end();
+        }
+        #endif /* ! DEBUG */
 
         /* Else there is nothing left to do, everything was managed at
         ** Provisioning Complete event.
