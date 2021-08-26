@@ -5,12 +5,20 @@
 // C STANDARD
 #include <stdint.h>         // uint16_t
 
+// NRF
+#include "boards.h"         // bsp_board_led_off, bsp_board_led_on
+
 // LUOS
 #include "luos_utils.h"     // LUOS_ASSERT
 #include "routing_table.h"  // routing_table_t, entry_mode_t
 
 // CUSTOM
 #include "mesh_bridge.h"    // MESH_BRIDGE_MOD
+
+/*      STATIC VARIABLES & CONSTANTS                                */
+
+// LED toggled to match Ext-RTB procedure state.
+static const uint32_t   DEFAULT_EXT_RTB_LED = 0;
 
 /*      STATIC FUNCTIONS                                            */
 
@@ -85,4 +93,14 @@ static uint16_t find_nb_containers(routing_table_t* node_entry)
     }
 
     return nb_containers;
+}
+
+__attribute__((weak)) void indicate_ext_rtb_engaged(void)
+{
+    bsp_board_led_on(DEFAULT_EXT_RTB_LED);
+}
+
+__attribute__((weak)) void indicate_ext_rtb_complete(void)
+{
+    bsp_board_led_off(DEFAULT_EXT_RTB_LED);
 }

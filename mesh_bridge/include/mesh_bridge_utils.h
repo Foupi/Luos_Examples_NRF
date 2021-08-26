@@ -21,4 +21,8 @@ uint16_t find_mesh_bridge_container_id(routing_table_t* routing_table,
 uint16_t find_mesh_bridge_node_id(routing_table_t* routing_table,
                                   uint16_t nb_entries);
 
+// Visually show the start and end of Ext-RTB procedure.
+void indicate_ext_rtb_engaged(void);
+void indicate_ext_rtb_complete(void);
+
 #endif /* ! MESH_BRIDGE_UTILS_H */

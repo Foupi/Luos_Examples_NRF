@@ -30,8 +30,6 @@
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_*_ACCESS_OPCODE
 
-#include "nrf_log.h"
-
 /*      STATIC VARIABLES & CONSTANTS                                */
 
 // Describes if a message can be sent.
@@ -264,8 +262,6 @@ static void send_luos_msg_model_msg(const tx_queue_elm_t* elm,
 
         // Luos MSG model SET complete access opcode.
         access_opcode_t opcode      = LUOS_MSG_MODEL_SET_ACCESS_OPCODE;
-
-        NRF_LOG_INFO("Max message payload size: %u", LUOS_MESH_MSG_MAX_DATA_SIZE);
 
         // Fill message data with Luos MSG SET command.
         msg->opcode     = opcode;

@@ -27,7 +27,9 @@
 #include "luos_rtb_model.h"         // luos_rtb_model_*
 #include "luos_rtb_model_common.h"  // LUOS_RTB_MODEL_MAX_RTB_ENTRY
 #include "mesh_bridge.h"            // MESH_BRIDGE_*
-#include "mesh_bridge_utils.h"      // find_mesh_bridge_container_id
+#include "mesh_bridge_utils.h"      /* find_mesh_bridge_container_id,
+                                    ** indicate_ext_rtb_*
+                                    */
 #include "mesh_init.h"              // g_device_provisioned
 #include "mesh_msg_queue_manager.h" // tx_queue_*, luos_mesh_msg_prepare
 #include "remote_container_table.h" // remote_container_*
@@ -225,6 +227,8 @@ void app_luos_rtb_model_engage_ext_rtb(uint16_t src_id,
 
     #ifdef DEBUG
     NRF_LOG_INFO("Engaging ext-RTB procedure: switch to GETTING state!");
+    #else /* ! DEBUG */
+    indicate_ext_rtb_engaged();
     #endif /* DEBUG */
 
     // Update current state.
@@ -243,6 +247,8 @@ void app_luos_rtb_model_publication_end(void)
 {
     #ifdef DEBUG
     NRF_LOG_INFO("Published local RTB, ext-RTB procedure complete: switch back to IDLE mode!");
+    #else /* ! DEBUG */
+    indicate_ext_rtb_complete();
     #endif /* DEBUG */
 
     ext_rtb_complete();
@@ -478,6 +484,8 @@ static void rtb_model_get_cb(uint16_t src_addr)
 
     #ifdef DEBUG
     NRF_LOG_INFO("Luos RTB GET request received: switch to REPLYING mode!");
+    #else /* ! DEBUG */
+    indicate_ext_rtb_engaged();
     #endif /* DEBUG */
 
     s_luos_rtb_model_ctx.curr_state = LUOS_RTB_MODEL_STATE_REPLYING;
@@ -557,6 +565,8 @@ static void entries_reception_timeout_cb(void* context)
     {
         #ifdef DEBUG
         NRF_LOG_INFO("Reception timeout for remote node entries, end of ext-RTB procedure: switch back to IDLE mode!");
+        #else /* ! DEBUG */
+        indicate_ext_rtb_complete();
         #endif /* DEBUG */
 
         ext_rtb_complete();
