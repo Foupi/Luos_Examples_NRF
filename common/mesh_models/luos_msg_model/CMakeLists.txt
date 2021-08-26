@@ -24,7 +24,6 @@ add_library( luos_msg_model
 target_include_directories( luos_msg_model PUBLIC
     "${LUOS_MSG_MODEL_PATH}/include"
 
-    "${LUOS_MESH_MODELS_PATH}/luos_rtb_model/include"
     "${CONTAINERS_COMMON_PATH}/include"
 
     ${MESH_INCLUDE_DIRS}

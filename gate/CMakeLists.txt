@@ -28,12 +28,9 @@ target_include_directories( gate PUBLIC
     "${GATE_PATH}/cJSON"
 
     "${CONTAINERS_COMMON_PATH}/include"
-
-    "${CONTAINERS_PATH}/mesh_bridge/include" # FIXME
 )
 
 add_compile_definitions(
-    LUOS_MESH_BRIDGE
     BSP_DEFINES_ONLY
     CONFIG_GPIO_AS_PINRESET
     DEBUG
@@ -42,6 +39,7 @@ add_compile_definitions(
 target_link_libraries( gate PUBLIC
     # Luos
     luos
+    luos_config
 
     # NRF
     # Drivers

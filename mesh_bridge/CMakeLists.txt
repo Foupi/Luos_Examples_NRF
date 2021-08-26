@@ -53,8 +53,6 @@ target_include_directories( mesh_bridge PUBLIC
 
     "${CONTAINERS_COMMON_PATH}/include"
 
-    "${CONTAINERS_PATH}/rtb_builder"    # FIXME
-
     ${MESH_INCLUDE_DIRS}
     ${CONFIG_SERVER_INCLUDE_DIRS}
     ${HEALTH_SERVER_INCLUDE_DIRS}
@@ -76,6 +74,7 @@ add_compile_definitions(
 target_link_libraries( mesh_bridge PUBLIC
     #Luos
     luos
+    luos_config
 
     #Models
     luos_msg_model
