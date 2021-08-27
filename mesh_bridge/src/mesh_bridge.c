@@ -52,6 +52,11 @@ static void MeshBridge_MsgHandler(container_t* container, msg_t* msg);
 
 void MeshBridge_Init(void)
 {
+    #ifdef DEBUG
+    NRF_LOG_INFO("Mesh Mod: 0x%x!", MESH_BRIDGE_MOD);
+    NRF_LOG_INFO("Mesh MSG begin: 0x%x!", MESH_BRIDGE_MSG_BEGIN);
+    #endif /* DEBUG */
+
     // Initialize Mesh stack.
     mesh_init();
 

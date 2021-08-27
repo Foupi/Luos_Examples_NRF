@@ -4,10 +4,8 @@
 /*      INCLUDES                                                    */
 
 // LUOS
+#include "app_luos_list.h"  // MESH_BRIDGE_MOD, MESH_BRIDGE_MSG_BEGIN
 #include "luos_list.h"      // LUOS_PROTOCOL_NB, LUOS_LAST_TYPE
-
-// CUSTOM
-#include "app_luos_list.h"  // MESH_BRIDGE_*
 
 /*      DEFINES                                                     */
 

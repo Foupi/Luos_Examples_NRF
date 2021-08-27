@@ -18,6 +18,7 @@ add_compile_definitions(
 target_link_libraries( rtb_builder PUBLIC
     #Luos
     luos
+    luos_config
 
     # NRF
     # External

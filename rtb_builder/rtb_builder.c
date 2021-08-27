@@ -38,6 +38,11 @@ static void RTBBuilder_MsgHandler(container_t* container, msg_t* msg);
 
 void RTBBuilder_Init(void)
 {
+    #ifdef DEBUG
+    NRF_LOG_INFO("RTB Mod: 0x%x!", RTB_MOD);
+    NRF_LOG_INFO("RTB MSG begin: 0x%x!", RTB_MSG_BEGIN);
+    #endif /* DEBUG */
+
     revision_t revision = { .unmap = REV };
     s_rtb_builder = Luos_CreateContainer(RTBBuilder_MsgHandler,
                                          RTB_TYPE, RTB_ALIAS, revision);

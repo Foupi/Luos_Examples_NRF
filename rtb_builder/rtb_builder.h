@@ -4,8 +4,8 @@
 /*      INCLUDES                                                    */
 
 // LUOS
-#include "luos.h"       // container_t
-#include "luos_list.h"  // LUOS_PROTOCOL_NB
+#include "app_luos_list.h"  // RTB_MOD, RTB_MSG_BEGIN
+#include "luos_list.h"      // LUOS_PROTOCOL_NB
 
 /*      DEFINES                                                     */
 
