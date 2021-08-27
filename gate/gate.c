@@ -19,6 +19,7 @@
 #include "app_uart.h"           // app_uart_evt_t
 
 // LUOS
+#include "app_luos_list.h"      // LUOS_MESH_BRIDGE
 #include "luos_hal_config.h"    // MAX_SYSTICK_MS_VAL
 
 // CUSTOM
@@ -26,7 +27,6 @@
 
 #ifdef LUOS_MESH_BRIDGE
 #include "mesh_bridge.h"        // MESH_BRIDGE_*
-#include "mesh_bridge_utils.h"  // find_mesh_bridge_container_id
 #endif /* LUOS_MESH_BRIDGE */
 
 /*******************************************************************************
@@ -100,6 +100,14 @@ static void print_rtb(const routing_table_t* rtb, uint16_t nb_entries);
 void Gate_Init(void)
 {
     uart_init(Gate_UartEvtHandler);
+
+    #ifdef DEBUG
+    #ifdef LUOS_MESH_BRIDGE
+    printf("Luos Mesh Bridge enabled!\n");
+    #else /* ! LUOS_MESH_BRIDGE */
+    printf("Luos Mesh Bridge disabled!\n");
+    #endif /* LUOS_MESH_BRIDGE */
+    #endif /* DEBUG */
 
     revision_t revision = {.unmap = REV};
     container = Luos_CreateContainer(0, GATE_MOD, "gate", revision);
@@ -188,8 +196,7 @@ void Gate_Loop(void)
 
         if (!detection_done)    // Only fill local container table once.
         {
-            uint16_t mesh_bridge_id = find_mesh_bridge_container_id(rtb,
-                nb_entries);
+            uint16_t mesh_bridge_id = RoutingTB_IDFromAlias(MESH_BRIDGE_ALIAS);
 
             msg_t   fill_local;
             memset(&fill_local, 0, sizeof(msg_t));
