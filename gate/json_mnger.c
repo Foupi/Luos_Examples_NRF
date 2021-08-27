@@ -5,6 +5,8 @@
 #include "convert.h"
 #include "gate.h"
 
+#include "app_luos_list.h"      // LUOS_MESH_BRIDGE
+
 #ifdef LUOS_MESH_BRIDGE
 #include "routing_table.h"  // routing_table_t
 #include "mesh_bridge.h"    // MESH_BRIDGE_*

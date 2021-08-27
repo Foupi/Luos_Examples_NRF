@@ -65,7 +65,7 @@ target_include_directories( mesh_bridge PUBLIC
 add_compile_definitions(
     BSP_DEFINES_ONLY
     CONFIG_GPIO_AS_PINRESET
-    DEBUG
+#    DEBUG
     NRF52_SERIES
     NRF_MESH_LOG_ENABLE=NRF_LOG_USES_RTT
     CONFIG_APP_IN_CORE

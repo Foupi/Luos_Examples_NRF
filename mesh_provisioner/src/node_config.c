@@ -141,7 +141,7 @@ static const char*              DEBUG_MESSAGES[]            =
 #endif /* DEBUG */
 
 // Default address for configuration element.
-static const uint16_t           DEFAULT_CONF_ELM_ADDR       = 0xFFFF;
+#define                         DEFAULT_CONF_ELM_ADDR       0xFFFF
 
 // Node configuration state.
 static struct
